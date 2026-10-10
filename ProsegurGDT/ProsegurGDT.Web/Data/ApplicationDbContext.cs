@@ -15,6 +15,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Tarjeta> Tarjetas => Set<Tarjeta>();
     public DbSet<HistorialEstadoTarjeta> HistorialEstados => Set<HistorialEstadoTarjeta>();
 
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);

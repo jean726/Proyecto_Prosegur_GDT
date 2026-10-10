@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
+using ProsegurGDT.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,11 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.LoginPath = "/Identity/Account/Login";
     o.AccessDeniedPath = "/Home/AccesoDenegado";
 });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+// Una cuenta desactivada pierde la sesión en ≤ 1 minuto
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
 // Todo el sitio exige sesión; lo público se marca con [AllowAnonymous]
 builder.Services.AddControllersWithViews(o => o.Filters.Add(new AuthorizeFilter()));
