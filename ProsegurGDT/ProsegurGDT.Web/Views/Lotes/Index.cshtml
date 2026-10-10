@@ -1,0 +1,61 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Domain.Lote>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Ingreso de tarjetas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Ingreso de tarjetas</h2>
+    <a asp-action="Registrar" class="btn btn-primary">Registrar nuevo lote</a>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<table class="table table-sm table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Hoja de control</th>
+            <th>Remito</th>
+            <th>Banco</th>
+            <th>Recepción</th>
+            <th class="text-end">Declaradas</th>
+            <th class="text-end">Contadas</th>
+            <th>Estado</th>
+            <th>Registrado</th>
+            <th>Por</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var l in Model)
+        {
+            <tr>
+                <td>@(l.CodigoHojaControl ?? "—")</td>
+                <td>@l.Remito?.Numero</td>
+                <td>@l.Remito?.Banco?.Nombre</td>
+                <td>@l.FechaRecepcion.ToString("dd/MM/yyyy")</td>
+                <td class="text-end">@l.CantidadDeclarada</td>
+                <td class="text-end">@l.CantidadContada</td>
+                <td>
+                    @if (l.Estado == EstadoLote.IngresadoEnCustodia)
+                    {
+                        <span class="badge bg-success">Ingresado en custodia</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge bg-danger">Discrepancia detectada</span>
+                    }
+                </td>
+                <td>@HoraLima.Convertir(l.FechaHoraRegistro).ToString("dd/MM/yyyy HH:mm:ss")</td>
+                <td>@l.RegistradoPor?.NombreCompleto</td>
+            </tr>
+        }
+    </tbody>
+</table>
