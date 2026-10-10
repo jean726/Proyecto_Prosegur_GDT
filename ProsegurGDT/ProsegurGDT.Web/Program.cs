@@ -42,7 +42,7 @@ builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInter
 builder.Services.AddControllersWithViews(o => o.Filters.Add(new AuthorizeFilter()));
 
 var app = builder.Build();
-
+    
 using (var scope = app.Services.CreateScope())
 {
     await DbSeeder.SeedAsync(scope.ServiceProvider, app.Environment.IsDevelopment());

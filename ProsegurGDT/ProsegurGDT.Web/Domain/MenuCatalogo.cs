@@ -14,6 +14,7 @@ public static class MenuCatalogo
         new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, false),
         new("Direcciones fraudulentas", "DireccionesFraudulentas", "Index", new[] { Roles.Buscador }, false),
         new("Hoja de asignación", "Asignaciones", "Index", new[] { Roles.AnalistaDeRutas }, false),
-        new("Usuarios", "Usuarios", "Index", new[] { Roles.Administrador }, false),
+        new("Usuarios", "Usuarios", "Index", new[] { Roles.Administrador }, true),
+        new("Auditoría", "Auditoria", "Index", new[] { Roles.Administrador }, true),
     };
 }
