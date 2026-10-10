@@ -1,0 +1,18 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Domain.AuditLog>
+@using ProsegurGDT.Web.Domain
+@{ ViewData["Title"] = "Auditoría"; string? q = ViewBag.Q; }
+<h2>Historial de auditoría</h2>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4"><input name="q" value="@q" class="form-control" placeholder="Usuario, acción o detalle" /></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary">Filtrar</button></div>
+</form>
+<table class="table table-sm">
+    <thead class="table-light"><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
+    <tbody>
+    @foreach (var a in Model)
+    {
+        <tr><td>@HoraLima.Convertir(a.FechaHoraUtc).ToString("dd/MM/yyyy HH:mm:ss")</td><td>@a.UsuarioNombre</td>
+            <td>@a.Accion</td><td>@a.Entidad @a.EntidadId</td><td>@a.Detalle</td></tr>
+    }
+    </tbody>
+</table>

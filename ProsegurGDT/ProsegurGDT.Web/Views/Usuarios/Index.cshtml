@@ -1,0 +1,67 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Models.UsuarioFilaVM>
+@{
+    ViewData["Title"] = "Usuarios";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Usuarios</h2>
+    <a asp-action="Crear" class="btn btn-primary">Registrar nuevo usuario</a>
+</div>
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+<table class="table table-sm table-hover align-middle">
+    <thead class="table-light"><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.NombreCompleto</td>
+                <td>@u.Email</td>
+                <td>@u.Rol</td>
+                <td>
+                    @if (!u.Activo)
+                    {
+                        <span class="badge bg-secondary">Desactivado</span>
+                    }
+                    else if (u.Bloqueado)
+                    {
+
+                        <span class="badge bg-warning text-dark">Bloqueado</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge bg-success">Activo</span>
+                    }
+                </td>
+                <td class="text-end">
+                    <a asp-action="Editar" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Modificar</a>
+                    @if (u.Bloqueado)
+                    {
+                        <form asp-action="Desbloquear" asp-route-id="@u.Id" method="post" class="d-inline">
+                            <button class="btn btn-sm btn-outline-warning">Desbloquear</button>
+                        </form>
+                    }
+                    @if (u.Activo)
+                    {
+                        <form asp-action="Desactivar" asp-route-id="@u.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Esta acción desactivará su acceso al sistema. ¿Continuar?');">
+                            <button class="btn btn-sm btn-outline-danger">Desactivar</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline">
+                            <button class="btn btn-sm btn-outline-success">Reactivar</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
