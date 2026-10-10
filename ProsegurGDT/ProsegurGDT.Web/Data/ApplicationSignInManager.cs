@@ -1,0 +1,27 @@
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+
+namespace ProsegurGDT.Web.Data;
+
+public class ApplicationSignInManager : SignInManager<ApplicationUser>
+{
+    public ApplicationSignInManager(
+        UserManager<ApplicationUser> userManager,
+        IHttpContextAccessor contextAccessor,
+        IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory,
+        IOptions<IdentityOptions> optionsAccessor,
+        ILogger<SignInManager<ApplicationUser>> logger,
+        IAuthenticationSchemeProvider schemes,
+        IUserConfirmation<ApplicationUser> confirmation)
+        : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes, confirmation) { }
+
+    // Una cuenta desactivada no puede iniciar sesión (CU22, flujo "Usuario inactivo")
+    public override async Task<bool> CanSignInAsync(ApplicationUser user)
+        => user.Activo && await base.CanSignInAsync(user);
+
+    // Fuerza el bloqueo por intentos fallidos (CU22, "Número máximo de intentos")
+    public override Task<SignInResult> PasswordSignInAsync(
+        string userName, string password, bool isPersistent, bool lockoutOnFailure)
+        => base.PasswordSignInAsync(userName, password, isPersistent, true);
+}

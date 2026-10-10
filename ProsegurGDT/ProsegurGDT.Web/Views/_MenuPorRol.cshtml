@@ -1,0 +1,17 @@
+﻿@using ProsegurGDT.Web.Domain
+@if (User.Identity?.IsAuthenticated == true)
+{
+    foreach (var op in MenuCatalogo.Items.Where(o => o.Roles.Any(r => User.IsInRole(r))))
+    {
+        if (op.Disponible)
+        {
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="@op.Controller" asp-action="@op.Action">@op.Texto</a>
+            </li>
+        }
+        else
+        {
+            <li class="nav-item"><span class="nav-link text-muted" title="Próximamente">@op.Texto</span></li>
+        }
+    }
+}

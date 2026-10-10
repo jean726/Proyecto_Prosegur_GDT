@@ -37,6 +37,8 @@ public static class DbSeeder
             }
         }
 
+        if (cargarDemo) await CrearUsuariosDemoAsync(sp);
+
         if (!await db.Bancos.AnyAsync())
         {
             db.Bancos.Add(new Banco { Nombre = "UNIBANCA" });
@@ -50,6 +52,26 @@ public static class DbSeeder
                 new Remito { Numero = "REM-0001", BancoId = banco.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(DateTime.Today) },
                 new Remito { Numero = "REM-0002", BancoId = banco.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(DateTime.Today) });
             await db.SaveChangesAsync();
+        }
+    }
+
+    private static async Task CrearUsuariosDemoAsync(IServiceProvider sp)
+    {
+        var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        foreach (var rol in Roles.Todos.Where(r => r != Roles.Administrador))
+        {
+            var email = $"{rol.ToLowerInvariant()}@gdt.local";
+            if (await um.FindByEmailAsync(email) is not null) continue;
+            var u = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                NombreCompleto = $"Demo {rol}",
+                Activo = true
+            };
+            var r = await um.CreateAsync(u, "<clave-demo>");
+            if (r.Succeeded) await um.AddToRoleAsync(u, rol);
         }
     }
 }
