@@ -35,6 +35,7 @@ builder.Services.ConfigureApplicationCookie(o =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<ITarjetaEstadoService, TarjetaEstadoService>();
 // Una cuenta desactivada pierde la sesión en ≤ 1 minuto
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
@@ -42,7 +43,7 @@ builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInter
 builder.Services.AddControllersWithViews(o => o.Filters.Add(new AuthorizeFilter()));
 
 var app = builder.Build();
-    
+
 using (var scope = app.Services.CreateScope())
 {
     await DbSeeder.SeedAsync(scope.ServiceProvider, app.Environment.IsDevelopment());
