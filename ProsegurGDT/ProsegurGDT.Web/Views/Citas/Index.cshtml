@@ -1,0 +1,39 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Domain.Tarjeta>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Citas con clientes";
+}
+<h2>Citas con clientes</h2>
+<p class="text-muted">Tarjetas pendientes de coordinar la entrega.</p>
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+<table class="table table-sm table-hover align-middle">
+    <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Teléfono</th><th>Dirección</th><th>Estado</th><th>Datos</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Codigo</td>
+                <td>@t.Cliente!.NombreCompleto</td>
+                <td>@(t.Cliente.Telefono ?? "—")</td>
+                <td>@t.Cliente.Direccion</td>
+                <td><span class="badge bg-secondary">@t.Estado.Texto()</span></td>
+                <td>@if (FichaCliente.DatosCompletos(t.Cliente)) {
+                    <span class="badge bg-success">Completos</span>
+                } else
+                {
+
+                    <span class="badge bg-warning text-dark">Incompletos</span>
+                }
+            </td>
+            <td class="text-end"><a asp-action="Gestionar" asp-route-id="@t.Id" class="btn btn-sm btn-primary">Gestionar</a></td>
+        </tr>
+    }
+</tbody>
+</table>

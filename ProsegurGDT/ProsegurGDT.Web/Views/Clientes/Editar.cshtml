@@ -1,0 +1,17 @@
+﻿@model ProsegurGDT.Web.Models.ClienteEditarVM
+@{
+    ViewData["Title"] = "Corregir ficha";
+}
+<h2>Corregir ficha del cliente</h2>
+<form asp-action="Editar" method="post" class="col-md-6">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="mb-2"><label asp-for="NombreCompleto" class="form-label"></label><input asp-for="NombreCompleto" class="form-control" /></div>
+    <div class="mb-2"><label asp-for="Telefono" class="form-label"></label><input asp-for="Telefono" class="form-control" /></div>
+    <div class="mb-3"><label asp-for="Direccion" class="form-label"></label><input asp-for="Direccion" class="form-control" /></div>
+    <button class="btn btn-success">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

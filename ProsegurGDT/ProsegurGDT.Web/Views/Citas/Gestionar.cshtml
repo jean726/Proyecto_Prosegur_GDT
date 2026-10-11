@@ -1,0 +1,75 @@
+﻿@model ProsegurGDT.Web.Models.GestionarCitaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Gestionar cita con cliente";
+    var c = Model.Tarjeta!.Cliente!;
+    var items = Enum.GetValues<ResultadoLlamada>().Select(r => new SelectListItem(r.Texto(), r.ToString())).ToList();
+}
+<h2>Gestionar cita con cliente</h2>
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+@if (!Model.DatosCompletos)
+{
+    <div class="alert alert-warning">Los datos de contacto están incompletos. Solo puede registrar "Datos insuficientes" y avisar al Supervisor.</div>
+}
+
+<div class="card mb-3">
+    <div class="card-header">Datos del cliente y de la tarjeta</div>
+    <div class="card-body row">
+        <div class="col-md-4"><label class="form-label">Cliente</label><input class="form-control" value="@c.NombreCompleto" readonly /></div>
+        <div class="col-md-2"><label class="form-label">Documento</label><input class="form-control" value="@c.DocumentoIdentidad" readonly /></div>
+        <div class="col-md-2"><label class="form-label">Teléfono</label><input class="form-control" value="@c.Telefono" readonly /></div>
+        <div class="col-md-4"><label class="form-label">Dirección</label><input class="form-control" value="@c.Direccion" readonly /></div>
+        <div class="col-md-3 mt-2"><label class="form-label">Tarjeta</label><input class="form-control" value="@Model.Tarjeta.Codigo" readonly /></div>
+        <div class="col-md-3 mt-2"><label class="form-label">Estado</label><input class="form-control" value="@Model.Tarjeta.Estado.Texto()" readonly /></div>
+        <div class="col-md-3 mt-2"><label class="form-label">Intentos sin contacto</label><input class="form-control" value="@Model.IntentosNoContacto de @Model.MaxIntentos" readonly /></div>
+    </div>
+</div>
+
+<form asp-action="Gestionar" method="post">
+    <input type="hidden" asp-for="TarjetaId" />
+    <div class="card mb-3">
+        <div class="card-header">Resultado de la llamada</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label asp-for="Resultado" class="form-label"></label>
+                    <select asp-for="Resultado" class="form-select" asp-items="items"><option value="">-- Seleccione --</option></select>
+                </div>
+                <div class="col-md-8"><label asp-for="Observaciones" class="form-label"></label><input asp-for="Observaciones" class="form-control" maxlength="400" /></div>
+            </div>
+            <div id="bloqueCita" class="row mt-3 d-none">
+                <div class="col-md-3"><label asp-for="Fecha" class="form-label">Fecha de entrega</label><input asp-for="Fecha" type="date" class="form-control" /></div>
+                <div class="col-md-3"><label asp-for="Hora" class="form-label">Hora de entrega</label><input asp-for="Hora" type="time" class="form-control" /></div>
+                <div class="col-md-6"><label asp-for="Lugar" class="form-label">Lugar de entrega</label><input asp-for="Lugar" class="form-control" maxlength="250" /></div>
+            </div>
+        </div>
+    </div>
+    <button class="btn btn-success">Registrar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<h5 class="mt-4">Historial de intentos</h5>
+<table class="table table-sm">
+    <thead class="table-light"><tr><th>Fecha y hora</th><th>Resultado</th><th>Observaciones</th><th>Registrado por</th></tr></thead>
+    <tbody>
+        @foreach (var h in Model.Historial)
+        {
+            <tr><td>@HoraLima.Convertir(h.FechaHora).ToString("dd/MM/yyyy HH:mm")</td><td>@h.Resultado.Texto()</td><td>@h.Observaciones</td><td>@h.Usuario?.NombreCompleto</td></tr>
+        }
+        @if (!Model.Historial.Any())
+        {
+            <tr><td colspan="4" class="text-muted">Sin intentos previos.</td></tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        const sel = document.getElementById('Resultado'), bloque = document.getElementById('bloqueCita');
+        function toggle() { bloque.classList.toggle('d-none', sel.value !== 'Exitoso'); }
+        sel.addEventListener('change', toggle); toggle();
+    </script>
+}
