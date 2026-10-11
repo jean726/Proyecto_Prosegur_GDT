@@ -7,8 +7,8 @@ public static class MenuCatalogo
     public static readonly OpcionMenu[] Items =
     {
         new("Ingreso de tarjetas", "Lotes", "Index", new[] { Roles.Supervisor }, true),
-        new("Fichas de clientes", "Clientes", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, false),
-        new("Citas con clientes", "Citas", "Index", new[] { Roles.AuxiliarTelefonista }, false),
+        new("Fichas de clientes", "Clientes", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, true),
+        new("Citas con clientes", "Citas", "Index", new[] { Roles.AuxiliarTelefonista }, true),
         new("Hojas de ruta", "HojasRuta", "Index", new[] { Roles.Supervisor }, false),
         new("Descargo de tarjetas", "Descargo", "Index", new[] { Roles.Descargador }, false),
         new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, false),
