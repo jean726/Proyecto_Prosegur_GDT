@@ -14,8 +14,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Tarjeta> Tarjetas => Set<Tarjeta>();
     public DbSet<HistorialEstadoTarjeta> HistorialEstados => Set<HistorialEstadoTarjeta>();
-
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RegistroLlamada> Llamadas => Set<RegistroLlamada>();
+    public DbSet<Cita> Citas => Set<Cita>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
@@ -28,10 +30,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<HistorialEstadoTarjeta>().Property(x => x.EstadoNuevo).HasConversion<string>().HasMaxLength(40);
         b.Entity<HistorialEstadoTarjeta>().Property(x => x.EstadoAnterior).HasConversion<string>().HasMaxLength(40);
 
+        b.Entity<RegistroLlamada>().Property(x => x.Resultado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<Cliente>().HasIndex(x => x.DocumentoIdentidad).IsUnique();
+
         // Cadena de custodia: nada se borra en cascada (evita además errores de "multiple cascade paths")
         foreach (var fk in b.Model.GetEntityTypes()
                      .Where(e => e.ClrType.Namespace == typeof(Banco).Namespace)
                      .SelectMany(e => e.GetForeignKeys()))
             fk.DeleteBehavior = DeleteBehavior.Restrict;
-        }
+    }
 }
