@@ -11,7 +11,7 @@ public static class MenuCatalogo
         new("Citas con clientes", "Citas", "Index", new[] { Roles.AuxiliarTelefonista }, true),
         new("Hojas de ruta", "HojasRuta", "Index", new[] { Roles.Supervisor }, false),
         new("Descargo de tarjetas", "Descargo", "Index", new[] { Roles.Descargador }, false),
-        new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, false),
+        new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, true),
         new("Direcciones fraudulentas", "DireccionesFraudulentas", "Index", new[] { Roles.Buscador, Roles.Clasificador, Roles.AnalistaDeRutas }, true),
         new("Alertas de direcciones", "DireccionesFraudulentas", "Alertas", new[] { Roles.Buscador }, true),
         new("Hoja de asignación", "Asignaciones", "Index", new[] { Roles.AnalistaDeRutas }, false),
