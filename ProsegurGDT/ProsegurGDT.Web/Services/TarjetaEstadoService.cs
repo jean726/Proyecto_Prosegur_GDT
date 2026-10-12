@@ -15,8 +15,8 @@ public class TarjetaEstadoService : ITarjetaEstadoService
     private static readonly Dictionary<EstadoTarjeta, EstadoTarjeta[]> Permitidas = new()
     {
         [EstadoTarjeta.IngresadaEnCustodia] = new[] { EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.PendienteDeCita, EstadoTarjeta.CitaProgramada, EstadoTarjeta.IntentosAgotados, EstadoTarjeta.NoClasificable },
-        [EstadoTarjeta.PendienteDeContacto] = new[] { EstadoTarjeta.PendienteDeCita, EstadoTarjeta.CitaProgramada, EstadoTarjeta.IntentosAgotados },
-        [EstadoTarjeta.PendienteDeCita] = new[] { EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.CitaProgramada, EstadoTarjeta.IntentosAgotados },
+        [EstadoTarjeta.PendienteDeContacto] = new[] { EstadoTarjeta.PendienteDeCita, EstadoTarjeta.CitaProgramada, EstadoTarjeta.IntentosAgotados, EstadoTarjeta.NoClasificable },
+        [EstadoTarjeta.PendienteDeCita] = new[] { EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.CitaProgramada, EstadoTarjeta.IntentosAgotados, EstadoTarjeta.NoClasificable },
         [EstadoTarjeta.IntentosAgotados] = new[] { EstadoTarjeta.PendienteDeContacto },
         [EstadoTarjeta.CitaProgramada] = new[] { EstadoTarjeta.AsignadaARuta, EstadoTarjeta.PendienteDeAsignacion, EstadoTarjeta.NoClasificable },
         [EstadoTarjeta.PendienteDeAsignacion] = new[] { EstadoTarjeta.AsignadaARuta },

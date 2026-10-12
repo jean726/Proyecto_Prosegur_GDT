@@ -36,6 +36,8 @@ builder.Services.ConfigureApplicationCookie(o =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<ITarjetaEstadoService, TarjetaEstadoService>();
+builder.Services.AddSingleton<IEmbeddingService, HashingNgramEmbeddingService>();
+builder.Services.AddScoped<IAddressRiskService, AddressRiskService>();
 // Una cuenta desactivada pierde la sesión en ≤ 1 minuto
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
