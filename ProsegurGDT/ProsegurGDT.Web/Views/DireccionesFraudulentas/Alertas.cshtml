@@ -1,0 +1,32 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Domain.AlertaDireccion>
+@{ ViewData["Title"] = "Alertas de direcciones"; }
+<h2>Alertas pendientes de revisión</h2>
+<p class="text-muted">Compare ambas direcciones. Al confirmar, la tarjeta queda no clasificable y su cita vigente se anula.</p>
+@if (TempData["Ok"] is string ok) { <div class="alert alert-success">@ok</div> }
+@if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
+<table class="table table-sm align-middle">
+    <thead class="table-light"><tr><th>Tarjeta</th><th>Dirección de la tarjeta</th><th>Dirección registrada</th><th>Puntaje</th><th>Detalle</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var a in Model)
+    {
+        <tr>
+            <td>@a.Tarjeta!.Codigo<div class="small text-muted">@a.Tarjeta.Cliente!.NombreCompleto</div></td>
+            <td>@a.Tarjeta.Cliente.Direccion</td>
+            <td>@a.DireccionFraudulenta!.DireccionOriginal</td>
+            <td>
+                @if (a.Nivel == ProsegurGDT.Web.Domain.NivelAlerta.Alta) { <span class="badge bg-danger">Alta @a.Puntaje.ToString("P0")</span> }
+                else { <span class="badge bg-warning text-dark">Media @a.Puntaje.ToString("P0")</span> }
+            </td>
+            <td class="small">@a.Detalle</td>
+            <td class="text-end">
+                <form asp-action="ResolverAlerta" asp-route-id="@a.Id" method="post">
+                    <button name="confirmar" value="true" class="btn btn-sm btn-danger"
+                            onclick="return confirm('¿Confirmar fraude? La tarjeta quedará no clasificable.');">Confirmar fraude</button>
+                    <button name="confirmar" value="false" class="btn btn-sm btn-outline-secondary">Descartar</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (!Model.Any()) { <tr><td colspan="6" class="text-muted">No hay alertas pendientes.</td></tr> }
+    </tbody>
+</table>

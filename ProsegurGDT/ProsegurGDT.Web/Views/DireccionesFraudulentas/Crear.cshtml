@@ -1,0 +1,11 @@
+﻿@model ProsegurGDT.Web.Models.DireccionCrearVM
+@{ ViewData["Title"] = "Registrar dirección"; }
+<h2>Registrar dirección fraudulenta</h2>
+<form asp-action="Crear" method="post" class="col-md-7">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="mb-2"><label asp-for="Direccion" class="form-label"></label><input asp-for="Direccion" class="form-control" /></div>
+    <div class="mb-3"><label asp-for="Motivo" class="form-label"></label><input asp-for="Motivo" class="form-control" /></div>
+    <button class="btn btn-success">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
