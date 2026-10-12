@@ -234,6 +234,62 @@ namespace ProsegurGDT.Web.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ProsegurGDT.Web.Domain.AlertaDireccion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DecididoPorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Detalle")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("DireccionFraudulentaId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaDecision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaGeneracion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Nivel")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<double>("Puntaje")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TarjetaId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecididoPorId");
+
+                    b.HasIndex("DireccionFraudulentaId");
+
+                    b.HasIndex("TarjetaId", "DireccionFraudulentaId");
+
+                    b.ToTable("Alertas");
+                });
+
             modelBuilder.Entity("ProsegurGDT.Web.Domain.AuditLog", b =>
                 {
                     b.Property<long>("Id")
@@ -379,6 +435,69 @@ namespace ProsegurGDT.Web.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Clientes");
+                });
+
+            modelBuilder.Entity("ProsegurGDT.Web.Domain.DireccionFraudulenta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DireccionNormalizada")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("DireccionOriginal")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaValidacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModeloVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Origen")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RegistradaPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ValidadaPorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<byte[]>("Vector")
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DireccionNormalizada");
+
+                    b.HasIndex("RegistradaPorId");
+
+                    b.HasIndex("ValidadaPorId");
+
+                    b.ToTable("DireccionesFraudulentas");
                 });
 
             modelBuilder.Entity("ProsegurGDT.Web.Domain.HistorialEstadoTarjeta", b =>
@@ -561,6 +680,9 @@ namespace ProsegurGDT.Web.Data.Migrations
                     b.Property<int>("LoteId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ZonaId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
@@ -570,7 +692,33 @@ namespace ProsegurGDT.Web.Data.Migrations
 
                     b.HasIndex("LoteId");
 
+                    b.HasIndex("ZonaId");
+
                     b.ToTable("Tarjetas");
+                });
+
+            modelBuilder.Entity("ProsegurGDT.Web.Domain.Zona", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("Zonas");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -624,6 +772,32 @@ namespace ProsegurGDT.Web.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProsegurGDT.Web.Domain.AlertaDireccion", b =>
+                {
+                    b.HasOne("ProsegurGDT.Web.Data.ApplicationUser", "DecididoPor")
+                        .WithMany()
+                        .HasForeignKey("DecididoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProsegurGDT.Web.Domain.DireccionFraudulenta", "DireccionFraudulenta")
+                        .WithMany()
+                        .HasForeignKey("DireccionFraudulentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProsegurGDT.Web.Domain.Tarjeta", "Tarjeta")
+                        .WithMany()
+                        .HasForeignKey("TarjetaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DecididoPor");
+
+                    b.Navigation("DireccionFraudulenta");
+
+                    b.Navigation("Tarjeta");
+                });
+
             modelBuilder.Entity("ProsegurGDT.Web.Domain.Cita", b =>
                 {
                     b.HasOne("ProsegurGDT.Web.Data.ApplicationUser", "RegistradaPor")
@@ -641,6 +815,24 @@ namespace ProsegurGDT.Web.Data.Migrations
                     b.Navigation("RegistradaPor");
 
                     b.Navigation("Tarjeta");
+                });
+
+            modelBuilder.Entity("ProsegurGDT.Web.Domain.DireccionFraudulenta", b =>
+                {
+                    b.HasOne("ProsegurGDT.Web.Data.ApplicationUser", "RegistradaPor")
+                        .WithMany()
+                        .HasForeignKey("RegistradaPorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProsegurGDT.Web.Data.ApplicationUser", "ValidadaPor")
+                        .WithMany()
+                        .HasForeignKey("ValidadaPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("RegistradaPor");
+
+                    b.Navigation("ValidadaPor");
                 });
 
             modelBuilder.Entity("ProsegurGDT.Web.Domain.HistorialEstadoTarjeta", b =>
@@ -725,9 +917,16 @@ namespace ProsegurGDT.Web.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ProsegurGDT.Web.Domain.Zona", "Zona")
+                        .WithMany()
+                        .HasForeignKey("ZonaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Cliente");
 
                     b.Navigation("Lote");
+
+                    b.Navigation("Zona");
                 });
 
             modelBuilder.Entity("ProsegurGDT.Web.Domain.Lote", b =>
