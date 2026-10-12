@@ -12,5 +12,7 @@ public class Tarjeta
     public Cliente? Cliente { get; set; }
     public EstadoTarjeta Estado { get; set; }
     public DateTime FechaActualizacion { get; set; }
+    public int? ZonaId { get; set; }
+    public Zona? Zona { get; set; }
     public ICollection<HistorialEstadoTarjeta> Historial { get; set; } = new List<HistorialEstadoTarjeta>();
 }

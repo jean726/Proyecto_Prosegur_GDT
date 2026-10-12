@@ -17,6 +17,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RegistroLlamada> Llamadas => Set<RegistroLlamada>();
     public DbSet<Cita> Citas => Set<Cita>();
+    public DbSet<Zona> Zonas => Set<Zona>();
+    public DbSet<DireccionFraudulenta> DireccionesFraudulentas => Set<DireccionFraudulenta>();
+    public DbSet<AlertaDireccion> Alertas => Set<AlertaDireccion>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -32,6 +35,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         b.Entity<RegistroLlamada>().Property(x => x.Resultado).HasConversion<string>().HasMaxLength(40);
         b.Entity<Cliente>().HasIndex(x => x.DocumentoIdentidad).IsUnique();
+
+        b.Entity<Zona>().HasIndex(x => x.Nombre).IsUnique();
+        b.Entity<DireccionFraudulenta>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<DireccionFraudulenta>().HasIndex(x => x.DireccionNormalizada);
+        b.Entity<AlertaDireccion>().Property(x => x.Nivel).HasConversion<string>().HasMaxLength(40);
+        b.Entity<AlertaDireccion>().Property(x => x.Decision).HasConversion<string>().HasMaxLength(40);
+        b.Entity<AlertaDireccion>().HasIndex(x => new { x.TarjetaId, x.DireccionFraudulentaId });
 
         // Cadena de custodia: nada se borra en cascada (evita además errores de "multiple cascade paths")
         foreach (var fk in b.Model.GetEntityTypes()
