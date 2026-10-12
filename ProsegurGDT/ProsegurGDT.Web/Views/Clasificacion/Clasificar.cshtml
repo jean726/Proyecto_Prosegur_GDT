@@ -1,0 +1,83 @@
+﻿@model ProsegurGDT.Web.Models.ClasificarLoteVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Clasificar lote";
+    var nAlertas = Model.Filas.Count(f => f.Alerta != null);
+}
+<h2>Clasificación de tarjetas por zona</h2>
+<p class="text-muted">Lote @Model.Lote.CodigoHojaControl — Remito @Model.Lote.Remito?.Numero</p>
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (nAlertas > 0)
+{
+    <div class="alert alert-danger">
+        <strong>@nAlertas</strong> tarjeta(s) tienen una dirección similar a una registrada como fraudulenta.
+        Quedan bloqueadas hasta que el Buscador las revise.
+    </div>
+}
+
+<form asp-action="Guardar" method="post">
+    <input type="hidden" name="loteId" value="@Model.Lote.Id" />
+    <table class="table table-sm align-middle">
+        <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección de entrega</th><th>Estado</th><th>Alerta</th><th>Zona</th></tr></thead>
+        <tbody>
+            @foreach (var f in Model.Filas)
+            {
+                var bloqueada = f.Alerta != null;
+                <tr class="@(bloqueada ? "table-danger" : f.Faltante ? "table-warning" : "")">
+                    <td>@f.Tarjeta.Codigo</td>
+                    <td>@f.Tarjeta.Cliente!.NombreCompleto</td>
+                    <td>@f.Tarjeta.Cliente.Direccion</td>
+                    <td><span class="badge bg-secondary">@f.Tarjeta.Estado.Texto()</span></td>
+                    <td>
+                        @if (bloqueada)
+                        {
+                            <span class="badge bg-danger">@f.Alerta!.Nivel.Texto() @f.Alerta.Puntaje.ToString("P0")</span>
+                            <div class="small">Coincide con: @f.Alerta.DireccionFraudulenta?.DireccionOriginal</div>
+                        }
+                    </td>
+                    <td style="min-width:200px">
+                        <select name="zonas[@f.Tarjeta.Id]" class="form-select form-select-sm" disabled="@bloqueada">
+                            <option value="">-- Zona --</option>
+                            @foreach (var z in Model.Zonas)
+                            {
+                                <option value="@z.Value" selected="@(f.ZonaId.HasValue && f.ZonaId.Value.ToString() == z.Value)">@z.Text</option>
+                            }
+                        </select>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button class="btn btn-success">Guardar clasificación</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<div class="card mt-4">
+    <div class="card-header">Proponer una dirección sospechosa</div>
+    <div class="card-body">
+        <form asp-action="ReportarSospechosa" method="post" class="row g-2">
+            <input type="hidden" name="loteId" value="@Model.Lote.Id" />
+            <div class="col-md-4">
+                <select name="tarjetaId" class="form-select">
+                    @foreach (var f in Model.Filas)
+                    {
+                        <option value="@f.Tarjeta.Id">@f.Tarjeta.Codigo — @f.Tarjeta.Cliente!.Direccion</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5"><input name="motivo" class="form-control" maxlength="300" placeholder="Motivo de la sospecha" /></div>
+            <div class="col-md-3"><button class="btn btn-outline-danger">Proponer al Buscador</button></div>
+        </form>
+    </div>
+</div>

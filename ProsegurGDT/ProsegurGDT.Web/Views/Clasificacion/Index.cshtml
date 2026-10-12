@@ -1,0 +1,42 @@
+﻿@model IEnumerable<ProsegurGDT.Web.Models.LoteClasifFilaVM>
+@{
+    ViewData["Title"] = "Clasificación por zona";
+}
+<h2>Clasificación por zona</h2>
+<p class="text-muted">Lotes con ficha de clientes generada.</p>
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+<table class="table table-sm table-hover align-middle">
+    <thead class="table-light"><tr><th>Hoja de control</th><th>Remito</th><th class="text-end">Tarjetas</th><th class="text-end">Sin zona</th><th class="text-end">Con alerta</th><th class="text-end">No clasificables</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var f in Model)
+        {
+            <tr>
+                <td>@f.Lote.CodigoHojaControl</td>
+                <td>@f.Lote.Remito?.Numero</td>
+                <td class="text-end">@f.Total</td>
+                <td class="text-end">@f.SinZona</td>
+                <td class="text-end">@if (f.ConAlerta > 0) {
+                    <span class="badge bg-danger">@f.ConAlerta</span>
+                } else
+                {
+
+                    <span>0</span>
+                }
+            </td>
+            <td class="text-end">@f.NoClasificables</td>
+            <td class="text-end"><a asp-action="Clasificar" asp-route-id="@f.Lote.Id" class="btn btn-sm btn-primary">Clasificar</a></td>
+        </tr>
+    }
+    @if (!Model.Any())
+    {
+        <tr><td colspan="7" class="text-muted">No hay lotes con ficha de clientes.</td></tr>
+    }
+</tbody>
+</table>
