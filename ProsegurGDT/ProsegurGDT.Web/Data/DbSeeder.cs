@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Domain;
+using ProsegurGDT.Web.Services;
 
 namespace ProsegurGDT.Web.Data;
 
@@ -52,6 +53,28 @@ public static class DbSeeder
                 new Remito { Numero = "REM-0001", BancoId = banco.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(DateTime.Today) },
                 new Remito { Numero = "REM-0002", BancoId = banco.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(DateTime.Today) });
             await db.SaveChangesAsync();
+        }
+
+        if (!await db.Zonas.AnyAsync())
+        {
+            var nombres = new[] { "Miraflores", "San Isidro", "San Borja", "Surquillo", "Barranco", "Santiago de Surco",
+                "Lince", "Jesús María", "Magdalena del Mar", "San Miguel", "La Molina", "Lima Cercado" };
+            db.Zonas.AddRange(nombres.Select(n => new Zona { Nombre = n }));
+            await db.SaveChangesAsync();
+        }
+
+        if (cargarDemo && !await db.DireccionesFraudulentas.AnyAsync() && !string.IsNullOrWhiteSpace(email))
+        {
+            var adminDemo = await sp.GetRequiredService<UserManager<ApplicationUser>>().FindByEmailAsync(email);
+            if (adminDemo is not null)
+            {
+                var riesgo = sp.GetRequiredService<IAddressRiskService>();
+                const string motivo = "Domicilio ficticio reportado en jornada anterior (dato de demostración)";
+                await riesgo.AgregarAsync("Avda. Larco 105, Mirafores", motivo, adminDemo.Id, true, "Demo");           // variante con error de tipeo
+                await riesgo.AgregarAsync("Av. Benavides 108, Miraflores", motivo, adminDemo.Id, true, "Demo");        // coincide exacta
+                await riesgo.AgregarAsync("Jirón Unión 111, Miraflores", motivo, adminDemo.Id, true, "Demo");          // palabras omitidas
+                await riesgo.AgregarAsync("Calle Berlin 117, Miraflores", motivo, adminDemo.Id, true, "Demo");         // numeración distinta
+            }
         }
     }
 
