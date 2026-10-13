@@ -29,11 +29,11 @@ public class AddressRiskService : IAddressRiskService
 
     private sealed record Entrada(DireccionFraudulenta D, float[] V);
 
-    public AddressRiskService(ApplicationDbContext db, IEmbeddingService emb, IConfiguration cfg)
+    public AddressRiskService(ApplicationDbContext db, IEmbeddingService emb, IConfiguracionOperativa cfg)
     {
         _db = db; _emb = emb;
-        UmbralMedio = cfg.GetValue<double?>("IA:UmbralMedio") ?? 0.80;
-        UmbralAlto = cfg.GetValue<double?>("IA:UmbralAlto") ?? 0.92;
+        UmbralMedio = cfg.UmbralMedio;
+        UmbralAlto = cfg.UmbralAlto;
     }
 
     public async Task<List<CoincidenciaDireccion>> BuscarAsync(string direccion, int max = 5)

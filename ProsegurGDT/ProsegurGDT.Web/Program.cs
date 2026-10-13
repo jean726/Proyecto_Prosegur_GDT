@@ -44,7 +44,19 @@ builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInter
 // Todo el sitio exige sesión; lo público se marca con [AllowAnonymous]
 builder.Services.AddControllersWithViews(o => o.Filters.Add(new AuthorizeFilter()));
 
+// Singleton
+builder.Services.AddSingleton<IConfiguracionOperativa, ConfiguracionOperativa>();
+// Strategy: una estrategia por resultado de llamada
+builder.Services.AddScoped<IManejadorResultadoLlamada, ManejadorCitaExitosa>();
+builder.Services.AddScoped<IManejadorResultadoLlamada, ManejadorContactoSinAcuerdo>();
+builder.Services.AddScoped<IManejadorResultadoLlamada, ManejadorDatosInsuficientes>();
+builder.Services.AddScoped<IManejadorResultadoLlamada, ManejadorNoContacto>();
+// Adapter
+builder.Services.AddSingleton<IAdaptadorFichaClientes, AdaptadorCsvUnibanca>();
+builder.Services.AddScoped<IImportadorFichaService, ImportadorFichaService>();
+
 var app = builder.Build();
+_ = app.Services.GetRequiredService<IConfiguracionOperativa>();
 
 using (var scope = app.Services.CreateScope())
 {
