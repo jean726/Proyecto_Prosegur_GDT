@@ -64,6 +64,13 @@ public class AddressRiskService : IAddressRiskService
             .Select(a => new { a.TarjetaId, a.DireccionFraudulentaId }).ToListAsync();
         var yaHay = existentes.Select(e => (e.TarjetaId, e.DireccionFraudulentaId)).ToHashSet();
 
+        var obsoletas = await _db.Alertas
+            .Where(a => ids.Contains(a.TarjetaId)
+             && a.Decision == DecisionAlerta.Pendiente
+             && a.Puntaje < UmbralMedio)
+            .ToListAsync();
+        if (obsoletas.Count > 0) _db.Alertas.RemoveRange(obsoletas);
+
         var cache = new Dictionary<string, float[]>();
         var nuevas = 0;
         foreach (var t in tarjetas)
@@ -95,7 +102,7 @@ public class AddressRiskService : IAddressRiskService
             });
             nuevas++;
         }
-        if (nuevas > 0) await _db.SaveChangesAsync();
+        if (nuevas > 0 || obsoletas.Count > 0) await _db.SaveChangesAsync();
         return nuevas;
     }
 

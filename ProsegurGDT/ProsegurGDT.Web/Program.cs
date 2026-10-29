@@ -58,6 +58,9 @@ builder.Services.AddScoped<IImportadorFichaService, ImportadorFichaService>();
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();
 
+app.Logger.LogWarning("IA umbrales: medio={M} alto={A}",
+    app.Configuration["IA:UmbralMedio"], app.Configuration["IA:UmbralAlto"]);
+
 using (var scope = app.Services.CreateScope())
 {
     await DbSeeder.SeedAsync(scope.ServiceProvider, app.Environment.IsDevelopment());
