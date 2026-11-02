@@ -29,11 +29,11 @@ public class AddressRiskService : IAddressRiskService
 
     private sealed record Entrada(DireccionFraudulenta D, float[] V);
 
-    public AddressRiskService(ApplicationDbContext db, IEmbeddingService emb, IConfiguration cfg)
+    public AddressRiskService(ApplicationDbContext db, IEmbeddingService emb, IConfiguracionOperativa cfg)
     {
         _db = db; _emb = emb;
-        UmbralMedio = cfg.GetValue<double?>("IA:UmbralMedio") ?? 0.80;
-        UmbralAlto = cfg.GetValue<double?>("IA:UmbralAlto") ?? 0.92;
+        UmbralMedio = cfg.UmbralMedio;
+        UmbralAlto = cfg.UmbralAlto;
     }
 
     public async Task<List<CoincidenciaDireccion>> BuscarAsync(string direccion, int max = 5)
@@ -63,6 +63,13 @@ public class AddressRiskService : IAddressRiskService
         var existentes = await _db.Alertas.Where(a => ids.Contains(a.TarjetaId))
             .Select(a => new { a.TarjetaId, a.DireccionFraudulentaId }).ToListAsync();
         var yaHay = existentes.Select(e => (e.TarjetaId, e.DireccionFraudulentaId)).ToHashSet();
+
+        var obsoletas = await _db.Alertas
+            .Where(a => ids.Contains(a.TarjetaId)
+             && a.Decision == DecisionAlerta.Pendiente
+             && a.Puntaje < UmbralMedio)
+            .ToListAsync();
+        if (obsoletas.Count > 0) _db.Alertas.RemoveRange(obsoletas);
 
         var cache = new Dictionary<string, float[]>();
         var nuevas = 0;
@@ -95,7 +102,7 @@ public class AddressRiskService : IAddressRiskService
             });
             nuevas++;
         }
-        if (nuevas > 0) await _db.SaveChangesAsync();
+        if (nuevas > 0 || obsoletas.Count > 0) await _db.SaveChangesAsync();
         return nuevas;
     }
 
