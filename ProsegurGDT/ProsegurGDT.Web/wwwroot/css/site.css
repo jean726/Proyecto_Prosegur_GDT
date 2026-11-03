@@ -545,3 +545,78 @@ body {
     border-color: var(--pg-amarillo-oscuro);
     box-shadow: 0 0 0 3px rgba(255, 204, 0, .35);
 }
+
+/* ===== Fase D4b: línea de tiempo ===== */
+.pg-linea {
+    display: flex;
+    margin: 8px 0 12px;
+    --tono: var(--pg-pendiente);
+}
+
+.pg-tono-riesgo {
+    --tono: var(--pg-riesgo);
+}
+
+.pg-tono-custodia {
+    --tono: var(--pg-custodia);
+}
+
+.pg-tono-entrega {
+    --tono: var(--pg-entrega);
+}
+
+.pg-tono-pendiente {
+    --tono: var(--pg-pendiente);
+}
+
+.pg-paso {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--pg-texto-suave);
+}
+
+    .pg-paso:not(:first-child)::before {
+        content: "";
+        position: absolute;
+        top: 7px;
+        right: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--pg-borde);
+    }
+
+    .pg-paso.hecho:not(:first-child)::before, .pg-paso.actual:not(:first-child)::before {
+        background: var(--pg-negro);
+    }
+
+.pg-punto {
+    position: relative;
+    z-index: 1;
+    width: 16px;
+    height: 16px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--pg-borde);
+}
+
+.pg-paso.hecho .pg-punto {
+    background: var(--pg-negro);
+    border-color: var(--pg-negro);
+}
+
+.pg-paso.actual {
+    color: var(--pg-texto);
+    font-weight: 500;
+}
+
+    .pg-paso.actual .pg-punto {
+        background: var(--tono);
+        border-color: var(--tono);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--tono) 25%, transparent);
+    }

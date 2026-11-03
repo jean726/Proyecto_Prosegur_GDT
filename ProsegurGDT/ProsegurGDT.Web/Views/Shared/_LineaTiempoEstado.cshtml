@@ -1,0 +1,33 @@
+﻿@using ProsegurGDT.Web.Domain
+@model EstadoTarjeta
+@{
+    var pasos = new[] { "Ingreso", "Contacto", "Cita", "Ruta", "Resultado" };
+    var (paso, tono, texto) = Model switch
+    {
+        EstadoTarjeta.IngresadaEnCustodia => (0, "custodia", "Ingresada en custodia"),
+        EstadoTarjeta.NoClasificable => (0, "riesgo", "No clasificable"),
+        EstadoTarjeta.PendienteDeContacto => (1, "pendiente", "Pendiente de contacto"),
+        EstadoTarjeta.IntentosAgotados => (1, "riesgo", "Intentos agotados"),
+        EstadoTarjeta.PendienteDeCita => (1, "pendiente", "Pendiente de cita"),
+        EstadoTarjeta.CitaProgramada => (2, "custodia", "Cita programada"),
+        EstadoTarjeta.AsignadaARuta => (3, "custodia", "Asignada a ruta"),
+        EstadoTarjeta.PendienteDeAsignacion => (3, "pendiente", "Pendiente de asignación"),
+        EstadoTarjeta.Entregada => (4, "entrega", "Entregada"),
+        EstadoTarjeta.Devuelta => (4, "pendiente", "Devuelta"),
+        EstadoTarjeta.EnCustodia => (4, "custodia", "En custodia"),
+        EstadoTarjeta.ConIncidencia => (4, "riesgo", "Con incidencia"),
+        EstadoTarjeta.ApartadaPorFraude => (4, "riesgo", "Apartada por fraude"),
+        EstadoTarjeta.ExtraviadaConIndiciosDeFraude => (4, "riesgo", "Extraviada con indicios de fraude"),
+        _ => (0, "pendiente", Model.ToString())
+    };
+}
+<div class="pg-linea pg-tono-@tono">
+    @for (var i = 0; i < pasos.Length; i++)
+    {
+        <div class="pg-paso @(i < paso ? "hecho" : i == paso ? "actual" : "")">
+            <span class="pg-punto"></span>
+            <span>@pasos[i]</span>
+        </div>
+    }
+</div>
+<span class="pg-estado pg-estado-@tono">@texto</span>
