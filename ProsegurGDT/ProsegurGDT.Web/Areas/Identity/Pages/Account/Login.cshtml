@@ -1,0 +1,56 @@
+@page
+@model LoginModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión - Prosegur GDT</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="pg-login">
+    <section class="pg-login-izq">
+        <div class="pg-login-marca">
+            <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" onerror="this.style.display='none'" />
+            <span>Prosegur GDT</span>
+        </div>
+        <div class="pg-login-texto">
+            <h1>Centro de control</h1>
+            <p>Trazabilidad de cada tarjeta, desde la bóveda hasta la entrega.</p>
+        </div>
+    </section>
+
+    <section class="pg-login-der">
+        <form method="post" class="pg-login-form" asp-route-returnUrl="@Model.ReturnUrl" novalidate>
+            <h2>Iniciar sesión</h2>
+            <p class="pg-login-sub">Ingresa con tu correo corporativo.</p>
+
+            <div asp-validation-summary="ModelOnly" class="pg-alerta" role="alert"></div>
+
+            <label asp-for="Input.Email" class="pg-et">Correo electrónico</label>
+            <input asp-for="Input.Email" class="pg-campo" autocomplete="username" placeholder="nombre@empresa.com" />
+            <span asp-validation-for="Input.Email" class="pg-error"></span>
+
+            <label asp-for="Input.Password" class="pg-et">Contraseña</label>
+            <input asp-for="Input.Password" class="pg-campo" autocomplete="current-password" placeholder="Contraseña" />
+            <span asp-validation-for="Input.Password" class="pg-error"></span>
+
+            <label class="pg-recordar"><input asp-for="Input.RememberMe" /> Recordarme en este equipo</label>
+
+            <button type="submit" class="pg-btn-amarillo">Ingresar</button>
+            <p class="pg-login-ayuda">¿Problemas para ingresar? Comunícate con el Administrador del sistema.</p>
+        </form>
+    </section>
+
+    <script>
+        document.querySelector('.pg-login-form').addEventListener('submit', function () {
+            var b = this.querySelector('button[type=submit]');
+            setTimeout(function () { b.disabled = true; b.textContent = 'Ingresando...'; }, 0);
+        });
+    </script>
+</body>
+</html>
