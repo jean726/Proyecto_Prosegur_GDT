@@ -1,18 +1,31 @@
 ﻿@model ProsegurGDT.Web.Models.UsuarioCrearVM
-@{ ViewData["Title"] = "Registrar usuario"; }
-<h2>Registrar usuario</h2>
-<form asp-action="Crear" method="post" class="col-md-6">
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <div class="mb-2"><label asp-for="NombreCompleto" class="form-label"></label><input asp-for="NombreCompleto" class="form-control" /><span asp-validation-for="NombreCompleto" class="text-danger"></span></div>
-    <div class="mb-2"><label asp-for="DocumentoIdentidad" class="form-label"></label><input asp-for="DocumentoIdentidad" class="form-control" /><span asp-validation-for="DocumentoIdentidad" class="text-danger"></span></div>
-    <div class="mb-2"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /><span asp-validation-for="Email" class="text-danger"></span></div>
-    <div class="mb-2"><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-control" /><span asp-validation-for="Password" class="text-danger"></span></div>
-    <div class="mb-3">
-        <label asp-for="Rol" class="form-label"></label>
-        <select asp-for="Rol" class="form-select" asp-items="@(new SelectList(ProsegurGDT.Web.Domain.Roles.Todos))"><option value="">-- Seleccione --</option></select>
-        <span asp-validation-for="Rol" class="text-danger"></span>
+@{
+    ViewData["Title"] = "Registrar usuario";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Registrar usuario</h1>
+        <p class="pg-subtitulo">Completa los datos y asigna el rol operativo.</p>
     </div>
-    <button class="btn btn-success">Guardar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</div>
+<form asp-action="Crear" method="post" class="pg-tarjeta pg-formulario">
+    <div asp-validation-summary="All" class="pg-alerta"></div>
+    <div class="row g-3">
+        <div class="col-md-6"><label asp-for="NombreCompleto" class="form-label"></label><input asp-for="NombreCompleto" class="form-control" /><span asp-validation-for="NombreCompleto" class="text-danger"></span></div>
+        <div class="col-md-6"><label asp-for="DocumentoIdentidad" class="form-label"></label><input asp-for="DocumentoIdentidad" class="form-control" /><span asp-validation-for="DocumentoIdentidad" class="text-danger"></span></div>
+        <div class="col-md-6"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /><span asp-validation-for="Email" class="text-danger"></span></div>
+        <div class="col-md-6"><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-control" /><span asp-validation-for="Password" class="text-danger"></span></div>
+        <div class="col-12">
+            <label asp-for="Rol" class="form-label"></label>
+            <select asp-for="Rol" class="form-select" asp-items="@(new SelectList(ProsegurGDT.Web.Domain.Roles.Todos))"><option value="">-- Seleccione --</option></select>
+            <span asp-validation-for="Rol" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="pg-acciones">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
 </form>
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

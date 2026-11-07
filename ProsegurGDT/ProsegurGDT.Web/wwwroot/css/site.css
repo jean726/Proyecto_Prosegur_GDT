@@ -704,3 +704,65 @@ button.pg-enviando, input.pg-enviando {
         transition: none !important;
     }
 }
+
+/* ===== Fase D6: pantallas ===== */
+.pg-contenido .pg-tarjeta-tabla {
+    padding: 0;
+    overflow: hidden;
+}
+
+    .pg-contenido .pg-tarjeta-tabla .table {
+        border: 0;
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+
+.pg-barra-tabla {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--pg-borde);
+}
+
+    .pg-barra-tabla .form-control {
+        max-width: 320px;
+    }
+
+.pg-formulario {
+    max-width: 680px;
+}
+
+.pg-acciones {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.pg-contenido .btn-sm {
+    --bs-btn-padding-y: .25rem;
+    --bs-btn-padding-x: .6rem;
+    --bs-btn-font-size: .8rem;
+    font-size: .8rem;
+}
+
+.pg-contenido .btn-outline-success {
+    --bs-btn-color: #1b5e20;
+    --bs-btn-border-color: #bfdcc3;
+    --bs-btn-bg: #fff;
+    --bs-btn-hover-bg: #e3f2e5;
+    --bs-btn-hover-border-color: var(--pg-entrega);
+    --bs-btn-hover-color: #1b5e20;
+    --bs-btn-active-bg: #cfe8d2;
+    --bs-btn-active-border-color: var(--pg-entrega);
+    --bs-btn-active-color: #1b5e20;
+}
+
+.pg-contenido .btn-outline-warning {
+    --bs-btn-color: #7a5b00;
+    --bs-btn-border-color: #f1dc8f;
+    --bs-btn-bg: #fff;
+    --bs-btn-hover-bg: #fff4cc;
+    --bs-btn-hover-border-color: var(--pg-amarillo-oscuro);
+    --bs-btn-hover-color: #7a5b00;
+    --bs-btn-active-bg: #ffeb9e;
+    --bs-btn-active-border-color: var(--pg-amarillo-oscuro);
+    --bs-btn-active-color: #7a5b00;
+}
