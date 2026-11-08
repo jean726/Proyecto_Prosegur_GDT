@@ -10,7 +10,7 @@
 </div>
 <form asp-action="Editar" method="post" class="pg-tarjeta pg-formulario">
     <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="All" class="pg-alerta"></div>
+    <div asp-validation-summary="ModelOnly" class="pg-alerta"></div>
     <div class="row g-3">
         <div class="col-md-6"><label asp-for="NombreCompleto" class="form-label"></label><input asp-for="NombreCompleto" class="form-control" /><span asp-validation-for="NombreCompleto" class="text-danger"></span></div>
         <div class="col-md-6"><label asp-for="DocumentoIdentidad" class="form-label"></label><input asp-for="DocumentoIdentidad" class="form-control" /><span asp-validation-for="DocumentoIdentidad" class="text-danger"></span></div>

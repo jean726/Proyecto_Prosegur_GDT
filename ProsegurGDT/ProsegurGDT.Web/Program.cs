@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Services;
+using Microsoft.AspNetCore.Mvc.DataAnnotations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddRoles<IdentityRole>()
+.AddErrorDescriber<IdentityErrorDescriberEspanol>()
 .AddSignInManager<ApplicationSignInManager>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -42,8 +44,15 @@ builder.Services.AddScoped<IAddressRiskService, AddressRiskService>();
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
 // Todo el sitio exige sesión; lo público se marca con [AllowAnonymous]
-builder.Services.AddControllersWithViews(o => o.Filters.Add(new AuthorizeFilter()));
-
+builder.Services.AddControllersWithViews(o =>
+{
+    o.Filters.Add(new AuthorizeFilter());
+    o.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Este campo es obligatorio.");
+    o.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((v, c) => $"El valor '{v}' no es válido para {c}.");
+    o.ModelBindingMessageProvider.SetValueIsInvalidAccessor(v => $"El valor '{v}' no es válido.");
+    o.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(c => $"Falta el valor de {c}.");
+});
+builder.Services.AddSingleton<IValidationAttributeAdapterProvider, AdaptadorValidacionEspanol>();
 // Singleton
 builder.Services.AddSingleton<IConfiguracionOperativa, ConfiguracionOperativa>();
 // Strategy: una estrategia por resultado de llamada
