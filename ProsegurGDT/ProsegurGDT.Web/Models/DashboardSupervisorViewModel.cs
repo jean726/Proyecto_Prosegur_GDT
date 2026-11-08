@@ -1,4 +1,5 @@
-﻿namespace ProsegurGDT.Web.Models;
+﻿using ProsegurGDT.Web.Domain;
+namespace ProsegurGDT.Web.Models;
 
 public class DashboardSupervisorViewModel
 {
@@ -7,4 +8,4 @@ public class DashboardSupervisorViewModel
     public List<FilaLote> LotesRecientes { get; set; } = new();
 }
 
-public record FilaLote(string Remito, string Banco, DateOnly Recibido, int Tarjetas);
+public record FilaLote(string Remito, string Banco, DateOnly Recibido, int Tarjetas, EstadoLote Estado);

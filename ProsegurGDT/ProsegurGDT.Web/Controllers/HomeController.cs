@@ -55,11 +55,18 @@ namespace ProsegurGDT.Web.Controllers
             var lotes = await _db.Lotes
                 .OrderByDescending(l => l.Id)
                 .Take(5)
-                .Select(l => new { l.Remito!.Numero, Banco = l.Remito.Banco!.Nombre, l.FechaRecepcion, l.CantidadContada })
+                .Select(l => new
+                {
+                    l.Remito!.Numero,
+                    Banco = l.Remito.Banco!.Nombre,
+                    l.FechaRecepcion,
+                    l.Estado,
+                    Tarjetas = l.Tarjetas.Count()
+                })
                 .ToListAsync();
 
             modelo.LotesRecientes = lotes
-                .Select(l => new FilaLote(l.Numero, l.Banco, l.FechaRecepcion, l.CantidadContada))
+                .Select(l => new FilaLote(l.Numero, l.Banco, l.FechaRecepcion, l.Tarjetas, l.Estado))
                 .ToList();
 
             return modelo;

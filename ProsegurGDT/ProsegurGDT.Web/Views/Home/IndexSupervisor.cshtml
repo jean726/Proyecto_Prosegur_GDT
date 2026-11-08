@@ -43,20 +43,25 @@
     {
         <table class="table mb-2">
             <thead>
-                <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th>Tarjetas</th></tr>
+                <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th>Tarjetas</th><th>Estado</th></tr>
             </thead>
             <tbody>
                 @foreach (var l in Model.LotesRecientes)
                 {
+                    var (tono, texto) = l.Estado == EstadoLote.DiscrepanciaDetectada
+                        ? ("riesgo", "Discrepancia")
+                        : l.Tarjetas == 0 ? ("pendiente", "Sin ficha") : ("custodia", "Ingresado");
                     <tr>
                         <td>@l.Remito</td>
                         <td>@l.Banco</td>
                         <td>@l.Recibido.ToString("dd/MM/yyyy")</td>
-                        <td><span class="pg-estado pg-estado-custodia">@l.Tarjetas</span></td>
+                        <td>@l.Tarjetas</td>
+                        <td><span class="pg-estado pg-estado-@tono">@texto</span></td>
                     </tr>
                 }
             </tbody>
         </table>
+    
     }
     <a asp-controller="Lotes" asp-action="Index">Ver todos los lotes →</a>
 </div>
