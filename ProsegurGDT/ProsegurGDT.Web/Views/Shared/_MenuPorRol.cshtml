@@ -1,12 +1,25 @@
 ﻿@using ProsegurGDT.Web.Domain
-@{ var ctrlActual = ViewContext.RouteData.Values["controller"]?.ToString(); }
+@{
+    var ctrlActual = ViewContext.RouteData.Values["controller"]?.ToString();
+    var accionActual = ViewContext.RouteData.Values["action"]?.ToString();
+    var itemsVisibles = MenuCatalogo.Items.Where(o => o.Roles.Any(r => User.IsInRole(r))).ToList();
+    var hayCoincidenciaExacta = itemsVisibles.Any(o => o.Controller == ctrlActual && o.Action == accionActual);
+
+    bool EsActivo(OpcionMenu op)
+    {
+        if (op.Controller != ctrlActual) return false;
+        return hayCoincidenciaExacta
+            ? op.Action == accionActual
+            : ReferenceEquals(op, itemsVisibles.First(o => o.Controller == ctrlActual));
+    }
+}
 @if (User.Identity?.IsAuthenticated == true)
 {
-    foreach (var op in MenuCatalogo.Items.Where(o => o.Roles.Any(r => User.IsInRole(r))))
+    foreach (var op in itemsVisibles)
     {
         if (op.Disponible)
         {
-            <a class="pg-item @(op.Controller == ctrlActual ? "activo" : "")" asp-area="" asp-controller="@op.Controller" asp-action="@op.Action">@op.Texto</a>
+            <a class="pg-item @(EsActivo(op) ? "activo" : "")" asp-area="" asp-controller="@op.Controller" asp-action="@op.Action">@op.Texto</a>
         }
         else
         {
