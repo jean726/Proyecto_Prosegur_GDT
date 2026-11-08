@@ -1,0 +1,62 @@
+﻿@using ProsegurGDT.Web.Domain
+@model ProsegurGDT.Web.Models.DashboardSupervisorViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Lotes y avance de tarjetas por etapa</p>
+    </div>
+    <a asp-controller="Lotes" asp-action="Registrar" class="btn btn-primary">+ Registrar lote</a>
+</div>
+
+@if (Model.IntentosAgotados > 0)
+{
+    <div class="pg-aviso">
+        @Model.IntentosAgotados @(Model.IntentosAgotados == 1 ? "tarjeta con intentos de contacto agotados espera" : "tarjetas con intentos de contacto agotados esperan") tu decisión
+    </div>
+}
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-3">Tarjetas por etapa</h2>
+    <div class="pg-etapas">
+        @for (var i = 0; i < EtapasTarjeta.Nombres.Length; i++)
+        {
+            <div class="pg-etapa @(Model.PorEtapa[i] > 0 ? "con-datos" : "")">
+                <div class="pg-etapa-barra"></div>
+                <strong>@Model.PorEtapa[i]</strong>
+                <small>@EtapasTarjeta.Nombres[i]</small>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Lotes recientes</h2>
+    @if (Model.LotesRecientes.Count == 0)
+    {
+        <p class="text-muted mb-0">Aún no hay lotes registrados.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead>
+                <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th>Tarjetas</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model.LotesRecientes)
+                {
+                    <tr>
+                        <td>@l.Remito</td>
+                        <td>@l.Banco</td>
+                        <td>@l.Recibido.ToString("dd/MM/yyyy")</td>
+                        <td><span class="pg-estado pg-estado-custodia">@l.Tarjetas</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <a asp-controller="Lotes" asp-action="Index">Ver todos los lotes →</a>
+</div>

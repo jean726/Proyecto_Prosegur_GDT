@@ -31,9 +31,39 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.Administrador))
                 return View("IndexAdmin", await ConstruirDashboardAdminAsync());
 
+            if (User.IsInRole(Roles.Supervisor))
+                return View("IndexSupervisor", await ConstruirDashboardSupervisorAsync());
+
             return View();
         }
+        private async Task<DashboardSupervisorViewModel> ConstruirDashboardSupervisorAsync()
+        {
+            var modelo = new DashboardSupervisorViewModel();
 
+            var conteos = await _db.Tarjetas
+                .GroupBy(t => t.Estado)
+                .Select(g => new { Estado = g.Key, Total = g.Count() })
+                .ToListAsync();
+
+            foreach (var c in conteos)
+                modelo.PorEtapa[EtapasTarjeta.Indice(c.Estado)] += c.Total;
+
+            modelo.IntentosAgotados = conteos
+                .Where(c => c.Estado == EstadoTarjeta.IntentosAgotados)
+                .Sum(c => c.Total);
+
+            var lotes = await _db.Lotes
+                .OrderByDescending(l => l.Id)
+                .Take(5)
+                .Select(l => new { l.Remito!.Numero, Banco = l.Remito.Banco!.Nombre, l.FechaRecepcion, l.CantidadContada })
+                .ToListAsync();
+
+            modelo.LotesRecientes = lotes
+                .Select(l => new FilaLote(l.Numero, l.Banco, l.FechaRecepcion, l.CantidadContada))
+                .ToList();
+
+            return modelo;
+        }
         private async Task<DashboardAdminViewModel> ConstruirDashboardAdminAsync()
         {
             var ahora = DateTimeOffset.UtcNow;
