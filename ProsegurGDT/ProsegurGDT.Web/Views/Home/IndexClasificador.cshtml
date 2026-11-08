@@ -1,0 +1,52 @@
+﻿@model ProsegurGDT.Web.Models.DashboardClasificadorViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Tarjetas pendientes de clasificar y bloqueadas por riesgo</p>
+    </div>
+    <a asp-controller="Clasificacion" asp-action="Index" class="btn btn-primary">Ir a clasificar</a>
+</div>
+
+@if (Model.NoClasificables > 0)
+{
+    <div class="pg-aviso pg-aviso-riesgo">
+        @Model.NoClasificables @(Model.NoClasificables == 1 ? "tarjeta no clasificable por dirección con alerta" : "tarjetas no clasificables por dirección con alerta")
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Por clasificar</small><strong>@Model.PorClasificar</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ya clasificadas</small><strong>@Model.YaClasificadas</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>No clasificables</small><strong>@Model.NoClasificables</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Tarjetas no clasificables</h2>
+    @if (Model.CodigosNoClasificables.Count == 0)
+    {
+        <p class="text-muted mb-2">No hay tarjetas no clasificables.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead>
+                <tr><th>Tarjeta</th><th>Motivo</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var codigo in Model.CodigosNoClasificables)
+                {
+                    <tr>
+                        <td>@codigo</td>
+                        <td>Dirección con alerta</td>
+                        <td><span class="pg-estado pg-estado-riesgo">No clasificable</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <a asp-controller="DireccionesFraudulentas" asp-action="Index">Ver direcciones fraudulentas →</a>
+</div>

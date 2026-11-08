@@ -5,6 +5,7 @@ using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
 using ProsegurGDT.Web.Models;
 using System.Diagnostics;
+using ProsegurGDT.Web.Services;
 
 namespace ProsegurGDT.Web.Controllers
 {
@@ -33,6 +34,9 @@ namespace ProsegurGDT.Web.Controllers
 
             if (User.IsInRole(Roles.Supervisor))
                 return View("IndexSupervisor", await ConstruirDashboardSupervisorAsync());
+
+            if (User.IsInRole(Roles.Clasificador))
+                return View("IndexClasificador", await ConstruirDashboardClasificadorAsync());
 
             return View();
         }
@@ -109,6 +113,23 @@ namespace ProsegurGDT.Web.Controllers
             return modelo;
         }
 
+        private async Task<DashboardClasificadorViewModel> ConstruirDashboardClasificadorAsync()
+        {
+            var elegibles = ReglasClasificacion.Elegibles;
+
+            return new DashboardClasificadorViewModel
+            {
+                PorClasificar = await _db.Tarjetas.CountAsync(t => t.ZonaId == null && elegibles.Contains(t.Estado)),
+                YaClasificadas = await _db.Tarjetas.CountAsync(t => t.ZonaId != null),
+                NoClasificables = await _db.Tarjetas.CountAsync(t => t.Estado == EstadoTarjeta.NoClasificable),
+                CodigosNoClasificables = await _db.Tarjetas
+                    .Where(t => t.Estado == EstadoTarjeta.NoClasificable)
+                    .OrderByDescending(t => t.FechaActualizacion)
+                    .Take(5)
+                    .Select(t => t.Codigo)
+                    .ToListAsync()
+            };
+        }
         public IActionResult Privacy()
         {
             return View();
