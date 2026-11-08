@@ -38,6 +38,9 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.Clasificador))
                 return View("IndexClasificador", await ConstruirDashboardClasificadorAsync());
 
+            if (User.IsInRole(Roles.Buscador))
+                return View("IndexBuscador", await ConstruirDashboardBuscadorAsync());
+
             return View();
         }
         private async Task<DashboardSupervisorViewModel> ConstruirDashboardSupervisorAsync()
@@ -130,6 +133,26 @@ namespace ProsegurGDT.Web.Controllers
                     .ToListAsync()
             };
         }
+        private async Task<DashboardBuscadorViewModel> ConstruirDashboardBuscadorAsync()
+        {
+            var elegibles = ReglasClasificacion.Elegibles;
+            var pendientes = _db.Alertas
+                .Where(a => a.Decision == DecisionAlerta.Pendiente && elegibles.Contains(a.Tarjeta!.Estado));
+
+            var criticas = await pendientes
+                .OrderByDescending(a => a.Puntaje)
+                .Take(3)
+                .Select(a => new { a.Tarjeta!.Codigo, Direccion = a.DireccionFraudulenta!.DireccionOriginal, a.Puntaje })
+                .ToListAsync();
+
+            return new DashboardBuscadorViewModel
+            {
+                AlertasPendientes = await pendientes.CountAsync(),
+                DireccionesPorValidar = await _db.DireccionesFraudulentas.CountAsync(d => d.Estado == EstadoDireccion.Pendiente),
+                DireccionesValidadas = await _db.DireccionesFraudulentas.CountAsync(d => d.Estado == EstadoDireccion.Validada),
+                AlertasCriticas = criticas.Select(c => new FilaAlertaCritica(c.Codigo, c.Direccion, c.Puntaje)).ToList()
+            };
+        }
         public IActionResult Privacy()
         {
             return View();
@@ -137,6 +160,7 @@ namespace ProsegurGDT.Web.Controllers
 
         [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

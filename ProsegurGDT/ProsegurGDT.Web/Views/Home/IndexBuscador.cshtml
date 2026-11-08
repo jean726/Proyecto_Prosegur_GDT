@@ -1,0 +1,52 @@
+﻿@model ProsegurGDT.Web.Models.DashboardBuscadorViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Alertas por revisar y estado del registro de direcciones</p>
+    </div>
+    <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="btn btn-primary">Revisar alertas</a>
+</div>
+
+@if (Model.AlertasPendientes > 0)
+{
+    <div class="pg-aviso">
+        @Model.AlertasPendientes @(Model.AlertasPendientes == 1 ? "alerta espera" : "alertas esperan") tu decisión
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Alertas pendientes</small><strong>@Model.AlertasPendientes</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Direcciones por validar</small><strong>@Model.DireccionesPorValidar</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Direcciones validadas</small><strong>@Model.DireccionesValidadas</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Alertas más críticas</h2>
+    @if (Model.AlertasCriticas.Count == 0)
+    {
+        <p class="text-muted mb-2">No hay alertas pendientes.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead>
+                <tr><th>Tarjeta</th><th>Coincide con</th><th>Similitud</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.AlertasCriticas)
+                {
+                    <tr>
+                        <td>@a.Tarjeta</td>
+                        <td>@a.Direccion</td>
+                        <td><span class="pg-estado pg-estado-riesgo">@a.Puntaje.ToString("P0")</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <a asp-controller="DireccionesFraudulentas" asp-action="Alertas">Ver todas las alertas →</a>
+</div>
