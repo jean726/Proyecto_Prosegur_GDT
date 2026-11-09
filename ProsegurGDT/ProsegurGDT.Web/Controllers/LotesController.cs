@@ -117,7 +117,7 @@ public class LotesController : Controller
         else
         {
             var dif = vm.CantidadContada.Value - remito.CantidadDeclarada;
-            TempData["Error"] = $"Existe una discrepancia entre el remito y el conteo físico. El lote no puede ser registrado. " +
+            TempData["Error"] = $"Existe una discrepancia entre el remito y el conteo físico. El lote quedó registrado como discrepancia y no ingresó en custodia. " +
                                 $"Declaradas: {remito.CantidadDeclarada}, contadas: {vm.CantidadContada}, diferencia: {dif}.";
         }
         return RedirectToAction(nameof(Index));
