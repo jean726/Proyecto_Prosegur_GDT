@@ -41,6 +41,9 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.Buscador))
                 return View("IndexBuscador", await ConstruirDashboardBuscadorAsync());
 
+            if (User.IsInRole(Roles.AuxiliarTelefonista))
+                return View("IndexTelefonista", await ConstruirDashboardTelefonistaAsync());
+
             return View();
         }
         private async Task<DashboardSupervisorViewModel> ConstruirDashboardSupervisorAsync()
@@ -115,7 +118,6 @@ namespace ProsegurGDT.Web.Controllers
 
             return modelo;
         }
-
         private async Task<DashboardClasificadorViewModel> ConstruirDashboardClasificadorAsync()
         {
             var elegibles = ReglasClasificacion.Elegibles;
@@ -153,6 +155,32 @@ namespace ProsegurGDT.Web.Controllers
                 AlertasCriticas = criticas.Select(c => new FilaAlertaCritica(c.Codigo, c.Direccion, c.Puntaje)).ToList()
             };
         }
+
+        private async Task<DashboardTelefonistaViewModel> ConstruirDashboardTelefonistaAsync()
+        {
+            var hoy = DateOnly.FromDateTime(DateTime.Now);
+            var vigentes = _db.Citas
+                .Where(c => c.Vigente && c.Tarjeta!.Estado == EstadoTarjeta.CitaProgramada);
+
+            var proximas = await vigentes
+                .Where(c => c.FechaEntrega >= hoy)
+                .OrderBy(c => c.FechaEntrega).ThenBy(c => c.HoraEntrega)
+                .Take(5)
+                .Select(c => new { c.Tarjeta!.Codigo, Cliente = c.Tarjeta.Cliente!.NombreCompleto, c.FechaEntrega, c.HoraEntrega })
+                .ToListAsync();
+
+            return new DashboardTelefonistaViewModel
+            {
+                PendientesContacto = await _db.Tarjetas.CountAsync(t =>
+                    t.Estado == EstadoTarjeta.IngresadaEnCustodia ||
+                    t.Estado == EstadoTarjeta.PendienteDeContacto ||
+                    t.Estado == EstadoTarjeta.PendienteDeCita),
+                IntentosAgotados = await _db.Tarjetas.CountAsync(t => t.Estado == EstadoTarjeta.IntentosAgotados),
+                CitasProgramadas = await vigentes.CountAsync(),
+                ProximasCitas = proximas.Select(c => new FilaCita(c.Codigo, c.Cliente, c.FechaEntrega, c.HoraEntrega)).ToList()
+            };
+        }
+
         public IActionResult Privacy()
         {
             return View();
