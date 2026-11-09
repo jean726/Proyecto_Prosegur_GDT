@@ -20,17 +20,14 @@ public class ClientesController : Controller
     public ClientesController(ApplicationDbContext db, IAuditoriaService audit, IImportadorFichaService importador)
     { _db = db; _audit = audit; _importador = importador; }
 
-    public async Task<IActionResult> Index(string? q, EstadoTarjeta? estado)
+    public async Task<IActionResult> Index()
     {
-        var query = _db.Tarjetas.Include(t => t.Cliente).Include(t => t.Lote).ThenInclude(l => l!.Remito).AsQueryable();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            q = q.Trim();
-            query = query.Where(t => t.Codigo.Contains(q) || t.Cliente!.NombreCompleto.Contains(q) || t.Cliente!.DocumentoIdentidad.Contains(q));
-        }
-        if (estado.HasValue) query = query.Where(t => t.Estado == estado.Value);
-        ViewBag.Q = q;
-        return View(await query.OrderByDescending(t => t.Id).Take(200).ToListAsync());
+        var tarjetas = await _db.Tarjetas
+            .Include(t => t.Cliente)
+            .OrderByDescending(t => t.Id)
+            .Take(200)
+            .ToListAsync();
+        return View(tarjetas);
     }
 
     [Authorize(Roles = Roles.Supervisor)]
