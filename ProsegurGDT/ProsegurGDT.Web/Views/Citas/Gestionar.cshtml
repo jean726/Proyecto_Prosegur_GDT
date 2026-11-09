@@ -1,75 +1,168 @@
 ﻿@model ProsegurGDT.Web.Models.GestionarCitaVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Gestionar cita con cliente";
+    ViewData["Title"] = "Gestionar cita";
     var c = Model.Tarjeta!.Cliente!;
     var items = Enum.GetValues<ResultadoLlamada>().Select(r => new SelectListItem(r.Texto(), r.ToString())).ToList();
+    var mostrarCita = Model.Resultado == ResultadoLlamada.Exitoso;
+    var pct = Model.MaxIntentos > 0 ? Math.Min(100, Model.IntentosNoContacto * 100 / Model.MaxIntentos) : 0;
 }
-<h2>Gestionar cita con cliente</h2>
-@if (!string.IsNullOrEmpty(Model.Error))
-{
-    <div class="alert alert-danger">@Model.Error</div>
-}
-@if (!Model.DatosCompletos)
-{
-    <div class="alert alert-warning">Los datos de contacto están incompletos. Solo puede registrar "Datos insuficientes" y avisar al Supervisor.</div>
-}
-
-<div class="card mb-3">
-    <div class="card-header">Datos del cliente y de la tarjeta</div>
-    <div class="card-body row">
-        <div class="col-md-4"><label class="form-label">Cliente</label><input class="form-control" value="@c.NombreCompleto" readonly /></div>
-        <div class="col-md-2"><label class="form-label">Documento</label><input class="form-control" value="@c.DocumentoIdentidad" readonly /></div>
-        <div class="col-md-2"><label class="form-label">Teléfono</label><input class="form-control" value="@c.Telefono" readonly /></div>
-        <div class="col-md-4"><label class="form-label">Dirección</label><input class="form-control" value="@c.Direccion" readonly /></div>
-        <div class="col-md-3 mt-2"><label class="form-label">Tarjeta</label><input class="form-control" value="@Model.Tarjeta.Codigo" readonly /></div>
-        <div class="col-md-3 mt-2"><label class="form-label">Estado</label><input class="form-control" value="@Model.Tarjeta.Estado.Texto()" readonly /></div>
-        <div class="col-md-3 mt-2"><label class="form-label">Intentos sin contacto</label><input class="form-control" value="@Model.IntentosNoContacto de @Model.MaxIntentos" readonly /></div>
+<div class="pg-encabezado">
+    <div>
+        <a asp-action="Index" class="pg-subtitulo d-inline-block mb-1 text-decoration-none">← Volver a Citas</a>
+        <h1>Gestionar cita con cliente</h1>
+        <p class="pg-subtitulo">Tarjeta @Model.Tarjeta.Codigo · @c.NombreCompleto · DNI @c.DocumentoIdentidad</p>
     </div>
 </div>
 
-<form asp-action="Gestionar" method="post">
-    <input type="hidden" asp-for="TarjetaId" />
-    <div class="card mb-3">
-        <div class="card-header">Resultado de la llamada</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <label asp-for="Resultado" class="form-label"></label>
-                    <select asp-for="Resultado" class="form-select" asp-items="items"><option value="">-- Seleccione --</option></select>
-                </div>
-                <div class="col-md-8"><label asp-for="Observaciones" class="form-label"></label><input asp-for="Observaciones" class="form-control" maxlength="400" /></div>
-            </div>
-            <div id="bloqueCita" class="row mt-3 d-none">
-                <div class="col-md-3"><label asp-for="Fecha" class="form-label">Fecha de entrega</label><input asp-for="Fecha" type="date" class="form-control" /></div>
-                <div class="col-md-3"><label asp-for="Hora" class="form-label">Hora de entrega</label><input asp-for="Hora" type="time" class="form-control" /></div>
-                <div class="col-md-6"><label asp-for="Lugar" class="form-label">Lugar de entrega</label><input asp-for="Lugar" class="form-control" maxlength="250" /></div>
-            </div>
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="pg-alerta">@Model.Error</div>
+}
+
+<div class="pg-tarjeta pg-bloque">
+    <partial name="_LineaTiempoEstado" model="Model.Tarjeta.Estado" />
+</div>
+
+<div class="row g-3 mb-1">
+    <div class="col-lg-7">
+        <div class="pg-tarjeta pg-bloque h-100">
+            <h2 class="h6 mb-3">Datos del cliente y la tarjeta</h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted fw-normal">Cliente</dt>
+                <dd class="col-sm-8 fw-medium">@c.NombreCompleto</dd>
+
+                <dt class="col-sm-4 text-muted fw-normal">Documento</dt>
+                <dd class="col-sm-8">DNI @c.DocumentoIdentidad</dd>
+
+                <dt class="col-sm-4 text-muted fw-normal">Teléfono</dt>
+                <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(c.Telefono) ? "—" : c.Telefono)</dd>
+
+                <dt class="col-sm-4 text-muted fw-normal">Dirección</dt>
+                <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(c.Direccion) ? "—" : c.Direccion)</dd>
+
+                <dt class="col-sm-4 text-muted fw-normal">Tarjeta</dt>
+                <dd class="col-sm-8 fw-semibold">@Model.Tarjeta.Codigo</dd>
+
+                <dt class="col-sm-4 text-muted fw-normal">Estado</dt>
+                <dd class="col-sm-8">
+                    <span class="pg-estado pg-estado-@Model.Tarjeta.Estado.TonoEstado()">@Model.Tarjeta.Estado.TextoEstado()</span>
+                </dd>
+            </dl>
         </div>
     </div>
-    <button class="btn btn-success">Registrar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    <div class="col-lg-5">
+        <div class="pg-tarjeta pg-bloque h-100">
+            <h2 class="h6 mb-3">Seguimiento</h2>
+            <div class="pg-barra-fila">
+                <span>Sin contacto</span>
+                <div class="pg-barra-pista"><span style="width:@pct%"></span></div>
+                <strong>@Model.IntentosNoContacto</strong>
+            </div>
+            <p class="pg-subtitulo mb-3">@Model.IntentosNoContacto de @Model.MaxIntentos intentos registrados.</p>
+            @if (!Model.DatosCompletos)
+            {
+                <div class="pg-aviso mb-0">
+                    Datos de contacto incompletos: solo puede registrar <strong>Datos insuficientes</strong> y avisar al Supervisor.
+                </div>
+            }
+            else
+            {
+                <p class="pg-subtitulo mb-0">Datos de contacto completos. Puede registrar cualquier resultado de la llamada.</p>
+            }
+        </div>
+    </div>
+</div>
+
+<form asp-action="Gestionar" method="post" class="pg-tarjeta pg-bloque">
+    <input type="hidden" asp-for="TarjetaId" />
+    <h2 class="h6 mb-3">Registrar resultado de la llamada</h2>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="Resultado" class="form-label">Resultado *</label>
+            <select asp-for="Resultado" class="form-select" asp-items="items">
+                <option value="">-- Seleccione --</option>
+            </select>
+        </div>
+        <div class="col-md-8">
+            <label asp-for="Observaciones" class="form-label"></label>
+            <input asp-for="Observaciones" class="form-control" maxlength="400" placeholder="Detalle breve de la llamada (opcional)" />
+        </div>
+    </div>
+
+    <div id="bloqueCita" class="row g-3 mt-1 @(mostrarCita ? "" : "d-none")">
+        <div class="col-12">
+            <hr class="my-1" />
+            <span class="pg-subtitulo">Complete los datos de la cita acordada con el cliente.</span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Fecha" class="form-label">Fecha de entrega</label>
+            <input asp-for="Fecha" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Hora" class="form-label">Hora de entrega</label>
+            <input asp-for="Hora" type="time" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Lugar" class="form-label">Lugar de entrega</label>
+            <input asp-for="Lugar" class="form-control" maxlength="250" placeholder="Dirección o punto de entrega" />
+        </div>
+    </div>
+
+    <div class="pg-acciones">
+        <button type="submit" class="btn btn-primary">Registrar llamada</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
 </form>
 
-<h5 class="mt-4">Historial de intentos</h5>
-<table class="table table-sm">
-    <thead class="table-light"><tr><th>Fecha y hora</th><th>Resultado</th><th>Observaciones</th><th>Registrado por</th></tr></thead>
-    <tbody>
-        @foreach (var h in Model.Historial)
-        {
-            <tr><td>@HoraLima.Convertir(h.FechaHora).ToString("dd/MM/yyyy HH:mm")</td><td>@h.Resultado.Texto()</td><td>@h.Observaciones</td><td>@h.Usuario?.NombreCompleto</td></tr>
-        }
-        @if (!Model.Historial.Any())
-        {
-            <tr><td colspan="4" class="text-muted">Sin intentos previos.</td></tr>
-        }
-    </tbody>
-</table>
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="pg-barra-tabla d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Historial de intentos</h2>
+        <span class="pg-subtitulo">@Model.Historial.Count @(Model.Historial.Count == 1 ? "registro" : "registros")</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha y hora</th>
+                    <th>Resultado</th>
+                    <th>Observaciones</th>
+                    <th>Registrado por</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model.Historial)
+                {
+                    <tr>
+                        <td class="text-nowrap">@HoraLima.Convertir(h.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@h.Resultado.Texto()</td>
+                        <td>@(string.IsNullOrWhiteSpace(h.Observaciones) ? "—" : h.Observaciones)</td>
+                        <td>@(h.Usuario?.NombreCompleto ?? "—")</td>
+                    </tr>
+                }
+                @if (!Model.Historial.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">Sin intentos previos.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        const sel = document.getElementById('Resultado'), bloque = document.getElementById('bloqueCita');
-        function toggle() { bloque.classList.toggle('d-none', sel.value !== 'Exitoso'); }
-        sel.addEventListener('change', toggle); toggle();
+        (function () {
+            var sel = document.getElementById('Resultado');
+            var bloque = document.getElementById('bloqueCita');
+
+            function toggle() {
+                bloque.classList.toggle('d-none', sel.value !== 'Exitoso');
+            }
+
+            sel.addEventListener('change', toggle);
+            toggle();
+        })();
     </script>
 }
