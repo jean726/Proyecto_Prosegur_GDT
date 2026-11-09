@@ -2,21 +2,64 @@
 @{
     ViewData["Title"] = "Generar ficha de clientes";
 }
-<h2>Generar ficha de clientes</h2>
-<p class="text-muted">Cargue el archivo CSV remitido por UNIBANCA. Cabecera: <code>CodigoTarjeta;NombreCompleto;Documento;Telefono;Direccion</code>. La cantidad de filas debe coincidir con las tarjetas contadas del lote.</p>
+<div class="pg-encabezado">
+    <div>
+        <h1>Generar ficha de clientes</h1>
+        <p class="pg-subtitulo">Carga el CSV de UNIBANCA y asígnalo a un lote ingresado en custodia.</p>
+    </div>
+</div>
 @if (Model.Errores.Count > 0)
 {
-    <div class="alert alert-danger"><ul class="mb-0">@foreach (var e in Model.Errores) {
-        <li>@e</li>
-    }
-</ul></div>
-}
-<form asp-action="Importar" method="post" enctype="multipart/form-data" class="col-md-7">
-    <div class="mb-3">
-        <label asp-for="LoteId" class="form-label">Lote ingresado</label>
-        <select asp-for="LoteId" class="form-select" asp-items="Model.Lotes"><option value="">-- Seleccione --</option></select>
+    <div class="pg-alerta">
+        <ul class="mb-0">
+            @foreach (var e in Model.Errores)
+            {
+                <li>@e</li>
+            }
+        </ul>
     </div>
-    <div class="mb-3"><label asp-for="Archivo" class="form-label">Archivo CSV</label><input asp-for="Archivo" type="file" accept=".csv" class="form-control" /></div>
-    <button class="btn btn-success">Generar ficha</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
+}
+@if (Model.Lotes.Count == 0)
+{
+    <div class="pg-aviso">
+        No hay lotes pendientes de ficha. Registra un lote en
+        <a asp-controller="Lotes" asp-action="Registrar" class="fw-semibold">Ingreso de tarjetas</a>
+        antes de importar el CSV.
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <form asp-action="Importar" method="post" enctype="multipart/form-data" class="pg-tarjeta h-100">
+                <div class="mb-3">
+                    <label asp-for="LoteId" class="form-label">1. Lote ingresado</label>
+                    <select asp-for="LoteId" class="form-select" asp-items="Model.Lotes">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                    <div class="form-text">Solo aparecen lotes ingresados en custodia que aún no tienen ficha.</div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Archivo" class="form-label">2. Archivo CSV</label>
+                    <input asp-for="Archivo" type="file" accept=".csv" class="form-control" />
+                </div>
+                <div class="pg-acciones">
+                    <button type="submit" class="btn btn-primary">Generar ficha</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-5">
+            <div class="pg-tarjeta pg-bloque h-100">
+                <h2 class="h6 mb-2">¿Qué debe cumplir el CSV?</h2>
+                <ul class="mb-0">
+                    <li>Cabecera: <code>CodigoTarjeta;NombreCompleto;Documento;Telefono;Direccion</code></li>
+                    <li>Peso máximo: 2 MB.</li>
+                    <li>Una fila por tarjeta.</li>
+                    <li>La cantidad de filas debe coincidir con las tarjetas contadas del lote.</li>
+                    <li>Si hay un error, no se genera ninguna ficha.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
