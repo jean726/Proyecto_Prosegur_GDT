@@ -2,11 +2,19 @@
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Ingreso de tarjetas";
+    var total = Model.Count();
+    var custodia = Model.Count(l => l.Estado == EstadoLote.IngresadoEnCustodia);
+    var discrepancias = total - custodia;
+    var subtitulo = total == 0
+        ? "Sin lotes registrados"
+        : $"Últimos {total} lotes · {custodia} en custodia";
 }
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Ingreso de tarjetas</h2>
-    <a asp-action="Registrar" class="btn btn-primary">Registrar nuevo lote</a>
+<div class="pg-encabezado">
+    <div>
+        <h1>Ingreso de tarjetas</h1>
+        <p class="pg-subtitulo">@subtitulo</p>
+    </div>
+    <a asp-action="Registrar" class="btn btn-primary">+ Registrar nuevo lote</a>
 </div>
 
 @if (TempData["Ok"] is string ok)
@@ -18,44 +26,137 @@
     <div class="alert alert-danger">@err</div>
 }
 
-<table class="table table-sm table-hover">
-    <thead class="table-light">
-        <tr>
-            <th>Hoja de control</th>
-            <th>Remito</th>
-            <th>Banco</th>
-            <th>Recepción</th>
-            <th class="text-end">Declaradas</th>
-            <th class="text-end">Contadas</th>
-            <th>Estado</th>
-            <th>Registrado</th>
-            <th>Por</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var l in Model)
-        {
-            <tr>
-                <td>@(l.CodigoHojaControl ?? "—")</td>
-                <td>@l.Remito?.Numero</td>
-                <td>@l.Remito?.Banco?.Nombre</td>
-                <td>@l.FechaRecepcion.ToString("dd/MM/yyyy")</td>
-                <td class="text-end">@l.CantidadDeclarada</td>
-                <td class="text-end">@l.CantidadContada</td>
-                <td>
-                    @if (l.Estado == EstadoLote.IngresadoEnCustodia)
-                    {
-                        <span class="badge bg-success">Ingresado en custodia</span>
-                    }
-                    else
-                    {
+@if (discrepancias > 0)
+{
+    <div class="pg-aviso">
+        @discrepancias @(discrepancias == 1 ? "lote tiene" : "lotes tienen") discrepancia detectada. Revisa el conteo antes de continuar.
+    </div>
+}
 
-                        <span class="badge bg-danger">Discrepancia detectada</span>
-                    }
-                </td>
-                <td>@HoraLima.Convertir(l.FechaHoraRegistro).ToString("dd/MM/yyyy HH:mm:ss")</td>
-                <td>@l.RegistradoPor?.NombreCompleto</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="pg-barra-tabla">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input id="pgBuscar" type="search" class="form-control" placeholder="Buscar hoja, remito o banco" autocomplete="off" aria-label="Buscar por hoja de control, remito o banco" />
+            <select id="pgEstado" class="form-select" style="max-width: 230px" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option value="@EstadoLote.IngresadoEnCustodia">Ingresado en custodia</option>
+                <option value="@EstadoLote.DiscrepanciaDetectada">Discrepancia detectada</option>
+            </select>
+            <div class="form-check ms-1">
+                <input id="pgSoloDiscrepancias" type="checkbox" class="form-check-input" />
+                <label for="pgSoloDiscrepancias" class="form-check-label">Solo discrepancias</label>
+            </div>
+            <span class="pg-subtitulo ms-auto">Mostrando <span id="pgMostrando">@total</span> de @total</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table id="pgTabla" class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Remito / Banco</th>
+                    <th>Recepción</th>
+                    <th>Conteo</th>
+                    <th>Estado</th>
+                    <th>Registrado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    var numeroRemito = l.Remito?.Numero ?? "—";
+                    var banco = l.Remito?.Banco?.Nombre ?? "—";
+                    var hoja = string.IsNullOrWhiteSpace(l.CodigoHojaControl) ? null : l.CodigoHojaControl;
+                    var esDiscrepancia = l.Estado == EstadoLote.DiscrepanciaDetectada;
+                    var diferencia = l.CantidadContada - l.CantidadDeclarada;
+                    var tono = esDiscrepancia ? "riesgo" : "custodia";
+                    var textoEstado = esDiscrepancia ? "Discrepancia detectada" : "Ingresado en custodia";
+                    var clave = $"{l.CodigoHojaControl} {numeroRemito} {banco}".ToLowerInvariant();
+                    <tr data-buscar="@clave" data-estado="@l.Estado" data-discrepancia="@(esDiscrepancia ? "true" : "false")">
+                        <td>
+                            @if (hoja is not null)
+                            {
+                                <span class="fw-semibold">@hoja</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin hoja</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="fw-medium">@numeroRemito</div>
+                            <div class="text-muted small">@banco</div>
+                        </td>
+                        <td class="text-nowrap">@l.FechaRecepcion.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <div>
+                                <span class="fw-semibold @(esDiscrepancia ? "text-danger" : "")">@l.CantidadDeclarada</span> / @l.CantidadContada
+                            </div>
+                            @if (esDiscrepancia)
+                            {
+                                <div class="text-danger small">Diferencia: @(diferencia > 0 ? "+" : "")@diferencia</div>
+                            }
+                            else
+                            {
+                                <div class="text-muted small">Coinciden</div>
+                            }
+                        </td>
+                        <td><span class="pg-estado pg-estado-@tono">@textoEstado</span></td>
+                        <td>
+                            <div class="text-nowrap">@HoraLima.Convertir(l.FechaHoraRegistro).ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="text-muted small">@(l.RegistradoPor?.NombreCompleto ?? "—")</div>
+                        </td>
+                    </tr>
+                }
+                <tr id="pgVacio" hidden>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        @if (total == 0)
+                        {
+                            <span>Aún no hay lotes registrados.</span>
+                            <a asp-action="Registrar" class="fw-semibold ms-1">Registrar el primero</a>
+                        }
+                        else
+                        {
+                            <span>No hay lotes que coincidan con los filtros.</span>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var buscar = document.getElementById('pgBuscar');
+            var estado = document.getElementById('pgEstado');
+            var soloDiscrepancias = document.getElementById('pgSoloDiscrepancias');
+            var filas = document.querySelectorAll('#pgTabla tbody tr[data-buscar]');
+            var mostrando = document.getElementById('pgMostrando');
+            var vacio = document.getElementById('pgVacio');
+
+            function filtrar() {
+                var texto = buscar.value.trim().toLowerCase();
+                var estadoSel = estado.value;
+                var soloDisc = soloDiscrepancias.checked;
+                var n = 0;
+                filas.forEach(function (f) {
+                    var coincideTexto = f.getAttribute('data-buscar').indexOf(texto) !== -1;
+                    var coincideEstado = estadoSel === '' || f.getAttribute('data-estado') === estadoSel;
+                    var coincideDisc = !soloDisc || f.getAttribute('data-discrepancia') === 'true';
+                    var visible = coincideTexto && coincideEstado && coincideDisc;
+                    f.hidden = !visible;
+                    if (visible) n++;
+                });
+                mostrando.textContent = n;
+                vacio.hidden = n !== 0;
+            }
+
+            buscar.addEventListener('input', filtrar);
+            estado.addEventListener('change', filtrar);
+            soloDiscrepancias.addEventListener('change', filtrar);
+            filtrar();
+        })();
+    </script>
+}
