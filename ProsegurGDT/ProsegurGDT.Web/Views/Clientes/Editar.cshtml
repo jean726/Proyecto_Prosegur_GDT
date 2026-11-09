@@ -2,15 +2,44 @@
 @{
     ViewData["Title"] = "Corregir ficha";
 }
-<h2>Corregir ficha del cliente</h2>
-<form asp-action="Editar" method="post" class="col-md-6">
+<div class="pg-encabezado">
+    <div>
+        <h1>Corregir ficha del cliente</h1>
+        <p class="pg-subtitulo">Completa los datos de contacto. Los cambios quedan auditados.</p>
+    </div>
+</div>
+<form asp-action="Editar" method="post" class="pg-tarjeta pg-formulario">
     <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <div class="mb-2"><label asp-for="NombreCompleto" class="form-label"></label><input asp-for="NombreCompleto" class="form-control" /></div>
-    <div class="mb-2"><label asp-for="Telefono" class="form-label"></label><input asp-for="Telefono" class="form-control" /></div>
-    <div class="mb-3"><label asp-for="Direccion" class="form-label"></label><input asp-for="Direccion" class="form-control" /></div>
-    <button class="btn btn-success">Guardar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    <div asp-validation-summary="ModelOnly" class="pg-alerta"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="DocumentoIdentidad" class="form-label">Documento (solo lectura)</label>
+            <input asp-for="DocumentoIdentidad" class="form-control" readonly />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="NombreCompleto" class="form-label"></label>
+            <input asp-for="NombreCompleto" class="form-control" />
+            <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Telefono" class="form-label"></label>
+            <input asp-for="Telefono" class="form-control" />
+            <span asp-validation-for="Telefono" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Direccion" class="form-label"></label>
+            <input asp-for="Direccion" class="form-control" />
+            <span asp-validation-for="Direccion" class="text-danger"></span>
+        </div>
+    </div>
+    @if (!Model.DatosCompletos)
+    {
+        <div class="pg-aviso mt-3">Faltan datos de contacto: el Telefonista no podrá coordinar la entrega. Corrige el teléfono o la dirección.</div>
+    }
+    <div class="pg-acciones">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
 </form>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

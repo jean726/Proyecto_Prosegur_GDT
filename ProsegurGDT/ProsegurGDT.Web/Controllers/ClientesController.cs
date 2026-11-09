@@ -36,7 +36,14 @@ public class ClientesController : Controller
     {
         var c = await _db.Clientes.FindAsync(id);
         if (c is null) return NotFound();
-        return View(new ClienteEditarVM { Id = c.Id, NombreCompleto = c.NombreCompleto, Telefono = c.Telefono, Direccion = c.Direccion });
+        return View(new ClienteEditarVM
+        {
+            Id = c.Id,
+            DocumentoIdentidad = c.DocumentoIdentidad,
+            NombreCompleto = c.NombreCompleto,
+            Telefono = c.Telefono,
+            Direccion = c.Direccion
+        });
     }
 
     [Authorize(Roles = Roles.Supervisor)]
