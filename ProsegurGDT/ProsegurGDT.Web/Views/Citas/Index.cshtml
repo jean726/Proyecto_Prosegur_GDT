@@ -2,9 +2,16 @@
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Citas con clientes";
+    var total = Model.Count();
+    var incompletas = Model.Count(t => !FichaCliente.DatosCompletos(t.Cliente!));
+    var estadosCola = new[] { EstadoTarjeta.IngresadaEnCustodia, EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.PendienteDeCita };
 }
-<h2>Citas con clientes</h2>
-<p class="text-muted">Tarjetas pendientes de coordinar la entrega.</p>
+<div class="pg-encabezado">
+    <div>
+        <h1>Citas con clientes</h1>
+        <p class="pg-subtitulo">@total tarjetas pendientes de coordinar la entrega · @incompletas con datos incompletos</p>
+    </div>
+</div>
 @if (TempData["Ok"] is string ok)
 {
     <div class="alert alert-success">@ok</div>
@@ -13,27 +20,107 @@
 {
     <div class="alert alert-danger">@err</div>
 }
-<table class="table table-sm table-hover align-middle">
-    <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Teléfono</th><th>Dirección</th><th>Estado</th><th>Datos</th><th></th></tr></thead>
-    <tbody>
-        @foreach (var t in Model)
-        {
-            <tr>
-                <td>@t.Codigo</td>
-                <td>@t.Cliente!.NombreCompleto</td>
-                <td>@(t.Cliente.Telefono ?? "—")</td>
-                <td>@t.Cliente.Direccion</td>
-                <td><span class="badge bg-secondary">@t.Estado.Texto()</span></td>
-                <td>@if (FichaCliente.DatosCompletos(t.Cliente)) {
-                    <span class="badge bg-success">Completos</span>
-                } else
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="pg-barra-tabla">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input id="pgBuscar" type="search" class="form-control" placeholder="Buscar tarjeta, cliente o documento" autocomplete="off" aria-label="Buscar por tarjeta, cliente o documento" />
+            <select id="pgEstado" class="form-select" style="max-width: 220px" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                @foreach (var e in estadosCola)
                 {
-
-                    <span class="badge bg-warning text-dark">Incompletos</span>
+                    <option value="@e">@e.TextoEstado()</option>
                 }
-            </td>
-            <td class="text-end"><a asp-action="Gestionar" asp-route-id="@t.Id" class="btn btn-sm btn-primary">Gestionar</a></td>
-        </tr>
-    }
-</tbody>
-</table>
+            </select>
+            <div class="form-check ms-1">
+                <input id="pgSoloIncompletos" type="checkbox" class="form-check-input" />
+                <label for="pgSoloIncompletos" class="form-check-label">Solo datos incompletos</label>
+            </div>
+            <span class="pg-subtitulo ms-auto">Mostrando <span id="pgMostrando">@total</span> de @total</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table id="pgTabla" class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Tarjeta</th>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                    <th>Datos</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    var completos = FichaCliente.DatosCompletos(t.Cliente!);
+                    var clave = $"{t.Codigo} {t.Cliente!.NombreCompleto} {t.Cliente.DocumentoIdentidad}".ToLowerInvariant();
+                    <tr data-buscar="@clave" data-estado="@t.Estado" data-incompletos="@(completos ? "false" : "true")">
+                        <td><span class="fw-semibold">@t.Codigo</span></td>
+                        <td>
+                            <div class="fw-medium">@t.Cliente.NombreCompleto</div>
+                            <div class="text-muted small">DNI @t.Cliente.DocumentoIdentidad</div>
+                        </td>
+                        <td>
+                            <div>@(t.Cliente.Telefono ?? "—")</div>
+                            <div class="text-muted small text-truncate" style="max-width: 320px" title="@t.Cliente.Direccion">@t.Cliente.Direccion</div>
+                        </td>
+                        <td><span class="pg-estado pg-estado-@t.Estado.TonoEstado()">@t.Estado.TextoEstado()</span></td>
+                        <td>
+                            @if (completos)
+                            {
+                                <span class="badge bg-success">Completos</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Incompletos</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Gestionar" asp-route-id="@t.Id" class="btn btn-sm btn-primary">Gestionar</a>
+                        </td>
+                    </tr>
+                }
+                <tr id="pgVacio" hidden>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        @(total == 0 ? "No hay tarjetas pendientes de coordinar." : "No hay tarjetas que coincidan con los filtros.")
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        (function () {
+            var buscar = document.getElementById('pgBuscar');
+            var estado = document.getElementById('pgEstado');
+            var soloIncompletos = document.getElementById('pgSoloIncompletos');
+            var filas = document.querySelectorAll('#pgTabla tbody tr[data-buscar]');
+            var mostrando = document.getElementById('pgMostrando');
+            var vacio = document.getElementById('pgVacio');
+
+            function filtrar() {
+                var texto = buscar.value.trim().toLowerCase();
+                var estadoSel = estado.value;
+                var incompletos = soloIncompletos.checked;
+                var n = 0;
+                filas.forEach(function (f) {
+                    var coincideTexto = f.getAttribute('data-buscar').indexOf(texto) !== -1;
+                    var coincideEstado = estadoSel === '' || f.getAttribute('data-estado') === estadoSel;
+                    var coincideDatos = !incompletos || f.getAttribute('data-incompletos') === 'true';
+                    var visible = coincideTexto && coincideEstado && coincideDatos;
+                    f.hidden = !visible;
+                    if (visible) n++;
+                });
+                mostrando.textContent = n;
+                vacio.hidden = n !== 0;
+            }
+
+            buscar.addEventListener('input', filtrar);
+            estado.addEventListener('change', filtrar);
+            soloIncompletos.addEventListener('change', filtrar);
+            filtrar();
+        })();
+    </script>
+}
