@@ -19,6 +19,24 @@
     </div>
 }
 
+@if (Model.HojasConDiscrepancia > 0)
+{
+    <div class="pg-aviso pg-aviso-riesgo">
+        @Model.HojasConDiscrepancia @(Model.HojasConDiscrepancia == 1 ? "hoja de ruta tiene" : "hojas de ruta tienen") una discrepancia pendiente de corrección
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Rutas sin hoja de ruta</small><strong>@Model.RutasSinHoja</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Hojas por aprobar</small><strong>@Model.HojasPorAprobar</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Hojas por firmar</small><strong>@Model.HojasPorFirmar</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Reporte de entregas de hoy</small><strong style="font-size:1.1rem">@(Model.ReporteHoy ?? "Sin diseñar")</strong></div>
+</div>
+<div class="mb-3 d-flex gap-3">
+    <a asp-controller="HojasRuta" asp-action="Index">Hojas de ruta →</a>
+    <a asp-controller="ReportesEntregas" asp-action="Index">Reporte de entregas →</a>
+</div>
+
 <div class="pg-tarjeta pg-bloque">
     <h2 class="h6 mb-3">Tarjetas por etapa</h2>
     <div class="pg-etapas">

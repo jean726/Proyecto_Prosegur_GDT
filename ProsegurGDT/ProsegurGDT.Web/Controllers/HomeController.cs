@@ -78,6 +78,16 @@ namespace ProsegurGDT.Web.Controllers
         {
             var modelo = new DashboardSupervisorViewModel();
 
+            var rutasConHoja = _db.HojasRuta.Select(h => h.AsignacionRutaId);
+            modelo.RutasSinHoja = await _db.AsignacionesRuta
+                .CountAsync(r => r.HojaAsignacion!.Estado == EstadoHojaAsignacion.Emitida && !rutasConHoja.Contains(r.Id));
+            modelo.HojasPorAprobar = await _db.HojasRuta.CountAsync(h => h.Estado == EstadoHojaRuta.PendienteDeAprobacion);
+            modelo.HojasConDiscrepancia = await _db.HojasRuta.CountAsync(h => h.Estado == EstadoHojaRuta.PendienteDeCorreccion);
+            modelo.HojasPorFirmar = await _db.HojasRuta.CountAsync(h => h.Estado == EstadoHojaRuta.Aprobada);
+            var hoyLima = DateOnly.FromDateTime(HoraLima.Ahora);
+            var repHoy = await _db.ReportesEntregas.Where(r => r.FechaJornada == hoyLima).Select(r => (EstadoReporteEntregas?)r.Estado).FirstOrDefaultAsync();
+            modelo.ReporteHoy = repHoy?.Texto();
+
             var conteos = await _db.Tarjetas
                 .GroupBy(t => t.Estado)
                 .Select(g => new { Estado = g.Key, Total = g.Count() })
