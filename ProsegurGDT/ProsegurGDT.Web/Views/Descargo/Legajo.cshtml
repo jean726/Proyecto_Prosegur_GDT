@@ -1,0 +1,66 @@
+@model ProsegurGDT.Web.Models.LegajoVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Documentación por mensajero";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Documentación — @Model.Repartidor</h1>
+        <p class="pg-subtitulo">Jornada @Model.Fecha.ToString("dd/MM/yyyy") · Lote @Model.CodigoHojaControl · Sector @Model.Sector</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        <span class="pg-estado @(Model.Organizada ? "pg-estado-entrega" : "pg-estado-pendiente")">@(Model.Organizada ? "Documentación organizada" : "Sin organizar")</span>
+        <span class="text-muted small">@Model.CargosRecibidos cargos de entrega · cerrado @(Model.FechaCierre is null ? "—" : HoraLima.Convertir(Model.FechaCierre.Value).ToString("dd/MM/yyyy HH:mm")) por @Model.Descargador</span>
+    </div>
+    @if (!Model.Organizada)
+    {
+        <form asp-action="Organizar" asp-route-id="@Model.HojaRutaId" method="post" class="mt-3 no-imprimir">
+            <button type="submit" class="btn btn-primary">Marcar documentación organizada</button>
+            <div class="small text-muted mt-1">Imprima este legajo, junte la hoja de ruta con sus cargos y márquelo como organizado para dejar la trazabilidad por repartidor.</div>
+        </form>
+    }
+    else if (Model.FechaOrganizacion is not null)
+    {
+        <div class="small text-muted mt-2">Organizada el @HoraLima.Convertir(Model.FechaOrganizacion.Value).ToString("dd/MM/yyyy HH:mm")</div>
+    }
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Receptor del cargo</th><th>Resultado</th><th>Motivo / detalle</th></tr></thead>
+            <tbody>
+                @foreach (var t in Model.Tarjetas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@t.Codigo</td>
+                        <td>@t.Cliente<div class="text-muted small">@t.Documento</div></td>
+                        <td>@(t.ReceptorNombre is null ? "—" : t.ReceptorNombre + " (" + t.ReceptorDocumento + ")")</td>
+                        <td><span class="pg-estado pg-estado-@t.Estado.TonoEstado()">@t.Estado.TextoEstado()</span></td>
+                        <td>
+                            @(t.Motivo?.Texto() ?? "—")
+                            @if (!string.IsNullOrEmpty(t.Detalle)) { <div class="text-muted small">@t.Detalle</div> }
+                            @if (t.ObservacionBuscador is not null) { <div class="text-muted small">Buscador: @t.ObservacionBuscador</div> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

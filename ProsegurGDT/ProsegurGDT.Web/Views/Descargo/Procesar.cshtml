@@ -1,0 +1,160 @@
+@model ProsegurGDT.Web.Models.ProcesarRutaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Procesar descargo";
+    var motivos = Html.GetEnumSelectList<MotivoNoEntrega>();
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Descargo — @Model.Repartidor</h1>
+        <p class="pg-subtitulo">Jornada @Model.Fecha.ToString("dd/MM/yyyy") · Lote @Model.CodigoHojaControl · Sector @Model.Sector · @Model.Estado.Texto()</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Aviso"] is string aviso)
+{
+    <div class="alert alert-warning">@aviso</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <h2 class="h6 mb-2">Cargos de entrega</h2>
+    @if (Model.Estado == EstadoDescargoRuta.PendienteDeDocumentacion)
+    {
+        <div class="alert alert-warning">Hoja pendiente de documentación: @Model.Observacion. Registre los cargos cuando el repartidor los presente.</div>
+    }
+    @if (Model.Cerrada)
+    {
+        <p class="mb-0">@Model.CargosRecibidos cargos recibidos. Descargo cerrado.</p>
+    }
+    else
+    {
+        <div class="d-flex flex-wrap gap-2 align-items-start">
+            <form asp-action="Cargos" method="post" class="d-flex gap-2 align-items-center">
+                <input type="hidden" name="HojaRutaId" value="@Model.HojaRutaId" />
+                <label class="form-label mb-0" for="Cantidad">Cargos recibidos (de @Model.Tarjetas.Count)</label>
+                <input type="number" id="Cantidad" name="Cantidad" class="form-control" style="width:6rem" min="0" max="@Model.Tarjetas.Count" value="@Model.CargosRecibidos" />
+                <button type="submit" class="btn btn-primary">Registrar</button>
+            </form>
+            <form asp-action="SinDocumentacion" method="post" class="d-flex gap-2 flex-grow-1">
+                <input type="hidden" name="Id" value="@Model.HojaRutaId" />
+                <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Hoja sin cargos: detalle de la incidencia a escalar al Supervisor" />
+                <button type="submit" class="btn btn-outline-danger text-nowrap">Sin cargos</button>
+            </form>
+        </div>
+    }
+</div>
+
+@foreach (var t in Model.Tarjetas)
+{
+    var tono = t.Estado.TonoEstado();
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+            <div>
+                <span class="fw-semibold">@t.Codigo</span> · @t.Cliente <span class="text-muted">(@t.Documento)</span>
+                <div class="text-muted small">@t.Direccion</div>
+            </div>
+            <div class="text-end">
+                <span class="pg-estado pg-estado-@tono">@t.Estado.TextoEstado()</span>
+                @if (t.Verificacion is VerificacionDescargo.DerivadaAlBuscador or VerificacionDescargo.DiscrepanciaResuelta or VerificacionDescargo.DiscrepanciaNoResuelta)
+                {
+                    <div class="small mt-1">@t.Verificacion.Value.Texto()</div>
+                }
+            </div>
+        </div>
+
+        @if (t.ReceptorNombre is not null)
+        {
+            <div class="small mt-2">Receptor consignado: @t.ReceptorNombre (@t.ReceptorDocumento)</div>
+        }
+        @if (t.Resultado is not null && !t.Pendiente)
+        {
+            <div class="small mt-1">Resultado: <strong>@t.Resultado.Value.Texto()</strong>@(t.Motivo is null ? "" : " · " + t.Motivo.Value.Texto())@(string.IsNullOrEmpty(t.Detalle) ? "" : " · " + t.Detalle)</div>
+        }
+        @if (t.ObservacionBuscador is not null)
+        {
+            <div class="small mt-1 text-muted">Buscador: @t.ObservacionBuscador</div>
+        }
+
+        @if (!Model.Cerrada && t.Pendiente)
+        {
+            @if (t.Verificacion == VerificacionDescargo.DerivadaAlBuscador)
+            {
+                <div class="alert alert-warning mt-2 mb-0">Derivada al Buscador. Espere el resultado de su verificación física.</div>
+            }
+            else if (t.Verificacion == VerificacionDescargo.DiscrepanciaNoResuelta)
+            {
+                <div class="alert alert-danger mt-2 mb-0">
+                    La discrepancia no se resolvió.
+                    <a asp-controller="Defraudacion" asp-action="Index">Registrarla en el apartado de defraudación →</a>
+                </div>
+            }
+            else if (Model.CargosRecibidos > 0)
+            {
+                <form asp-action="Registrar" method="post" class="row g-2 mt-2">
+                    <input type="hidden" name="HojaRutaId" value="@Model.HojaRutaId" />
+                    <input type="hidden" name="TarjetaId" value="@t.TarjetaId" />
+                    <div class="col-md-3">
+                        <label class="form-label small mb-0">Resultado de la visita</label>
+                        <select name="Resultado" class="form-select form-select-sm" required>
+                            <option value="">Seleccione…</option>
+                            @foreach (var r in Enum.GetValues<ResultadoDescargo>())
+                            {
+                                <option value="@r">@r.Texto()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-0">Receptor (si se entregó)</label>
+                        <input type="text" name="ReceptorNombre" class="form-control form-control-sm" maxlength="150" placeholder="Nombre en el cargo" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-0">Documento</label>
+                        <input type="text" name="ReceptorDocumento" class="form-control form-control-sm" maxlength="20" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-0">Motivo (si no se entregó)</label>
+                        <select name="Motivo" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            @foreach (var m in Enum.GetValues<MotivoNoEntrega>())
+                            {
+                                <option value="@m">@m.Texto()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-12 d-flex gap-2">
+                        <input type="text" name="Detalle" class="form-control form-control-sm" maxlength="300" placeholder="Detalle del evento u observación (obligatorio en incidencias)" />
+                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">Registrar resultado</button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="small text-muted mt-2">Registre los cargos de entrega para poder verificar esta tarjeta.</div>
+            }
+        }
+    </div>
+}
+
+@if (!Model.Cerrada)
+{
+    <div class="pg-tarjeta pg-bloque">
+        <h2 class="h6 mb-2">Cerrar el descargo de la ruta</h2>
+        <p class="text-muted small">Quedan @Model.Pendientes tarjeta(s) sin verificar. Solo puede cerrarse cuando todas tengan su resultado.</p>
+        <form asp-action="Cerrar" asp-route-id="@Model.HojaRutaId" method="post" onsubmit="return confirm('¿Cerrar el descargo de esta ruta?');">
+            <button type="submit" class="btn btn-primary" disabled="@(Model.Pendientes > 0 || Model.CargosRecibidos == 0)">Cerrar hoja de ruta</button>
+        </form>
+    </div>
+}
+else
+{
+    <a asp-action="Legajo" asp-route-id="@Model.HojaRutaId" class="btn btn-outline-secondary">Ver documentación de la ruta</a>
+}

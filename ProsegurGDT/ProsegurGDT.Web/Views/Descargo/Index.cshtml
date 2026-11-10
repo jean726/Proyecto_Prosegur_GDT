@@ -1,0 +1,75 @@
+@model ProsegurGDT.Web.Models.DescargoIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Descargo de tarjetas";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Descargo de tarjetas</h1>
+        <p class="pg-subtitulo">@(Model.Rutas.Count == 0 ? "Aún no hay hojas de ruta remitidas por Mensajería" : $"{Model.Rutas.Count} hojas de ruta · {Model.Pendientes} tarjetas pendientes de verificar")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas asignadas</small><strong>@Model.TotalAsignadas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Cargos recibidos</small><strong>@Model.TotalCargos</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Pendientes de verificación</small><strong>@Model.Pendientes</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Jornada</th><th>Hoja de control</th><th>Repartidor</th><th>Sector</th><th class="text-end">Tarjetas</th><th class="text-end">Cargos</th><th class="text-end">Verificadas</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rutas)
+                {
+                    var tono = r.Estado switch
+                    {
+                        EstadoDescargoRuta.Cerrada => "entrega",
+                        EstadoDescargoRuta.PendienteDeDocumentacion => "riesgo",
+                        EstadoDescargoRuta.EnProceso => "custodia",
+                        _ => "pendiente"
+                    };
+                    <tr>
+                        <td>@r.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td class="fw-semibold">@(r.CodigoHojaControl ?? "—")</td>
+                        <td>@r.Repartidor</td>
+                        <td>@r.Sector</td>
+                        <td class="text-end">@r.Tarjetas</td>
+                        <td class="text-end">@r.CargosRecibidos</td>
+                        <td class="text-end">@r.Procesadas / @r.Tarjetas</td>
+                        <td>
+                            <span class="pg-estado pg-estado-@tono">@r.Estado.Texto()</span>
+                            @if (r.Estado == EstadoDescargoRuta.Cerrada && !r.Organizada) { <div class="small text-muted">Documentación sin organizar</div> }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (r.Estado == EstadoDescargoRuta.Cerrada)
+                            {
+                                <a asp-action="Legajo" asp-route-id="@r.HojaRutaId" class="btn btn-sm btn-outline-secondary">Documentación</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Procesar" asp-route-id="@r.HojaRutaId" class="btn btn-sm btn-primary">Procesar</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Rutas.Count == 0)
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">El Supervisor debe firmar las hojas de ruta y remitir el reporte de entregas para que aparezcan aquí.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

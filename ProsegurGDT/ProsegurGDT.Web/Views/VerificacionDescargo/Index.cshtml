@@ -1,0 +1,55 @@
+@model List<ProsegurGDT.Web.Models.VerificacionFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Verificación de descargo";
+    var pendientes = Model.Count(v => v.Estado == VerificacionDescargo.DerivadaAlBuscador);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Verificación de descargo</h1>
+        <p class="pg-subtitulo">@pendientes tarjetas derivadas por el Descargador esperan tu verificación física</p>
+    </div>
+    <a asp-controller="DireccionesFraudulentas" asp-action="Index" class="btn btn-outline-secondary">Registro de direcciones fraudulentas</a>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<p class="text-muted small">Revise el Registro de Direcciones Fraudulentas, localice la tarjeta física y confirme que coincide con los datos del sistema antes de que continúe su custodia (RN-13, RN-14).</p>
+
+@foreach (var v in Model)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+            <div>
+                <span class="fw-semibold">@v.Codigo</span> · Titular: @v.Cliente <span class="text-muted">(@v.Documento)</span>
+                <div class="text-muted small">@v.Direccion · Ruta de @v.Repartidor</div>
+                <div class="small mt-1">Receptor consignado en el cargo: <strong>@v.ReceptorNombre (@v.ReceptorDocumento)</strong></div>
+            </div>
+            <div><span class="pg-estado @(v.Estado == VerificacionDescargo.DerivadaAlBuscador ? "pg-estado-pendiente" : v.Estado == VerificacionDescargo.DiscrepanciaResuelta ? "pg-estado-entrega" : "pg-estado-riesgo")">@v.Estado.Texto()</span></div>
+        </div>
+        @if (v.Estado == VerificacionDescargo.DerivadaAlBuscador)
+        {
+            <form asp-action="Resolver" method="post" class="mt-2 d-flex flex-wrap gap-2 align-items-start">
+                <input type="hidden" name="Id" value="@v.DescargoTarjetaId" />
+                <input type="text" name="Observacion" class="form-control flex-grow-1" style="min-width:16rem" maxlength="300" placeholder="Resultado de la verificación física" required />
+                <button type="submit" name="Resuelta" value="true" class="btn btn-primary text-nowrap">Discrepancia resuelta</button>
+                <button type="submit" name="Resuelta" value="false" class="btn btn-outline-danger text-nowrap">No se pudo resolver</button>
+            </form>
+        }
+        else
+        {
+            <div class="small text-muted mt-2">@v.Observacion</div>
+        }
+    </div>
+}
+@if (Model.Count == 0)
+{
+    <div class="pg-tarjeta pg-bloque text-muted">No hay tarjetas derivadas. Aparecerán cuando el Descargador detecte que el receptor del cargo no coincide con el titular.</div>
+}

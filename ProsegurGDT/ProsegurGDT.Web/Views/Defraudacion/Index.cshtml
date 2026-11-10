@@ -1,0 +1,96 @@
+@model ProsegurGDT.Web.Models.DefraudacionIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Apartado de defraudación";
+    var porIngresar = Model.Actas.Count(a => a.Estado == EstadoActaFraude.Registrada);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Apartado de defraudación</h1>
+        <p class="pg-subtitulo">@Model.Actas.Count tarjetas en el acta de fraude · @porIngresar por ingresar a bóveda</p>
+    </div>
+    @if (Model.PuedeIngresar)
+    {
+        <a asp-action="Inventario" class="btn btn-outline-secondary">Inventario de bóveda</a>
+    }
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (Model.PuedeRegistrar)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <h2 class="h6 mb-2">Tarjetas por registrar en el acta</h2>
+        <p class="text-muted small">Discrepancias no resueltas por el Buscador y reportes de fraude del Verificador. Al registrarlas se apartan del flujo normal.</p>
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Detalle</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var c in Model.Candidatos)
+                {
+                    <tr>
+                        <td class="fw-semibold">@c.Codigo</td>
+                        <td>@c.Cliente</td>
+                        <td>@c.Origen.Texto()</td>
+                        <td class="small">@c.Detalle</td>
+                        <td class="text-end">
+                            <form asp-action="Registrar" method="post" onsubmit="return confirm('¿Registrar la tarjeta en el acta de fraude? Se apartará del flujo normal.');">
+                                <input type="hidden" name="TarjetaId" value="@c.TarjetaId" />
+                                <input type="hidden" name="Origen" value="@c.Origen" />
+                                <input type="hidden" name="ReporteFraudeId" value="@c.ReporteFraudeId" />
+                                <button type="submit" class="btn btn-sm btn-danger text-nowrap">Registrar en acta</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Candidatos.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-3">No hay tarjetas pendientes de registrar.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Descripción</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Actas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@a.Codigo</td>
+                        <td>@a.Cliente</td>
+                        <td>@a.Origen.Texto()</td>
+                        <td class="small">@a.Descripcion</td>
+                        <td>
+                            <span class="pg-estado @(a.Estado == EstadoActaFraude.Registrada ? "pg-estado-riesgo" : "pg-estado-custodia")">@a.Estado.Texto()</span>
+                            @if (a.Ubicacion is not null) { <div class="small text-muted">@a.Ubicacion · @HoraLima.Convertir(a.FechaIngreso!.Value).ToString("dd/MM/yyyy HH:mm")</div> }
+                        </td>
+                        <td class="text-end">
+                            @if (Model.PuedeIngresar && a.Estado == EstadoActaFraude.Registrada)
+                            {
+                                <form asp-action="Ingresar" method="post" class="d-flex gap-2">
+                                    <input type="hidden" name="Id" value="@a.Id" />
+                                    <input type="text" name="Ubicacion" class="form-control form-control-sm" style="min-width:9rem" maxlength="120" placeholder="Ubicación en bóveda" required />
+                                    <button type="submit" class="btn btn-sm btn-primary text-nowrap">Ingresar a bóveda</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Actas.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">El acta de fraude está vacía.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

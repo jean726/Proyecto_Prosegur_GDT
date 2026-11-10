@@ -1,0 +1,73 @@
+@model ProsegurGDT.Web.Models.ReportesDescargoIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reportes de descargo";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reportes de descargo</h1>
+        <p class="pg-subtitulo">Al cierre de cada jornada: primero el reporte de entregas y después el de descargo, que se deriva al banco emisor</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Jornada</th><th class="text-end">Rutas cerradas</th><th class="text-end">Documentación organizada</th><th>Reporte de entregas</th><th>Reporte de descargo</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var j in Model.Jornadas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@j.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">@j.Cerradas / @j.Rutas</td>
+                        <td class="text-end">@j.Organizadas / @j.Rutas</td>
+                        <td>
+                            @if (j.ReporteEntregasId is not null)
+                            {
+                                <a asp-action="Detalle" asp-route-id="@j.ReporteEntregasId" class="btn btn-sm btn-outline-secondary">Ver</a>
+                            }
+                            else
+                            {
+                                <form asp-action="Generar" method="post" class="d-inline">
+                                    <input type="hidden" name="fecha" value="@j.Fecha.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="tipo" value="@TipoReporteDescargo.Entregas" />
+                                    <button type="submit" class="btn btn-sm btn-primary" disabled="@(!j.TodasCerradas)">Generar</button>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            @if (j.ReporteDescargoId is not null)
+                            {
+                                <span class="pg-estado @(j.EstadoDescargo == EstadoReporteDescargo.Derivado ? "pg-estado-entrega" : "pg-estado-pendiente")">@j.EstadoDescargo!.Value.Texto()</span>
+                                <a asp-action="Detalle" asp-route-id="@j.ReporteDescargoId" class="btn btn-sm btn-outline-secondary ms-1">Ver</a>
+                            }
+                            else
+                            {
+                                <form asp-action="Generar" method="post" class="d-inline">
+                                    <input type="hidden" name="fecha" value="@j.Fecha.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="tipo" value="@TipoReporteDescargo.Descargo" />
+                                    <button type="submit" class="btn btn-sm btn-primary" disabled="@(!j.TodasCerradas || j.ReporteEntregasId is null)">Generar</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Jornadas.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No hay jornadas con hojas de ruta para descargar.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

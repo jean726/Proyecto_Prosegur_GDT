@@ -73,6 +73,10 @@ builder.Services.AddScoped<IFaltantesService, FaltantesService>();
 builder.Services.AddScoped<IHojaRutaService, HojaRutaService>();
 builder.Services.AddScoped<IFraudeService, FraudeService>();
 builder.Services.AddScoped<IReporteEntregasService, ReporteEntregasService>();
+// Fase 9 — Descargo
+builder.Services.AddScoped<IDescargoService, DescargoService>();
+builder.Services.AddScoped<IDefraudacionService, DefraudacionService>();
+builder.Services.AddScoped<IReportesDescargoService, ReportesDescargoService>();
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();

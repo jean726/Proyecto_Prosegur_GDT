@@ -1,0 +1,92 @@
+@model ProsegurGDT.Web.Models.DetalleReporteDescargoVM
+@using ProsegurGDT.Web.Domain
+@{
+    var esDescargo = Model.Tipo == TipoReporteDescargo.Descargo;
+    ViewData["Title"] = esDescargo ? "Reporte de descargo" : "Reporte de entregas";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>@(esDescargo ? "Reporte de descargo" : "Reporte de entregas") — @Model.Fecha.ToString("dd/MM/yyyy")</h1>
+        <p class="pg-subtitulo">Generado por @Model.GeneradoPor el @HoraLima.Convertir(Model.FechaGeneracion).ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Asignadas</small><strong>@Model.Asignadas</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Entregadas</small><strong>@Model.Entregadas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Devueltas</small><strong>@Model.Devueltas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>En custodia</small><strong>@Model.EnCustodia</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Incidencias</small><strong>@Model.Incidencias</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Fraude</small><strong>@Model.Fraude</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla mb-3">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Asignadas</th><th class="text-end">Entregadas</th><th class="text-end">Devueltas</th><th class="text-end">En custodia</th><th class="text-end">Incidencias</th><th class="text-end">Fraude</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Lineas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@l.Repartidor</td>
+                        <td>@l.Sector</td>
+                        <td class="text-end">@l.Asignadas</td>
+                        <td class="text-end">@l.Entregadas</td>
+                        <td class="text-end">@l.Devueltas</td>
+                        <td class="text-end">@l.EnCustodia</td>
+                        <td class="text-end">@l.Incidencias</td>
+                        <td class="text-end">@l.Fraude</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (esDescargo)
+{
+    @if (Model.NoEntregadas.Count > 0)
+    {
+        <div class="pg-tarjeta pg-bloque mb-3">
+            <h2 class="h6 mb-2">Tarjetas no entregadas y sus motivos</h2>
+            <table class="table mb-0">
+                <thead><tr><th>Tarjeta</th><th>Titular</th><th>Resultado</th><th>Motivo</th><th>Detalle</th></tr></thead>
+                <tbody>
+                    @foreach (var n in Model.NoEntregadas)
+                    {
+                        <tr><td class="fw-semibold">@n.Codigo</td><td>@n.Cliente</td><td>@n.Resultado</td><td>@n.Motivo</td><td>@n.Detalle</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="pg-tarjeta pg-bloque">
+        <h2 class="h6 mb-2">Derivación al banco emisor (CU14)</h2>
+        @if (Model.Estado == EstadoReporteDescargo.Derivado)
+        {
+            <span class="pg-estado pg-estado-entrega">Derivado</span>
+            <div class="text-muted small mt-2">Enviado a @Model.BancoDestino por @Model.DerivadoPor el @HoraLima.Convertir(Model.FechaDerivacion!.Value).ToString("dd/MM/yyyy HH:mm") para la activación de las tarjetas entregadas.</div>
+        }
+        else
+        {
+            <p class="text-muted small">Al cierre de la jornada, derive el reporte consolidado para que el banco active las tarjetas efectivamente entregadas. No puede deshacerse.</p>
+            <form asp-action="Derivar" asp-route-id="@Model.Id" method="post" class="no-imprimir" onsubmit="return confirm('¿Derivar el reporte de descargo al banco emisor?');">
+                <button type="submit" class="btn btn-primary">Derivar al banco</button>
+            </form>
+        }
+    </div>
+}
