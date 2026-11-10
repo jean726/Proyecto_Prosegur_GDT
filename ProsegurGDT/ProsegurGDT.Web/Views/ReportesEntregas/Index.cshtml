@@ -1,0 +1,77 @@
+@model ProsegurGDT.Web.Models.ReportesEntregasIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reporte de entregas";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reporte de entregas</h1>
+        <p class="pg-subtitulo">@Model.Reportes.Count reportes · @Model.Jornadas.Count jornadas listas para diseñar</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (Model.Jornadas.Count > 0)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <h2 class="h6 mb-2">Jornadas con hojas de ruta aprobadas</h2>
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Jornada</th><th class="text-end">Hojas aprobadas</th><th class="text-end">Hojas pendientes</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var j in Model.Jornadas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@j.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">@j.HojasListas</td>
+                        <td class="text-end">@j.HojasPendientes</td>
+                        <td class="text-end">
+                            <form asp-action="Crear" method="post" class="d-inline">
+                                <input type="hidden" name="fecha" value="@j.Fecha.ToString("yyyy-MM-dd")" />
+                                <button type="submit" class="btn btn-sm btn-primary">Diseñar reporte</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Jornada</th><th class="text-end">Asignadas</th><th class="text-end">Entregadas</th><th class="text-end">Devueltas</th><th class="text-end">Incidencias</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Reportes)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">@r.Asignadas</td>
+                        <td class="text-end">@r.Entregadas</td>
+                        <td class="text-end">@r.Devueltas</td>
+                        <td class="text-end">@r.Incidencias</td>
+                        <td>
+                            <span class="pg-estado @(r.Estado == EstadoReporteEntregas.Remitido ? "pg-estado-entrega" : "pg-estado-pendiente")">@r.Estado.Texto()</span>
+                            @if (r.FechaRemision is not null) { <div class="text-muted small">@HoraLima.Convertir(r.FechaRemision.Value).ToString("dd/MM/yyyy HH:mm")</div> }
+                        </td>
+                        <td class="text-end"><a asp-action="Detalle" asp-route-id="@r.Id" class="btn btn-sm @(r.Estado == EstadoReporteEntregas.Borrador ? "btn-primary" : "btn-outline-secondary")">@(r.Estado == EstadoReporteEntregas.Borrador ? "Abrir" : "Ver")</a></td>
+                    </tr>
+                }
+                @if (Model.Reportes.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Aún no hay reportes. Apruebe hojas de ruta para poder diseñar el reporte de la jornada.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

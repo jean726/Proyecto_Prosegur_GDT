@@ -10,6 +10,7 @@ public static class MenuCatalogo
         new("Fichas de clientes", "Clientes", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, true),
         new("Citas con clientes", "Citas", "Index", new[] { Roles.AuxiliarTelefonista }, true),
         new("Hojas de ruta", "HojasRuta", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, true),
+        new("Reporte de entregas", "ReportesEntregas", "Index", new[] { Roles.Supervisor }, true),
         new("Reportes de fraude", "Fraude", "Index", new[] { Roles.Verificador }, true),
         new("Descargo de tarjetas", "Descargo", "Index", new[] { Roles.Descargador }, false),
         new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, true),

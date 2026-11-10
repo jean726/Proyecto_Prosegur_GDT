@@ -1,0 +1,89 @@
+@model ProsegurGDT.Web.Models.DetalleReporteEntregasVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reporte de entregas";
+    var remitido = Model.Estado == EstadoReporteEntregas.Remitido;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reporte de entregas — @Model.Fecha.ToString("dd/MM/yyyy")</h1>
+        <p class="pg-subtitulo">Generado por @Model.GeneradoPor · actualizado @HoraLima.Convertir(Model.FechaActualizacion).ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Asignadas</small><strong>@Model.Asignadas</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Entregadas</small><strong>@Model.Entregadas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Devueltas</small><strong>@Model.Devueltas</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Incidencias</small><strong>@Model.Incidencias</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Sin resultado aún</small><strong>@Model.Pendientes</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <span class="pg-estado @(remitido ? "pg-estado-entrega" : "pg-estado-pendiente")">@Model.Estado.Texto()</span>
+    @if (remitido)
+    {
+        <div class="text-muted small mt-2">Remitido al área de Descargo por @Model.RemitidoPor el @HoraLima.Convertir(Model.FechaRemision!.Value).ToString("dd/MM/yyyy HH:mm"). Ya no puede modificarse.</div>
+        @if (Model.Observacion is not null) { <div class="mt-2"><strong>Observación:</strong> @Model.Observacion</div> }
+    }
+    else
+    {
+        @if (Model.HojasPendientesJornada > 0)
+        {
+            <div class="alert alert-warning mt-3 mb-0">@Model.HojasPendientesJornada hoja(s) de ruta de esta jornada aún no están aprobadas y no se incluyen en el reporte.</div>
+        }
+        <form asp-action="Actualizar" method="post" class="mt-3 no-imprimir">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <label class="form-label" for="Observacion">Observación del Supervisor</label>
+            <textarea id="Observacion" name="Observacion" class="form-control mb-2" rows="2" maxlength="400">@Model.Observacion</textarea>
+            <button type="submit" class="btn btn-outline-primary">Guardar y actualizar datos</button>
+        </form>
+        <div class="small text-muted mt-2">Los resultados de entrega los registra el Descargador. Actualice el reporte para reflejar el estado más reciente de las tarjetas.</div>
+    }
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla mb-3">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Asignadas</th><th class="text-end">Entregadas</th><th class="text-end">Devueltas</th><th class="text-end">Incidencias</th><th class="text-end">Sin resultado</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Lineas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@l.Repartidor</td>
+                        <td>@l.Sector</td>
+                        <td class="text-end">@l.Asignadas</td>
+                        <td class="text-end">@l.Entregadas</td>
+                        <td class="text-end">@l.Devueltas</td>
+                        <td class="text-end">@l.Incidencias</td>
+                        <td class="text-end">@l.Pendientes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (!remitido)
+{
+    <div class="pg-tarjeta pg-bloque no-imprimir">
+        <h2 class="h6 mb-2">Remitir al área de Descargo (CU08)</h2>
+        <p class="text-muted small">Al cierre de la jornada, remita el reporte consolidado. Se congelan los totales con los datos actuales y el Descargador lo recibe para iniciar el Descargo.</p>
+        <form asp-action="Remitir" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('¿Remitir el reporte de entregas al área de Descargo? Ya no podrá modificarse.');">
+            <button type="submit" class="btn btn-primary">Remitir reporte de entregas</button>
+        </form>
+    </div>
+}
