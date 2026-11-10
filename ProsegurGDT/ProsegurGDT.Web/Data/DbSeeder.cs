@@ -128,7 +128,14 @@ public static class DbSeeder
                 await riesgo.AgregarAsync("Calle Berlin 117, Miraflores", motivo, adminDemo.Id, true, "Demo");         // numeración distinta
             }
         }
+
+        if (cargarDemo)
+            await DbSeederLoteDemo.SembrarAsync(sp, sp.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder"));
     }
+
+    // Nombre legible del rol: «AuxiliarTelefonista» → «Auxiliar Telefonista», «EncargadoDeBoveda» → «Encargado de Bóveda»
+    private static string Texto(this string rol) =>
+        System.Text.RegularExpressions.Regex.Replace(rol, "(?<!^)([A-Z])", " $1").Replace(" De ", " de ").Replace("Boveda", "Bóveda");
 
     private static async Task CrearUsuariosDemoAsync(IServiceProvider sp)
     {
@@ -136,13 +143,23 @@ public static class DbSeeder
         foreach (var rol in Roles.Todos.Where(r => r != Roles.Administrador))
         {
             var email = $"{rol.ToLowerInvariant()}@gdt.local";
-            if (await um.FindByEmailAsync(email) is not null) continue;
+            var existente = await um.FindByEmailAsync(email);
+            if (existente is not null)
+            {
+                // Las cuentas creadas antes se llamaban «Demo {rol}» (o «Demo - {rol}»): se deja solo el nombre del rol
+                if (existente.NombreCompleto.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
+                {
+                    existente.NombreCompleto = rol.Texto();
+                    await um.UpdateAsync(existente);
+                }
+                continue;
+            }
             var u = new ApplicationUser
             {
                 UserName = email,
                 Email = email,
                 EmailConfirmed = true,
-                NombreCompleto = $"Demo {rol}",
+                NombreCompleto = rol.Texto(),
                 Activo = true
             };
             var r = await um.CreateAsync(u, "<clave-demo>");

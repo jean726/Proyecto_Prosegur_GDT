@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
 using ProsegurGDT.Web.Models;
+using ProsegurGDT.Web.Services;
 
 namespace ProsegurGDT.Web.Controllers;
 
@@ -13,11 +14,13 @@ public class LotesController : Controller
 {
     private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _users;
+    private readonly IAuditoriaService _audit;
 
-    public LotesController(ApplicationDbContext db, UserManager<ApplicationUser> users)
+    public LotesController(ApplicationDbContext db, UserManager<ApplicationUser> users, IAuditoriaService audit)
     {
         _db = db;
         _users = users;
+        _audit = audit;
     }
 
     public async Task<IActionResult> Index()
@@ -107,6 +110,9 @@ public class LotesController : Controller
         };
         _db.Lotes.Add(lote);
         await _db.SaveChangesAsync();
+
+        await _audit.RegistrarAsync("RegistrarLote", "Lote", lote.Id.ToString(),
+            $"Remito {remito.Numero}: declaradas {remito.CantidadDeclarada}, contadas {vm.CantidadContada}, {(coincide ? "ingresado en custodia" : "discrepancia")}");
 
         if (coincide)
         {

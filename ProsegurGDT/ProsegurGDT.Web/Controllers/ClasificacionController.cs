@@ -45,13 +45,21 @@ public class ClasificacionController : Controller
         return View(filas);
     }
 
-    // Paso 1 de CU15: el sistema consulta el registro (CU16/CU28) y carga las alertas del lote
+    // Paso 1 de CU15: el sistema consulta el registro (CU16) y genera las alertas del lote.
+    // Escribe en la base de datos, por eso es POST; después redirige al GET, que solo lee.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Evaluar(int id)
+    {
+        if (!await _db.Lotes.AnyAsync(l => l.Id == id)) return NotFound();
+        await _riesgo.EvaluarLoteAsync(id);
+        return RedirectToAction(nameof(Clasificar), new { id });
+    }
+
     [HttpGet]
     public async Task<IActionResult> Clasificar(int id)
     {
         var lote = await _db.Lotes.Include(l => l.Remito).FirstOrDefaultAsync(l => l.Id == id);
         if (lote is null) return NotFound();
-        await _riesgo.EvaluarLoteAsync(id);
         return View(await ConstruirAsync(lote, null, false));
     }
 
