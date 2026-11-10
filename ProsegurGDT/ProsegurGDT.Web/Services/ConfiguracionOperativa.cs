@@ -17,8 +17,8 @@ public sealed class ConfiguracionOperativa : IConfiguracionOperativa
     public ConfiguracionOperativa(IConfiguration cfg)
     {
         MaxIntentosContacto = Math.Max(1, cfg.GetValue<int?>("Contacto:MaxIntentos") ?? 3);
-        UmbralMedio = cfg.GetValue<double?>("IA:UmbralMedio") ?? 0.80;
-        UmbralAlto = cfg.GetValue<double?>("IA:UmbralAlto") ?? 0.92;
+        UmbralMedio = cfg.GetValue<double?>("IA:UmbralMedio") ?? 0.60;
+        UmbralAlto = cfg.GetValue<double?>("IA:UmbralAlto") ?? 0.90;
 
         if (UmbralMedio is <= 0 or >= 1 || UmbralAlto <= UmbralMedio || UmbralAlto > 1)
             throw new InvalidOperationException(
