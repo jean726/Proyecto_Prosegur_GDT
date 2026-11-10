@@ -40,6 +40,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ReporteEntregas> ReportesEntregas => Set<ReporteEntregas>();
     public DbSet<ReporteEntregasLinea> ReportesEntregasLineas => Set<ReporteEntregasLinea>();
 
+    // Fase 9 — Descargo
+    public DbSet<DescargoRuta> DescargosRuta => Set<DescargoRuta>();
+    public DbSet<DescargoTarjeta> DescargosTarjeta => Set<DescargoTarjeta>();
+    public DbSet<ActaFraude> ActasFraude => Set<ActaFraude>();
+    public DbSet<ReporteDescargo> ReportesDescargo => Set<ReporteDescargo>();
+    public DbSet<ReporteDescargoLinea> ReportesDescargoLineas => Set<ReporteDescargoLinea>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
@@ -93,6 +100,22 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<ReporteEntregas>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
         b.Entity<ReporteEntregas>().HasIndex(x => x.FechaJornada).IsUnique();
         b.Entity<ReporteEntregasLinea>().HasIndex(x => new { x.ReporteEntregasId, x.HojaRutaId }).IsUnique();
+
+        // Fase 9 — Descargo
+        b.Entity<DescargoRuta>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<DescargoRuta>().HasIndex(x => x.HojaRutaId).IsUnique();
+        b.Entity<DescargoTarjeta>().Property(x => x.Resultado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<DescargoTarjeta>().Property(x => x.Verificacion).HasConversion<string>().HasMaxLength(40);
+        b.Entity<DescargoTarjeta>().Property(x => x.Motivo).HasConversion<string>().HasMaxLength(40);
+        b.Entity<DescargoTarjeta>().HasIndex(x => x.TarjetaId).IsUnique();
+        b.Entity<ActaFraude>().Property(x => x.Origen).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ActaFraude>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ActaFraude>().HasIndex(x => x.TarjetaId).IsUnique();
+        b.Entity<ReporteDescargo>().Property(x => x.Tipo).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ReporteDescargo>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ReporteDescargo>().HasIndex(x => new { x.FechaJornada, x.Tipo }).IsUnique();
+        b.Entity<ReporteDescargoLinea>().HasIndex(x => new { x.ReporteDescargoId, x.DescargoRutaId }).IsUnique();
+
 
         // Cadena de custodia: nada se borra en cascada (evita además errores de "multiple cascade paths")
         foreach (var fk in b.Model.GetEntityTypes()
