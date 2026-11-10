@@ -1,0 +1,83 @@
+@model IEnumerable<ProsegurGDT.Web.Models.LoteConciliacionFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Conciliación de tarjetas";
+    var total = Model.Count();
+    var pendientes = Model.Count(f => f.Pendiente);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Conciliación de tarjetas</h1>
+        <p class="pg-subtitulo">@(total == 0 ? "Aún no hay lotes con hoja de asignación" : $"{total} lotes con hoja · {pendientes} pendientes de conciliar")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Remito / Banco</th>
+                    <th class="text-end">Tarjetas en hoja</th>
+                    <th>Conciliación</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(f.CodigoHojaControl ?? "Sin hoja")</td>
+                        <td>
+                            <div class="fw-medium">@(f.Remito ?? "—")</div>
+                            <div class="text-muted small">@(f.Banco ?? "—")</div>
+                        </td>
+                        <td class="text-end">@f.TotalHoja</td>
+                        <td>
+                            @if (f.Pendiente)
+                            {
+                                <span class="pg-estado pg-estado-pendiente">Pendiente</span>
+                            }
+                            else
+                            {
+                                <span class="pg-estado @(f.Estado == EstadoConciliacion.Consistente ? "pg-estado-entrega" : "pg-estado-riesgo")">@f.Estado!.Value.Texto()</span>
+                                <div class="text-muted small">
+                                    @HoraLima.Convertir(f.FechaVerificacion!.Value).ToString("dd/MM/yyyy HH:mm")
+                                    @if (f.Incidencias > 0) { <text> · @f.Incidencias incidencias</text> }
+                                </div>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (f.Pendiente)
+                            {
+                                <a asp-action="Verificar" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Verificar lote</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Detalle" asp-route-id="@f.ConciliacionId" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                @if (f.PuedeReconciliar)
+                                {
+                                    <a asp-action="Verificar" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Volver a verificar</a>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">El Analista de Rutas debe generar primero la hoja de asignación de un lote.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -207,3 +207,72 @@ public class DetalleHojaVM
     public List<RutaHojaVM> Rutas { get; set; } = new();
     public List<(string Zona, int Cantidad)> Postergadas { get; set; } = new();
 }
+
+// ---------- CU20 — Conciliación de tarjetas ----------
+
+public class LoteConciliacionFilaVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public int HojaId { get; set; }
+    public int TotalHoja { get; set; }
+    public int? ConciliacionId { get; set; }
+    public EstadoConciliacion? Estado { get; set; }
+    public DateTime? FechaVerificacion { get; set; }
+    public int Incidencias { get; set; }
+
+    public bool Pendiente => Estado is null;
+    public bool PuedeReconciliar => Estado == EstadoConciliacion.ConFaltantes;
+}
+
+public class VerificarConciliacionVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+
+    [Required(ErrorMessage = "Ingrese los códigos de las tarjetas contadas físicamente.")]
+    public string? CodigosFisicos { get; set; }
+
+    // Solo para mostrar (no se enlazan desde el formulario)
+    public int CantidadFicha { get; set; }
+    public int CantidadPlanilla { get; set; }
+    public int CantidadHoja { get; set; }
+    public List<string> CodigosEsperados { get; set; } = new();
+    public string? Bloqueo { get; set; }
+    public List<string> Errores { get; set; } = new();
+}
+
+public class IncidenciaConciliacionVM
+{
+    public string Codigo { get; set; } = "—";
+    public string Cliente { get; set; } = "—";
+    public TipoIncidencia Tipo { get; set; }
+    public EstadoIncidencia Estado { get; set; }
+    public string? Ubicacion { get; set; }
+}
+
+public class DetalleConciliacionVM
+{
+    public int ConciliacionId { get; set; }
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public int HojaId { get; set; }
+    public string VerificadaPor { get; set; } = "—";
+    public DateTime FechaVerificacion { get; set; }
+    public int CantidadFicha { get; set; }
+    public int CantidadPlanilla { get; set; }
+    public int CantidadHoja { get; set; }
+    public int CantidadFisica { get; set; }
+    public int Faltantes { get; set; }
+    public int Duplicados { get; set; }
+    public int Discrepancias { get; set; }
+    public EstadoConciliacion Estado { get; set; }
+    public bool EsUltima { get; set; }
+    public List<IncidenciaConciliacionVM> Incidencias { get; set; } = new();
+}

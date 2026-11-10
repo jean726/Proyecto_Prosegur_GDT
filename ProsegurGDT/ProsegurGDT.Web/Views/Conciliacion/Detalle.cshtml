@@ -1,0 +1,71 @@
+@model ProsegurGDT.Web.Models.DetalleConciliacionVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Conciliación";
+    var consistente = Model.Estado == EstadoConciliacion.Consistente;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Conciliación de tarjetas</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        @if (!consistente && Model.EsUltima)
+        {
+            <a asp-action="Verificar" asp-route-id="@Model.LoteId" class="btn btn-primary">Volver a verificar</a>
+        }
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica"><small>Ficha</small><strong>@Model.CantidadFicha</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Planilla</small><strong>@Model.CantidadPlanilla</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Hoja</small><strong>@Model.CantidadHoja</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Físicas</small><strong>@Model.CantidadFisica</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Faltantes</small><strong>@Model.Faltantes</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Duplicados</small><strong>@Model.Duplicados</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <span class="pg-estado @(consistente ? "pg-estado-entrega" : "pg-estado-riesgo")">@Model.Estado.Texto()</span>
+    <div class="text-muted small mt-2">
+        Verificada por @Model.VerificadaPor el @HoraLima.Convertir(Model.FechaVerificacion).ToString("dd/MM/yyyy HH:mm")
+        @if (!Model.EsUltima) { <text> · Esta no es la verificación vigente del lote.</text> }
+    </div>
+    @if (consistente)
+    {
+        <div class="mt-2">La cantidad física coincide con la ficha, la planilla y la hoja de asignación. El lote puede continuar a la consolidación y rotulado de paquetes.</div>
+    }
+    else if (Model.EsUltima)
+    {
+        <div class="mt-2">El lote no puede pasar a consolidación y rotulado hasta resolver las incidencias (RN-24). El Buscador las localiza y luego se vuelve a verificar.</div>
+    }
+</div>
+
+@if (Model.Incidencias.Count > 0)
+{
+    <div class="pg-tarjeta pg-tarjeta-tabla">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Tipo</th><th>Tarjeta</th><th>Cliente</th><th>Estado</th></tr></thead>
+                <tbody>
+                    @foreach (var i in Model.Incidencias)
+                    {
+                        <tr>
+                            <td><span class="pg-estado pg-estado-riesgo">@i.Tipo.Texto()</span></td>
+                            <td class="fw-semibold">@i.Codigo</td>
+                            <td>@i.Cliente</td>
+                            <td>@i.Estado.Texto()@(i.Ubicacion is null ? "" : " · " + i.Ubicacion)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

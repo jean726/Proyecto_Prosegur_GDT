@@ -67,6 +67,7 @@ builder.Services.AddScoped<IImportadorFichaService, ImportadorFichaService>();
 builder.Services.AddScoped<IPlanillaArmadoService, PlanillaArmadoService>();
 builder.Services.AddScoped<IDensidadService, DensidadService>();
 builder.Services.AddScoped<IAsignacionService, AsignacionService>();
+builder.Services.AddScoped<IConciliacionService, ConciliacionService>();
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();

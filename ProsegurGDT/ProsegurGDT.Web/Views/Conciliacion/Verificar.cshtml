@@ -1,0 +1,57 @@
+@model ProsegurGDT.Web.Models.VerificarConciliacionVM
+@{
+    ViewData["Title"] = "Verificar lote";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Verificar consistencia del lote</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+@if (Model.Bloqueo is not null)
+{
+    <div class="alert alert-warning">@Model.Bloqueo</div>
+}
+@foreach (var e in Model.Errores)
+{
+    <div class="alert alert-danger">@e</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica"><small>Ficha de clientes</small><strong>@Model.CantidadFicha</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Planilla de armado</small><strong>@Model.CantidadPlanilla</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hoja de asignación</small><strong>@Model.CantidadHoja</strong></div>
+</div>
+
+@if (Model.Bloqueo is null)
+{
+    <form asp-action="Verificar" method="post" class="pg-tarjeta pg-bloque">
+        <input type="hidden" asp-for="LoteId" />
+        <div class="mb-3">
+            <label asp-for="CodigosFisicos" class="form-label fw-semibold">Códigos de las tarjetas contadas físicamente</label>
+            <textarea asp-for="CodigosFisicos" id="codigos" class="form-control font-monospace" rows="12"
+                      placeholder="Un código por línea"></textarea>
+            <span asp-validation-for="CodigosFisicos" class="text-danger"></span>
+            <div class="form-text">
+                Ingrese un código por línea (o separados por coma). Se cruzan contra las @Model.CantidadHoja tarjetas de la hoja de asignación:
+                las que no aparezcan serán <strong>faltantes</strong>, las repetidas <strong>duplicadas</strong> y las ajenas a la hoja <strong>discrepancias</strong>.
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Verificar lote</button>
+            <button type="button" class="btn btn-outline-secondary" id="cargar-esperados">Cargar los códigos de la hoja</button>
+        </div>
+    </form>
+
+    <script>
+        (function () {
+            var esperados = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CodigosEsperados));
+            var boton = document.getElementById('cargar-esperados');
+            if (boton) boton.addEventListener('click', function () {
+                document.getElementById('codigos').value = esperados.join('\n');
+            });
+        })();
+    </script>
+}
