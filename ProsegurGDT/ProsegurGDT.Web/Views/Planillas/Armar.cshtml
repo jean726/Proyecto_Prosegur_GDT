@@ -1,0 +1,96 @@
+@model ProsegurGDT.Web.Models.ArmarPlanillaVM
+@{
+    ViewData["Title"] = "Armar planilla";
+    var bloqueado = Model.Bloqueo is not null;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>@(Model.PlanillaId is null ? "Armar planilla de ruta" : "Modificar planilla de ruta")</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (Model.Errores.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var e in Model.Errores)
+            {
+                <li>@e</li>
+            }
+        </ul>
+    </div>
+}
+@if (bloqueado)
+{
+    <div class="pg-aviso">@Model.Bloqueo</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas a planificar</small><strong>@Model.TotalTarjetas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Zonas</small><strong>@Model.Zonas.Count</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Apartadas por fraude</small><strong>@Model.Excluidas</strong></div>
+</div>
+
+@if (!bloqueado)
+{
+    <form asp-action="Armar" method="post">
+        <input type="hidden" name="LoteId" value="@Model.LoteId" />
+        <div class="pg-tarjeta pg-tarjeta-tabla">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Zona</th>
+                            <th class="text-end">Tarjetas</th>
+                            <th>Tipo de repartidor</th>
+                            <th style="width:130px">Orden de visita</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Zonas.Count; i++)
+                        {
+                            <tr>
+                                <td class="fw-semibold">
+                                    @Model.Zonas[i].ZonaNombre
+                                    <input type="hidden" name="Zonas[@i].ZonaId" value="@Model.Zonas[i].ZonaId" />
+                                </td>
+                                <td class="text-end">@Model.Zonas[i].CantidadTarjetas</td>
+                                <td>
+                                    <select asp-for="Zonas[i].TipoRepartidorRequerido" class="form-select form-select-sm"
+                                            asp-items="Html.GetEnumSelectList<ProsegurGDT.Web.Domain.TipoRepartidorRequerido>()"
+                                            aria-label="Tipo de repartidor para @Model.Zonas[i].ZonaNombre">
+                                    </select>
+                                </td>
+                                <td>
+                                    <input name="Zonas[@i].OrdenVisita" type="number" min="1" max="999" class="form-control form-control-sm"
+                                           value="@Model.Zonas[i].OrdenVisita" aria-label="Orden de visita de @Model.Zonas[i].ZonaNombre" />
+                                </td>
+                                <td>
+                                    <input name="Zonas[@i].Observacion" maxlength="300" class="form-control form-control-sm"
+                                           value="@Model.Zonas[i].Observacion" aria-label="Observación de @Model.Zonas[i].ZonaNombre" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="pg-tarjeta pg-bloque mt-3">
+            <label for="Observacion" class="form-label fw-semibold">Observación general (opcional)</label>
+            <textarea id="Observacion" name="Observacion" maxlength="300" rows="2" class="form-control">@Model.Observacion</textarea>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary">Guardar planilla</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+}

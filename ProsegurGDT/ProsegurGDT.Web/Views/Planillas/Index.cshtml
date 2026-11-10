@@ -1,0 +1,96 @@
+@model IEnumerable<ProsegurGDT.Web.Models.LotePlanillaFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Planilla de armado";
+    var total = Model.Count();
+    var listas = Model.Count(f => f.ListaParaArmar);
+    var generadas = Model.Count(f => f.PlanillaId != null);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Planilla de armado de ruta</h1>
+        <p class="pg-subtitulo">@(total == 0 ? "Sin lotes con ficha de clientes" : $"{total} lotes · {listas} listos para armar · {generadas} con planilla")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Remito / Banco</th>
+                    <th class="text-end">Tarjetas</th>
+                    <th class="text-end">Sin zona</th>
+                    <th class="text-end">Con alerta</th>
+                    <th class="text-end">Apartadas por fraude</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(f.CodigoHojaControl ?? "Sin hoja")</td>
+                        <td>
+                            <div class="fw-medium">@(f.Remito ?? "—")</div>
+                            <div class="text-muted small">@(f.Banco ?? "—")</div>
+                        </td>
+                        <td class="text-end">@f.Tarjetas</td>
+                        <td class="text-end">@if (f.SinZona > 0) { <span class="text-danger fw-semibold">@f.SinZona</span> } else { <span>0</span> }</td>
+                        <td class="text-end">@if (f.ConAlerta > 0) { <span class="text-danger fw-semibold">@f.ConAlerta</span> } else { <span>0</span> }</td>
+                        <td class="text-end">@f.Excluidas</td>
+                        <td>
+                            @if (f.PlanillaId != null)
+                            {
+                                <span class="pg-estado pg-estado-entrega">Planilla generada</span>
+                                <div class="text-muted small">@HoraLima.Convertir(f.FechaPlanilla!.Value).ToString("dd/MM/yyyy HH:mm")</div>
+                            }
+                            else if (f.ListaParaArmar)
+                            {
+                                <span class="pg-estado pg-estado-custodia">Lista para armar</span>
+                            }
+                            else
+                            {
+                                <span class="pg-estado pg-estado-pendiente">Bloqueada</span>
+                                <div class="text-muted small">@f.Bloqueo</div>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (f.PlanillaId != null)
+                            {
+                                <a asp-action="Detalle" asp-route-id="@f.PlanillaId" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                @if (!f.TieneReporte)
+                                {
+                                    <a asp-action="Armar" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Modificar</a>
+                                }
+                            }
+                            else if (f.ListaParaArmar)
+                            {
+                                <a asp-action="Armar" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Armar planilla</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Clasificacion" asp-action="Clasificar" asp-route-id="@f.LoteId" class="btn btn-sm btn-outline-secondary">Ir a clasificación</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No hay lotes con ficha de clientes.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

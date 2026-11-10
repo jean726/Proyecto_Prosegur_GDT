@@ -1,0 +1,66 @@
+@model ProsegurGDT.Web.Models.DetallePlanillaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Planilla de armado";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Planilla de armado de ruta</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        @if (!Model.TieneReporte)
+        {
+            <a asp-action="Armar" asp-route-id="@Model.LoteId" class="btn btn-primary">Modificar</a>
+        }
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (Model.TieneReporte)
+{
+    <div class="pg-aviso">El lote ya tiene reporte de densidad; la planilla ya no puede modificarse.</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas</small><strong>@Model.TotalTarjetas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Zonas</small><strong>@Model.Zonas.Count</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Apartadas por fraude</small><strong>@Model.Excluidas</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <div><span class="pg-estado pg-estado-entrega">@Model.Estado.Texto()</span></div>
+    <div class="text-muted small mt-2">
+        Generada por @Model.GeneradaPor el @HoraLima.Convertir(Model.FechaGeneracion).ToString("dd/MM/yyyy HH:mm")
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.Observacion))
+    {
+        <div class="mt-2">@Model.Observacion</div>
+    }
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Orden</th><th>Zona</th><th class="text-end">Tarjetas</th><th>Tipo de repartidor</th><th>Observación</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var z in Model.Zonas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@z.OrdenVisita</td>
+                        <td>@z.ZonaNombre</td>
+                        <td class="text-end">@z.CantidadTarjetas</td>
+                        <td>@z.TipoRepartidorRequerido.Texto()</td>
+                        <td>@(string.IsNullOrWhiteSpace(z.Observacion) ? "—" : z.Observacion)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
