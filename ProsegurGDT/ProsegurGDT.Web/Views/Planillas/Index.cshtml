@@ -81,7 +81,7 @@
                             }
                             else
                             {
-                                <a asp-controller="Clasificacion" asp-action="Clasificar" asp-route-id="@f.LoteId" class="btn btn-sm btn-outline-secondary">Ir a clasificación</a>
+                                <form asp-controller="Clasificacion" asp-action="Evaluar" asp-route-id="@f.LoteId" method="post" class="d-inline"><button type="submit" class="btn btn-sm btn-outline-secondary">Ir a clasificación</button></form>
                             }
                         </td>
                     </tr>
