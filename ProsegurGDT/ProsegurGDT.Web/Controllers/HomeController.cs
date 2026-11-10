@@ -47,8 +47,33 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.AnalistaDeRutas))
                 return View("IndexAnalista", await ConstruirDashboardAnalistaAsync());
 
+            if (User.IsInRole(Roles.Verificador))
+                return View("IndexVerificador", await ConstruirDashboardVerificadorAsync());
+
             return View();
         }
+
+        private async Task<DashboardVerificadorViewModel> ConstruirDashboardVerificadorAsync()
+        {
+            var revisables = new[] { EstadoHojaRuta.Aprobada, EstadoHojaRuta.Firmada };
+            var hoy = DateTime.UtcNow.AddHours(-36);
+            var recientes = await _db.ReportesFraude
+                .OrderByDescending(r => r.Id).Take(5)
+                .Select(r => new { r.Id, r.Tarjeta!.Codigo, r.Tipo, r.FechaHora })
+                .ToListAsync();
+            var fechas = await _db.ReportesFraude.Where(r => r.FechaHora >= hoy).Select(r => r.FechaHora).ToListAsync();
+            var hojasRevisables = _db.HojasRuta.Where(h => revisables.Contains(h.Estado));
+
+            return new DashboardVerificadorViewModel
+            {
+                HojasPorRevisar = await hojasRevisables.CountAsync(),
+                TarjetasEnRevision = await hojasRevisables.SumAsync(h => (int?)h.AsignacionRuta!.CantidadTarjetas) ?? 0,
+                ReportesTotal = await _db.ReportesFraude.CountAsync(),
+                ReportesHoy = fechas.Count(f => HoraLima.Convertir(f).Date == HoraLima.Ahora.Date),
+                Recientes = recientes.Select(r => new FilaReporteFraudeReciente(r.Id, r.Codigo, r.Tipo.Texto(), r.FechaHora)).ToList()
+            };
+        }
+
         private async Task<DashboardSupervisorViewModel> ConstruirDashboardSupervisorAsync()
         {
             var modelo = new DashboardSupervisorViewModel();

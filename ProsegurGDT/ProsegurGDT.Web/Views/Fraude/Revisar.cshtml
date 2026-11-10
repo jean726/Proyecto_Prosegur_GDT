@@ -1,0 +1,41 @@
+@model ProsegurGDT.Web.Models.RevisarHojaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Revisar hoja de ruta";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Revisión — @Model.Repartidor</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Sector @Model.Sector · Hoja @Model.Estado.Texto().ToLowerInvariant()</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var t in Model.Tarjetas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@t.Codigo</td>
+                        <td>@t.Cliente</td>
+                        <td>@t.Direccion</td>
+                        <td><span class="pg-estado pg-estado-@t.Estado.TonoEstado()">@t.Estado.TextoEstado()</span></td>
+                        <td class="text-end">
+                            @if (t.ReporteId is not null)
+                            {
+                                <a asp-action="Detalle" asp-route-id="@t.ReporteId" class="btn btn-sm btn-outline-secondary">Ver reporte</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Nuevo" asp-route-hojaRutaId="@Model.HojaRutaId" asp-route-tarjetaId="@t.TarjetaId" class="btn btn-sm btn-outline-danger">Reportar fraude</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

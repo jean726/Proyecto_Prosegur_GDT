@@ -1,0 +1,32 @@
+@model ProsegurGDT.Web.Models.DetalleReporteFraudeVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reporte de fraude";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reporte de fraude #@Model.Id</h1>
+        <p class="pg-subtitulo">Tarjeta @Model.Codigo · Lote @Model.CodigoHojaControl</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="pg-tarjeta pg-bloque">
+    <span class="pg-estado @(Model.Estado == EstadoReporteFraude.Generado ? "pg-estado-riesgo" : "pg-estado-entrega")">@Model.Estado.Texto()</span>
+    <dl class="row mt-3 mb-0">
+        <dt class="col-sm-3">Indicador</dt><dd class="col-sm-9">@Model.Tipo.Texto()</dd>
+        <dt class="col-sm-3">Descripción</dt><dd class="col-sm-9">@Model.Descripcion</dd>
+        <dt class="col-sm-3">Titular</dt><dd class="col-sm-9">@Model.Cliente (@Model.Documento)</dd>
+        <dt class="col-sm-3">Dirección</dt><dd class="col-sm-9">@Model.Direccion</dd>
+        <dt class="col-sm-3">Repartidor / sector</dt><dd class="col-sm-9">@Model.Repartidor · @Model.Sector</dd>
+        <dt class="col-sm-3">Generado por</dt><dd class="col-sm-9">@Model.Verificador · @HoraLima.Convertir(Model.FechaHora).ToString("dd/MM/yyyy HH:mm")</dd>
+    </dl>
+</div>

@@ -69,6 +69,9 @@ builder.Services.AddScoped<IDensidadService, DensidadService>();
 builder.Services.AddScoped<IAsignacionService, AsignacionService>();
 builder.Services.AddScoped<IConciliacionService, ConciliacionService>();
 builder.Services.AddScoped<IFaltantesService, FaltantesService>();
+// Fase 8 — Mensajería
+builder.Services.AddScoped<IHojaRutaService, HojaRutaService>();
+builder.Services.AddScoped<IFraudeService, FraudeService>();
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();

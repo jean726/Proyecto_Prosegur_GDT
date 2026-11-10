@@ -1,0 +1,68 @@
+@model ProsegurGDT.Web.Models.FraudeIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reportes de fraude";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reportes de fraude</h1>
+        <p class="pg-subtitulo">@Model.Hojas.Count hojas de ruta para revisar · @Model.Reportes.Count reportes generados</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <h2 class="h6 mb-2">Hojas de ruta aprobadas por revisar</h2>
+    <p class="text-muted small">Revise los cargos de entrega de cada hoja y genere un reporte cuando detecte anomalías o indicadores de fraude.</p>
+    <table class="table align-middle mb-0">
+        <thead><tr><th>Hoja de control</th><th>Repartidor</th><th>Sector</th><th class="text-end">Tarjetas</th><th class="text-end">Reportes</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var h in Model.Hojas)
+            {
+                <tr>
+                    <td class="fw-semibold">@(h.CodigoHojaControl ?? "—")</td>
+                    <td>@h.Repartidor</td>
+                    <td>@h.Sector</td>
+                    <td class="text-end">@h.Tarjetas</td>
+                    <td class="text-end">@h.Reportes</td>
+                    <td class="text-end"><a asp-action="Revisar" asp-route-id="@h.HojaRutaId" class="btn btn-sm btn-primary">Revisar</a></td>
+                </tr>
+            }
+            @if (Model.Hojas.Count == 0)
+            {
+                <tr><td colspan="6" class="text-center text-muted py-3">No hay hojas de ruta aprobadas todavía. El Supervisor debe aprobarlas primero.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>#</th><th>Tarjeta</th><th>Cliente</th><th>Repartidor</th><th>Indicador</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Reportes)
+                {
+                    <tr>
+                        <td>@r.Id</td>
+                        <td class="fw-semibold">@r.Codigo</td>
+                        <td>@r.Cliente</td>
+                        <td>@r.Repartidor</td>
+                        <td>@r.Tipo.Texto()</td>
+                        <td><span class="pg-estado @(r.Estado == EstadoReporteFraude.Generado ? "pg-estado-riesgo" : "pg-estado-entrega")">@r.Estado.Texto()</span></td>
+                        <td>@HoraLima.Convertir(r.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end"><a asp-action="Detalle" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+                    </tr>
+                }
+                @if (Model.Reportes.Count == 0)
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">Aún no se generó ningún reporte de fraude.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

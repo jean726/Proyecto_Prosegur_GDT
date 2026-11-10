@@ -1,0 +1,48 @@
+@model ProsegurGDT.Web.Models.NuevoReporteFraudeVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Nuevo reporte de fraude";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Generar reporte de fraude</h1>
+        <p class="pg-subtitulo">Tarjeta @Model.Codigo · Lote @Model.CodigoHojaControl</p>
+    </div>
+    <a asp-action="Revisar" asp-route-id="@Model.HojaRutaId" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger"><div asp-validation-summary="All"></div></div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <h2 class="h6 mb-2">Ficha del cliente (consulta del Verificador, RN-04)</h2>
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Titular</dt><dd class="col-sm-9">@Model.Cliente</dd>
+        <dt class="col-sm-3">Documento</dt><dd class="col-sm-9">@Model.Documento</dd>
+        <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">@(Model.Telefono ?? "—")</dd>
+        <dt class="col-sm-3">Dirección</dt><dd class="col-sm-9">@Model.Direccion</dd>
+        <dt class="col-sm-3">Cita</dt><dd class="col-sm-9">@(Model.CitaTexto ?? "—")</dd>
+        <dt class="col-sm-3">Repartidor / sector</dt><dd class="col-sm-9">@Model.Repartidor · @Model.Sector</dd>
+    </dl>
+</div>
+
+<form asp-action="Nuevo" method="post" class="pg-tarjeta pg-bloque">
+    <input type="hidden" asp-for="HojaRutaId" />
+    <input type="hidden" asp-for="TarjetaId" />
+    <div class="mb-3">
+        <label asp-for="Tipo" class="form-label">Indicador de fraude detectado</label>
+        <select asp-for="Tipo" class="form-select" asp-items="Html.GetEnumSelectList<TipoIndicadorFraude>()">
+            <option value="">Seleccione…</option>
+        </select>
+        <span asp-validation-for="Tipo" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Descripcion" class="form-label">Descripción de la irregularidad</label>
+        <textarea asp-for="Descripcion" class="form-control" rows="4" maxlength="500"></textarea>
+        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+    </div>
+    <div class="small text-muted mb-3">El reporte queda disponible para el área de Descargo. No cambia el estado de la tarjeta: eso lo hace el Descargador.</div>
+    <button type="submit" class="btn btn-danger">Generar reporte de fraude</button>
+</form>

@@ -1,0 +1,54 @@
+@model ProsegurGDT.Web.Models.DashboardVerificadorViewModel
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Hojas de ruta aprobadas por revisar y reportes de fraude</p>
+    </div>
+    <a asp-controller="Fraude" asp-action="Index" class="btn btn-primary">Reportes de fraude</a>
+</div>
+
+@if (Model.HojasPorRevisar > 0)
+{
+    <div class="pg-aviso">
+        @Model.HojasPorRevisar @(Model.HojasPorRevisar == 1 ? "hoja de ruta espera" : "hojas de ruta esperan") tu revisión
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hojas por revisar</small><strong>@Model.HojasPorRevisar</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Tarjetas en revisión</small><strong>@Model.TarjetasEnRevision</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Reportes hoy</small><strong>@Model.ReportesHoy</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Reportes en total</small><strong>@Model.ReportesTotal</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Últimos reportes de fraude</h2>
+    @if (Model.Recientes.Count == 0)
+    {
+        <p class="text-muted mb-0">Aún no generaste reportes de fraude.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead><tr><th>#</th><th>Tarjeta</th><th>Indicador</th><th>Fecha</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Recientes)
+                {
+                    <tr>
+                        <td>@r.Id</td>
+                        <td>@r.Codigo</td>
+                        <td>@r.Tipo</td>
+                        <td>@HoraLima.Convertir(r.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end"><a asp-controller="Fraude" asp-action="Detalle" asp-route-id="@r.Id">Ver →</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <a asp-controller="Fraude" asp-action="Index">Ver todos →</a>
+</div>
