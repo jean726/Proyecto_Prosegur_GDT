@@ -226,9 +226,9 @@ public class HojaRutaService : IHojaRutaService
     // Tarjetas de la ruta con su cita vigente y la verificación contra el sistema (paso 7 de CU05)
     private async Task<List<TarjetaHojaRutaVM>> ConstruirTarjetasAsync(AsignacionRuta ruta)
     {
-        var asignadas = await _db.AsignacionesTarjeta.AsNoTracking()
-            .Where(a => a.AsignacionRutaId == ruta.Id)
-            .Select(a => a.Tarjeta!).Include(t => t.Cliente).Include(t => t.Zona).ToListAsync();
+        var asignadas = await _db.Tarjetas.AsNoTracking()
+            .Where(t => _db.AsignacionesTarjeta.Any(a => a.AsignacionRutaId == ruta.Id && a.TarjetaId == t.Id))
+            .Include(t => t.Cliente).Include(t => t.Zona).ToListAsync();
         var ids = asignadas.Select(t => t.Id).ToList();
 
         var citas = (await _db.Citas.AsNoTracking().Where(c => c.Vigente && ids.Contains(c.TarjetaId)).ToListAsync())

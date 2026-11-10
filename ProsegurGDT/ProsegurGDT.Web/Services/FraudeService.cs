@@ -72,9 +72,9 @@ public class FraudeService : IFraudeService
         if (h is null || !Revisables.Contains(h.Estado)) return null;
         var ruta = h.AsignacionRuta!;
 
-        var tarjetas = await _db.AsignacionesTarjeta.AsNoTracking()
-            .Where(a => a.AsignacionRutaId == ruta.Id)
-            .Select(a => a.Tarjeta!).Include(t => t.Cliente).OrderBy(t => t.Codigo).ToListAsync();
+        var tarjetas = await _db.Tarjetas.AsNoTracking()
+            .Where(t => _db.AsignacionesTarjeta.Any(a => a.AsignacionRutaId == ruta.Id && a.TarjetaId == t.Id))
+            .Include(t => t.Cliente).OrderBy(t => t.Codigo).ToListAsync();
         var ids = tarjetas.Select(t => t.Id).ToList();
         var reportes = await _db.ReportesFraude.Where(r => ids.Contains(r.TarjetaId))
             .ToDictionaryAsync(r => r.TarjetaId, r => r.Id);
