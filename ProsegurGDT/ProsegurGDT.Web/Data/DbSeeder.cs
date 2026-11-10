@@ -50,8 +50,8 @@ public static class DbSeeder
         {
             var banco = await db.Bancos.FirstAsync();
             db.Remitos.AddRange(
-                new Remito { Numero = "REM-0001", BancoId = banco.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(DateTime.Today) },
-                new Remito { Numero = "REM-0002", BancoId = banco.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(DateTime.Today) });
+                new Remito { Numero = "REM-0001", BancoId = banco.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) },
+                new Remito { Numero = "REM-0002", BancoId = banco.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) });
             await db.SaveChangesAsync();
         }
 
