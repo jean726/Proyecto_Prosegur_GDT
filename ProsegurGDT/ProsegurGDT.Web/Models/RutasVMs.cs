@@ -276,3 +276,43 @@ public class DetalleConciliacionVM
     public bool EsUltima { get; set; }
     public List<IncidenciaConciliacionVM> Incidencias { get; set; } = new();
 }
+
+// ---------- CU21 — Localización de tarjetas faltantes ----------
+
+public class FaltanteFilaVM
+{
+    public int IncidenciaId { get; set; }
+    public string Codigo { get; set; } = "—";
+    public string Cliente { get; set; } = "—";
+    public string? LoteHoja { get; set; }
+    public string? Remito { get; set; }
+    public EstadoIncidencia Estado { get; set; }
+    public string? Ubicacion { get; set; }
+}
+
+public class HistorialFaltanteVM
+{
+    public DateTime FechaHora { get; set; }
+    public string Estado { get; set; } = string.Empty;
+    public string? Observacion { get; set; }
+}
+
+public class LocalizarFaltanteVM
+{
+    public int IncidenciaId { get; set; }
+    public string Codigo { get; set; } = "—";
+    public string Cliente { get; set; } = "—";
+    public string? LoteHoja { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public EstadoTarjeta EstadoTarjeta { get; set; }
+    public EstadoIncidencia Estado { get; set; }
+    public string? UbicacionRegistrada { get; set; }
+    public string? UbicacionBoveda { get; set; }
+    public string? EstadoFisicoBoveda { get; set; }
+    public List<HistorialFaltanteVM> Historial { get; set; } = new();
+
+    [Required(ErrorMessage = "Ingrese la ubicación donde se encontró la tarjeta.")]
+    [MaxLength(120, ErrorMessage = "La ubicación no puede superar 120 caracteres.")]
+    public string? Ubicacion { get; set; }
+}

@@ -1,0 +1,61 @@
+@model ProsegurGDT.Web.Models.LocalizarFaltanteVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Localizar tarjeta";
+    var abierta = Model.Estado == EstadoIncidencia.Abierta;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Localizar tarjeta faltante</h1>
+        <p class="pg-subtitulo">Tarjeta @Model.Codigo · @Model.Cliente</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Lote</dt><dd class="col-sm-9">@Model.LoteHoja</dd>
+        <dt class="col-sm-3">Remito / Banco</dt><dd class="col-sm-9">@Model.Remito · @Model.Banco</dd>
+        <dt class="col-sm-3">Estado de la tarjeta</dt>
+        <dd class="col-sm-9"><span class="pg-estado pg-estado-@Model.EstadoTarjeta.TonoEstado()">@Model.EstadoTarjeta.TextoEstado()</span></dd>
+        <dt class="col-sm-3">Inventario de bóveda</dt>
+        <dd class="col-sm-9">@(Model.UbicacionBoveda is null ? "Sin registro en bóveda" : $"{Model.UbicacionBoveda} · {Model.EstadoFisicoBoveda}")</dd>
+        <dt class="col-sm-3">Incidencia</dt>
+        <dd class="col-sm-9">@Model.Estado.Texto()@(Model.UbicacionRegistrada is null ? "" : " · " + Model.UbicacionRegistrada)</dd>
+    </dl>
+</div>
+
+@if (abierta)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <form asp-action="Localizar" asp-route-id="@Model.IncidenciaId" method="post" class="mb-3">
+            <label asp-for="Ubicacion" class="form-label fw-semibold">Ubicación donde se encontró</label>
+            <input asp-for="Ubicacion" class="form-control mb-2" maxlength="120" placeholder="Ej.: Bóveda - Estante A-1" required />
+            <span asp-validation-for="Ubicacion" class="text-danger"></span>
+            <div><button type="submit" class="btn btn-primary">Marcar como localizada</button></div>
+        </form>
+        <form asp-action="NoLocalizada" asp-route-id="@Model.IncidenciaId" method="post"
+              onsubmit="return confirm('La tarjeta quedará como extraviada con indicios de fraude. ¿Continuar?');">
+            <button type="submit" class="btn btn-outline-danger">No se pudo localizar</button>
+        </form>
+    </div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Fecha</th><th>Estado</th><th>Observación</th></tr></thead>
+            <tbody>
+                @foreach (var h in Model.Historial)
+                {
+                    <tr><td>@HoraLima.Convertir(h.FechaHora).ToString("dd/MM/yyyy HH:mm")</td><td>@h.Estado</td><td>@h.Observacion</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

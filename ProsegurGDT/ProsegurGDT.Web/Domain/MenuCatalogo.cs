@@ -16,6 +16,7 @@ public static class MenuCatalogo
         new("Reporte de densidad", "Densidad", "Index", new[] { Roles.Clasificador }, true),
         new("Conciliación de tarjetas", "Conciliacion", "Index", new[] { Roles.Clasificador }, true),
         new("Direcciones fraudulentas", "DireccionesFraudulentas", "Index", new[] { Roles.Buscador, Roles.Clasificador, Roles.AnalistaDeRutas }, true),
+        new("Tarjetas faltantes", "Faltantes", "Index", new[] { Roles.Buscador }, true),
         new("Alertas de direcciones", "DireccionesFraudulentas", "Alertas", new[] { Roles.Buscador }, true),
         new("Hoja de asignación", "Asignaciones", "Index", new[] { Roles.AnalistaDeRutas }, true),
         new("Usuarios", "Usuarios", "Index", new[] { Roles.Administrador }, true),

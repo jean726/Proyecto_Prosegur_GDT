@@ -213,7 +213,9 @@ public class ConciliacionService : IConciliacionService
             .SelectMany(r => r.Zonas).SumAsync(z => (int?)z.CantidadTarjetas) ?? 0;
         if (c.Hoja is not null)
             c.Esperadas = await _db.AsignacionesTarjeta
-                .Where(a => a.AsignacionRuta!.HojaAsignacionId == c.Hoja.Id)
+                // Las tarjetas declaradas no localizadas quedan excluidas del lote (proceso §5.2.4)
+                .Where(a => a.AsignacionRuta!.HojaAsignacionId == c.Hoja.Id
+                         && a.Tarjeta!.Estado != EstadoTarjeta.ExtraviadaConIndiciosDeFraude)
                 .Select(a => a.Tarjeta!).ToListAsync();
         return c;
     }

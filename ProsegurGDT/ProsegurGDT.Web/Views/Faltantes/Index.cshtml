@@ -1,0 +1,50 @@
+@model IEnumerable<ProsegurGDT.Web.Models.FaltanteFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Tarjetas faltantes";
+    var abiertas = Model.Count(f => f.Estado == EstadoIncidencia.Abierta);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Tarjetas faltantes</h1>
+        <p class="pg-subtitulo">@(Model.Any() ? $"{abiertas} por localizar · {Model.Count() - abiertas} resueltas" : "No hay faltantes registrados")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Tarjeta</th><th>Cliente</th><th>Lote / Remito</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@f.Codigo</td>
+                        <td>@f.Cliente</td>
+                        <td><div>@f.LoteHoja</div><div class="text-muted small">@f.Remito</div></td>
+                        <td>
+                            <span class="pg-estado @(f.Estado == EstadoIncidencia.Abierta ? "pg-estado-riesgo" : f.Estado == EstadoIncidencia.Localizada ? "pg-estado-entrega" : "pg-estado-pendiente")">@f.Estado.Texto()</span>
+                            @if (f.Ubicacion is not null) { <div class="text-muted small">@f.Ubicacion</div> }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Localizar" asp-route-id="@f.IncidenciaId" class="btn btn-sm @(f.Estado == EstadoIncidencia.Abierta ? "btn-primary" : "btn-outline-secondary")">@(f.Estado == EstadoIncidencia.Abierta ? "Localizar" : "Ver")</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">Los faltantes aparecen cuando el Clasificador concilia un lote y detecta tarjetas ausentes.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
