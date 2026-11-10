@@ -1,0 +1,75 @@
+@model ProsegurGDT.Web.Models.DetalleHojaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Hoja de asignación";
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Hoja de asignación a mensajeros</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <a asp-action="Imprimir" asp-route-id="@Model.HojaId" class="btn btn-outline-secondary" target="_blank" rel="noopener">Imprimir</a>
+        <a asp-action="Csv" asp-route-id="@Model.HojaId" class="btn btn-primary">Descargar CSV</a>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas asignadas</small><strong>@Model.TotalTarjetas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Rutas</small><strong>@Model.TotalRutas</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Postergadas</small><strong>@Model.Postergadas.Sum(p => p.Cantidad)</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <span class="pg-estado pg-estado-entrega">@Model.Estado.Texto()</span>
+    <div class="text-muted small mt-2">Generada por @Model.GeneradaPor el @HoraLima.Convertir(Model.FechaHoraEmision).ToString("dd/MM/yyyy HH:mm")</div>
+</div>
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Orden</th><th>Repartidor</th><th>Tipo</th><th>Sector de cobertura</th><th class="text-end">Tarjetas</th><th>Estado</th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Rutas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.Orden</td>
+                        <td>@r.Repartidor</td>
+                        <td>@r.TipoRepartidor.Texto()</td>
+                        <td>@r.Sector</td>
+                        <td class="text-end">@r.CantidadTarjetas</td>
+                        <td><span class="pg-estado @(r.Estado == EstadoAsignacionRuta.Reagrupada ? "pg-estado-pendiente" : "pg-estado-custodia")">@r.Estado.Texto()</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td colspan="5" class="pt-0">
+                            <details>
+                                <summary class="text-muted small">Ver las @r.Tarjetas.Count tarjetas</summary>
+                                <ul class="small mb-0 mt-1">
+                                    @foreach (var t in r.Tarjetas)
+                                    {
+                                        <li>@t.Codigo — @t.Cliente — @t.Direccion</li>
+                                    }
+                                </ul>
+                            </details>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.Postergadas.Count > 0)
+{
+    <div class="pg-aviso mt-3">
+        Tarjetas postergadas a la siguiente jornada:
+        @string.Join(", ", Model.Postergadas.Select(p => $"{p.Zona} ({p.Cantidad})"))
+    </div>
+}

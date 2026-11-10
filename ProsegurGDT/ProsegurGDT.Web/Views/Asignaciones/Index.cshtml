@@ -1,0 +1,80 @@
+@model IEnumerable<ProsegurGDT.Web.Models.LoteAsignacionFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Hoja de asignación";
+    var total = Model.Count();
+    var pendientes = Model.Count(f => f.HojaId == null);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Hoja de asignación a mensajeros</h1>
+        <p class="pg-subtitulo">@(total == 0 ? "Aún no hay lotes con reporte de densidad" : $"{total} lotes con reporte · {pendientes} pendientes de hoja")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Remito / Banco</th>
+                    <th class="text-end">Zonas</th>
+                    <th>Reporte de densidad</th>
+                    <th>Hoja de asignación</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(f.CodigoHojaControl ?? "Sin hoja")</td>
+                        <td>
+                            <div class="fw-medium">@(f.Remito ?? "—")</div>
+                            <div class="text-muted small">@(f.Banco ?? "—")</div>
+                        </td>
+                        <td class="text-end">@f.ZonasReporte</td>
+                        <td><span class="pg-estado @(f.EstadoReporte == EstadoReporteDensidad.Revisado ? "pg-estado-entrega" : "pg-estado-custodia")">@f.EstadoReporte.Texto()</span></td>
+                        <td>
+                            @if (f.HojaId is null)
+                            {
+                                <span class="pg-estado pg-estado-pendiente">Pendiente</span>
+                            }
+                            else
+                            {
+                                <span class="pg-estado pg-estado-entrega">Emitida</span>
+                                <div class="text-muted small">@HoraLima.Convertir(f.FechaHoja!.Value).ToString("dd/MM/yyyy HH:mm")</div>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (f.HojaId is null)
+                            {
+                                <a asp-action="Generar" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Generar hoja</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Detalle" asp-route-id="@f.HojaId" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-action="Imprimir" asp-route-id="@f.HojaId" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Imprimir</a>
+                                <a asp-action="Csv" asp-route-id="@f.HojaId" class="btn btn-sm btn-primary">Descargar CSV</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">El Clasificador debe generar primero el reporte de densidad de un lote.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

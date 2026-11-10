@@ -1,0 +1,56 @@
+@model ProsegurGDT.Web.Models.DetalleHojaVM
+@using ProsegurGDT.Web.Domain
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hoja de asignación - @Model.CodigoHojaControl</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body { padding: 24px; color: #111418; }
+        h1 { font-size: 1.4rem; margin-bottom: 4px; }
+        h2 { font-size: 1.1rem; margin-top: 20px; }
+        .meta { color: #555; margin-bottom: 16px; }
+        .ruta { page-break-inside: avoid; margin-bottom: 18px; }
+        @@media print { .no-imprimir { display: none !important; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="no-imprimir mb-3 d-flex gap-2">
+        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.close()">Cerrar</button>
+    </div>
+
+    <h1>Prosegur GDT — Hoja de asignación a mensajeros</h1>
+    <div class="meta">
+        Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco<br />
+        Generada por @Model.GeneradaPor el @HoraLima.Convertir(Model.FechaHoraEmision).ToString("dd/MM/yyyy HH:mm")<br />
+        Total: @Model.TotalTarjetas tarjetas en @Model.TotalRutas rutas
+    </div>
+
+    @foreach (var r in Model.Rutas)
+    {
+        <div class="ruta">
+            <h2>Ruta @r.Orden — @r.Repartidor (@r.TipoRepartidor.Texto()) — @r.Sector · @r.CantidadTarjetas tarjetas</h2>
+            <table class="table table-bordered table-sm">
+                <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección</th></tr></thead>
+                <tbody>
+                    @foreach (var t in r.Tarjetas)
+                    {
+                        <tr><td>@t.Codigo</td><td>@t.Cliente</td><td>@t.Direccion</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Model.Postergadas.Count > 0)
+    {
+        <p><strong>Postergadas a la siguiente jornada:</strong> @string.Join(", ", Model.Postergadas.Select(p => $"{p.Zona} ({p.Cantidad})"))</p>
+    }
+</body>
+</html>

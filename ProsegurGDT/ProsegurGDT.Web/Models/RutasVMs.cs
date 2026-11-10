@@ -113,3 +113,97 @@ public class ReporteDensidadVM
     public int TotalNoClasificables => Zonas.Sum(z => z.CantidadNoClasificables);
     public int ZonasConAlerta => Zonas.Count(z => z.TieneAlerta);
 }
+
+// ---------- CU19 — Hoja de asignación a mensajeros ----------
+
+public enum AccionZonaAsignacion { Asignar = 1, Reagrupar, Postergar }
+
+public class LoteAsignacionFilaVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public int ReporteId { get; set; }
+    public EstadoReporteDensidad EstadoReporte { get; set; }
+    public int ZonasReporte { get; set; }
+    public int? HojaId { get; set; }
+    public DateTime? FechaHoja { get; set; }
+}
+
+public class RepartidorDisponibleVM
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public TipoRepartidor Tipo { get; set; }
+    public string? ZonaHabitual { get; set; }
+    public int Capacidad { get; set; }
+    public int AsignadasHoy { get; set; }
+    public string Etiqueta => $"{Nombre} · {Tipo.Texto()} · capacidad {Capacidad} · {AsignadasHoy} hoy";
+}
+
+public class ZonaAsignacionVM
+{
+    public int ZonaId { get; set; }
+    public string ZonaNombre { get; set; } = string.Empty;
+    public int CantidadReporte { get; set; }
+    public int Asignables { get; set; }          // tarjetas con cita programada: las únicas que entran a una ruta
+    public bool TieneAlerta { get; set; }
+    public TipoRepartidorRequerido TipoRequerido { get; set; }
+    public int OrdenVisita { get; set; }
+    public AccionZonaAsignacion Accion { get; set; } = AccionZonaAsignacion.Asignar;
+    public int? RepartidorId { get; set; }
+    public int? DestinoZonaId { get; set; }
+}
+
+public class GenerarHojaVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public DateTime FechaJornada { get; set; }
+    public EstadoReporteDensidad? EstadoReporte { get; set; }
+    public bool ConfirmarAdvertencias { get; set; }
+    public List<ZonaAsignacionVM> Zonas { get; set; } = new();
+
+    // Solo para mostrar (no se enlazan desde el formulario)
+    public List<RepartidorDisponibleVM> Repartidores { get; set; } = new();
+    public string? Bloqueo { get; set; }
+    public List<string> Errores { get; set; } = new();
+    public List<string> Advertencias { get; set; } = new();
+}
+
+public class TarjetaRutaVM
+{
+    public string Codigo { get; set; } = string.Empty;
+    public string Cliente { get; set; } = string.Empty;
+    public string Direccion { get; set; } = string.Empty;
+}
+
+public class RutaHojaVM
+{
+    public int Orden { get; set; }
+    public string Repartidor { get; set; } = string.Empty;
+    public TipoRepartidor TipoRepartidor { get; set; }
+    public string Sector { get; set; } = string.Empty;
+    public int CantidadTarjetas { get; set; }
+    public EstadoAsignacionRuta Estado { get; set; }
+    public List<TarjetaRutaVM> Tarjetas { get; set; } = new();
+}
+
+public class DetalleHojaVM
+{
+    public int HojaId { get; set; }
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public string GeneradaPor { get; set; } = "—";
+    public DateTime FechaHoraEmision { get; set; }
+    public EstadoHojaAsignacion Estado { get; set; }
+    public int TotalTarjetas { get; set; }
+    public int TotalRutas { get; set; }
+    public List<RutaHojaVM> Rutas { get; set; } = new();
+    public List<(string Zona, int Cantidad)> Postergadas { get; set; } = new();
+}

@@ -1,0 +1,159 @@
+@model ProsegurGDT.Web.Models.GenerarHojaVM
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Models
+@{
+    ViewData["Title"] = "Generar hoja de asignación";
+    var bloqueado = Model.Bloqueo is not null;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Generar hoja de asignación a mensajeros</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco · Jornada @Model.FechaJornada.ToString("dd/MM/yyyy")</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (Model.Errores.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">@foreach (var e in Model.Errores) { <li>@e</li> }</ul>
+    </div>
+}
+@if (Model.Advertencias.Count > 0)
+{
+    <div class="alert alert-warning">
+        <strong>Revise estas advertencias:</strong>
+        <ul class="mb-2">@foreach (var a in Model.Advertencias) { <li>@a</li> }</ul>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="confirmarAdv" form="formHoja" name="ConfirmarAdvertencias" value="true" />
+            <label class="form-check-label" for="confirmarAdv">Entiendo las advertencias y deseo generar la hoja de todos modos</label>
+        </div>
+    </div>
+}
+@if (bloqueado)
+{
+    <div class="pg-aviso">@Model.Bloqueo</div>
+}
+
+@if (!bloqueado)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <div class="fw-semibold mb-2">Repartidores disponibles</div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Zona habitual</th><th class="text-end">Capacidad</th><th class="text-end">Asignadas hoy</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Repartidores)
+                    {
+                        <tr>
+                            <td>@r.Nombre</td><td>@r.Tipo.Texto()</td><td>@(r.ZonaHabitual ?? "—")</td>
+                            <td class="text-end">@r.Capacidad</td><td class="text-end">@r.AsignadasHoy</td>
+                        </tr>
+                    }
+                    @if (Model.Repartidores.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-muted">No hay repartidores activos.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <form id="formHoja" asp-action="Generar" method="post">
+        <input type="hidden" name="LoteId" value="@Model.LoteId" />
+        <div class="pg-tarjeta pg-tarjeta-tabla">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Zona</th>
+                            <th class="text-end">Reporte</th>
+                            <th class="text-end">Con cita</th>
+                            <th>Tipo requerido</th>
+                            <th style="min-width:170px">Acción</th>
+                            <th style="min-width:260px">Repartidor / Zona destino</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Zonas.Count; i++)
+                        {
+                            var z = Model.Zonas[i];
+                            var sinCobertura = z.Asignables > 0 && z.Accion == AccionZonaAsignacion.Asignar && z.RepartidorId is null && (Model.Errores.Count > 0);
+                            <tr class="@(sinCobertura ? "table-warning" : "")" data-zona-fila>
+                                <td class="fw-semibold">
+                                    @z.ZonaNombre
+                                    @if (z.TieneAlerta) { <span class="pg-estado pg-estado-riesgo ms-1">Alerta</span> }
+                                    <input type="hidden" name="Zonas[@i].ZonaId" value="@z.ZonaId" />
+                                </td>
+                                <td class="text-end">@z.CantidadReporte</td>
+                                <td class="text-end">@z.Asignables</td>
+                                <td>@z.TipoRequerido.Texto()</td>
+                                @if (z.Asignables == 0)
+                                {
+                                    <td colspan="2" class="text-muted small">Sin tarjetas con cita programada: no entra a ninguna ruta.</td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        <select name="Zonas[@i].Accion" class="form-select form-select-sm pg-accion" aria-label="Acción para @z.ZonaNombre">
+                                            <option value="@((int)AccionZonaAsignacion.Asignar)" selected="@(z.Accion == AccionZonaAsignacion.Asignar)">Asignar repartidor</option>
+                                            <option value="@((int)AccionZonaAsignacion.Reagrupar)" selected="@(z.Accion == AccionZonaAsignacion.Reagrupar)">Reagrupar con otra zona</option>
+                                            <option value="@((int)AccionZonaAsignacion.Postergar)" selected="@(z.Accion == AccionZonaAsignacion.Postergar)">Postergar a la siguiente jornada</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="Zonas[@i].RepartidorId" class="form-select form-select-sm pg-rep" aria-label="Repartidor de @z.ZonaNombre">
+                                            <option value="">-- Sin repartidor --</option>
+                                            @foreach (var r in Model.Repartidores)
+                                            {
+                                                <option value="@r.Id" selected="@(z.RepartidorId == r.Id)">@r.Etiqueta</option>
+                                            }
+                                        </select>
+                                        <select name="Zonas[@i].DestinoZonaId" class="form-select form-select-sm pg-dest" aria-label="Zona destino de @z.ZonaNombre">
+                                            <option value="">-- Zona destino --</option>
+                                            @foreach (var o in Model.Zonas.Where(o => o.ZonaId != z.ZonaId && o.Asignables > 0))
+                                            {
+                                                <option value="@o.ZonaId" selected="@(z.DestinoZonaId == o.ZonaId)">@o.ZonaNombre</option>
+                                            }
+                                        </select>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="text-muted small mt-2">Solo las tarjetas con cita programada entran a una ruta. Las zonas sin repartidor deben reagruparse con una ruta adyacente o postergarse.</p>
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary">Generar hoja</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            // Muestra solo el selector que corresponde a la acción elegida; el servidor valida igualmente
+            document.querySelectorAll('[data-zona-fila]').forEach(function (fila) {
+                var accion = fila.querySelector('.pg-accion');
+                if (!accion) return;
+                var rep = fila.querySelector('.pg-rep');
+                var dest = fila.querySelector('.pg-dest');
+                function actualizar() {
+                    rep.hidden = accion.value !== '1';
+                    dest.hidden = accion.value !== '2';
+                    if (accion.value !== '1') rep.value = '';
+                    if (accion.value !== '2') dest.value = '';
+                }
+                accion.addEventListener('change', actualizar);
+                actualizar();
+            });
+        })();
+    </script>
+}

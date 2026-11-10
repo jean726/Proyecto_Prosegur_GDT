@@ -66,6 +66,7 @@ builder.Services.AddScoped<IImportadorFichaService, ImportadorFichaService>();
 // Fase 7 — Rutas
 builder.Services.AddScoped<IPlanillaArmadoService, PlanillaArmadoService>();
 builder.Services.AddScoped<IDensidadService, DensidadService>();
+builder.Services.AddScoped<IAsignacionService, AsignacionService>();
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();
