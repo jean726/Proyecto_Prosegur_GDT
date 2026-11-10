@@ -44,6 +44,9 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.AuxiliarTelefonista))
                 return View("IndexTelefonista", await ConstruirDashboardTelefonistaAsync());
 
+            if (User.IsInRole(Roles.AnalistaDeRutas))
+                return View("IndexAnalista", await ConstruirDashboardAnalistaAsync());
+
             return View();
         }
         private async Task<DashboardSupervisorViewModel> ConstruirDashboardSupervisorAsync()
@@ -153,6 +156,38 @@ namespace ProsegurGDT.Web.Controllers
                 DireccionesPorValidar = await _db.DireccionesFraudulentas.CountAsync(d => d.Estado == EstadoDireccion.Pendiente),
                 DireccionesValidadas = await _db.DireccionesFraudulentas.CountAsync(d => d.Estado == EstadoDireccion.Validada),
                 AlertasCriticas = criticas.Select(c => new FilaAlertaCritica(c.Codigo, c.Direccion, c.Puntaje)).ToList()
+            };
+        }
+
+        private async Task<DashboardAnalistaViewModel> ConstruirDashboardAnalistaAsync()
+        {
+            var conHoja = _db.HojasAsignacion.Select(h => h.LoteId);
+            var pendientes = await _db.ReportesDensidad
+                .Where(r => !conHoja.Contains(r.LoteId))
+                .OrderBy(r => r.LoteId)
+                .Select(r => new { r.LoteId, Hoja = r.Lote!.CodigoHojaControl, Remito = r.Lote.Remito!.Numero, Zonas = r.Zonas.Count, r.Estado })
+                .ToListAsync();
+
+            // Jornada de hoy en hora de Lima (las fechas se guardan en UTC)
+            var rutasHoy = await _db.AsignacionesRuta
+                .Where(r => r.HojaAsignacion!.Estado == EstadoHojaAsignacion.Emitida
+                         && r.HojaAsignacion.FechaHoraEmision >= DateTime.UtcNow.AddHours(-36))
+                .Select(r => new { r.RepartidorId, r.CantidadTarjetas, r.HojaAsignacionId, r.HojaAsignacion!.FechaHoraEmision })
+                .ToListAsync();
+            var hoy = HoraLima.Ahora.Date;
+            rutasHoy = rutasHoy.Where(r => HoraLima.Convertir(r.FechaHoraEmision).Date == hoy).ToList();
+
+            var repartidores = await _db.Repartidores.Where(r => r.Activo).OrderBy(r => r.Nombre).ToListAsync();
+            var asignadas = rutasHoy.GroupBy(r => r.RepartidorId).ToDictionary(g => g.Key, g => g.Sum(x => x.CantidadTarjetas));
+
+            return new DashboardAnalistaViewModel
+            {
+                ReportesPendientes = pendientes.Count,
+                HojasHoy = rutasHoy.Select(r => r.HojaAsignacionId).Distinct().Count(),
+                TarjetasEnRutaHoy = rutasHoy.Sum(r => r.CantidadTarjetas),
+                RepartidoresActivos = repartidores.Count,
+                Pendientes = pendientes.Select(p => new FilaReportePendiente(p.LoteId, p.Hoja, p.Remito, p.Zonas, p.Estado.Texto())).ToList(),
+                Cargas = repartidores.Select(r => new FilaRepartidorCarga(r.Nombre, r.Tipo.Texto(), r.CapacidadTarjetas, asignadas.GetValueOrDefault(r.Id))).ToList()
             };
         }
 
