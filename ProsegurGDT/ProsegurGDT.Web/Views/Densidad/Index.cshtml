@@ -1,0 +1,82 @@
+@model IEnumerable<ProsegurGDT.Web.Models.LoteDensidadFilaVM>
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Reporte de densidad";
+    var total = Model.Count();
+    var generados = Model.Count(f => f.ReporteId != null);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Reporte de densidad de entregas</h1>
+        <p class="pg-subtitulo">@(total == 0 ? "Aún no hay lotes con planilla de armado" : $"{total} lotes con planilla · {generados} con reporte")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Remito / Banco</th>
+                    <th class="text-end">Zonas</th>
+                    <th>Estado del reporte</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(f.CodigoHojaControl ?? "Sin hoja")</td>
+                        <td>
+                            <div class="fw-medium">@(f.Remito ?? "—")</div>
+                            <div class="text-muted small">@(f.Banco ?? "—")</div>
+                        </td>
+                        <td class="text-end">@f.ZonasPlanilla</td>
+                        <td>
+                            @if (f.EstadoReporte is null)
+                            {
+                                <span class="pg-estado pg-estado-pendiente">Pendiente de generar</span>
+                            }
+                            else
+                            {
+                                <span class="pg-estado @(f.EstadoReporte == EstadoReporteDensidad.Revisado ? "pg-estado-entrega" : "pg-estado-custodia")">@f.EstadoReporte.Value.Texto()</span>
+                                <div class="text-muted small">@HoraLima.Convertir(f.FechaReporte!.Value).ToString("dd/MM/yyyy HH:mm")</div>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (f.ReporteId != null)
+                            {
+                                <a asp-action="Ver" asp-route-id="@f.LoteId" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-action="Imprimir" asp-route-id="@f.ReporteId" class="btn btn-sm btn-primary" target="_blank" rel="noopener">Imprimir</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Ver" asp-route-id="@f.LoteId" class="btn btn-sm btn-primary">Generar reporte</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Primero genere la planilla de armado de un lote.
+                            <a asp-controller="Planillas" asp-action="Index" class="fw-semibold ms-1">Ir a Planilla de armado</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

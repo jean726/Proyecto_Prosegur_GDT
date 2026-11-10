@@ -65,6 +65,7 @@ builder.Services.AddSingleton<IAdaptadorFichaClientes, AdaptadorCsvUnibanca>();
 builder.Services.AddScoped<IImportadorFichaService, ImportadorFichaService>();
 // Fase 7 — Rutas
 builder.Services.AddScoped<IPlanillaArmadoService, PlanillaArmadoService>();
+builder.Services.AddScoped<IDensidadService, DensidadService>();
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();

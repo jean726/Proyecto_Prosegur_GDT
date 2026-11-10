@@ -68,3 +68,48 @@ public class DetallePlanillaVM
     public List<ZonaPlanillaVM> Zonas { get; set; } = new();
     public int TotalTarjetas => Zonas.Sum(z => z.CantidadTarjetas);
 }
+
+// ---------- CU18 — Reporte de densidad de entregas ----------
+
+public class LoteDensidadFilaVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public string? Banco { get; set; }
+    public int ZonasPlanilla { get; set; }
+    public int? ReporteId { get; set; }
+    public EstadoReporteDensidad? EstadoReporte { get; set; }
+    public DateTime? FechaReporte { get; set; }
+}
+
+public class ZonaDensidadVM
+{
+    public int ZonaId { get; set; }
+    public string ZonaNombre { get; set; } = string.Empty;
+    public int CantidadTarjetas { get; set; }
+    public int CantidadNoClasificables { get; set; }
+    public bool TieneAlerta { get; set; }
+    public TipoRepartidorRequerido TipoRepartidorRequerido { get; set; }
+}
+
+public class ReporteDensidadVM
+{
+    public int LoteId { get; set; }
+    public string? CodigoHojaControl { get; set; }
+    public string? Remito { get; set; }
+    public int? ReporteId { get; set; }
+    public EstadoReporteDensidad? Estado { get; set; }
+    public string GeneradoPor { get; set; } = "—";
+    public DateTime? FechaGeneracion { get; set; }
+    public string? RevisadoPor { get; set; }
+    public DateTime? FechaRevision { get; set; }
+    public List<ZonaDensidadVM> Zonas { get; set; } = new();
+    // Motivo por el que aún no se puede generar el reporte (solo si no existe)
+    public string? Bloqueo { get; set; }
+
+    public bool Existe => ReporteId is not null;
+    public int TotalTarjetas => Zonas.Sum(z => z.CantidadTarjetas);
+    public int TotalNoClasificables => Zonas.Sum(z => z.CantidadNoClasificables);
+    public int ZonasConAlerta => Zonas.Count(z => z.TieneAlerta);
+}
