@@ -146,8 +146,8 @@ public static class DbSeeder
             var existente = await um.FindByEmailAsync(email);
             if (existente is not null)
             {
-                // Las cuentas creadas antes se llamaban «Demo {rol}»: se deja solo el nombre del rol
-                if (existente.NombreCompleto == $"Demo {rol}")
+                // Las cuentas creadas antes se llamaban «Demo {rol}» (o «Demo - {rol}»): se deja solo el nombre del rol
+                if (existente.NombreCompleto.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
                 {
                     existente.NombreCompleto = rol.Texto();
                     await um.UpdateAsync(existente);
