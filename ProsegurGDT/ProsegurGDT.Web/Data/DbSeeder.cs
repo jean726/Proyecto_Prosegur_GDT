@@ -63,6 +63,58 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
+        if (cargarDemo && !await db.Repartidores.AnyAsync())
+        {
+            var zonas = await db.Zonas.ToDictionaryAsync(z => z.Nombre, z => z.Id);
+            var repartidores = new (string Nombre, TipoRepartidor Tipo, string Zona, int Capacidad)[]
+            {
+                ("Carlos Mendoza", TipoRepartidor.Motorizado, "Miraflores", 25),
+                ("Luis Ramírez", TipoRepartidor.Motorizado, "San Isidro", 25),
+                ("Jorge Salazar", TipoRepartidor.Motorizado, "Santiago de Surco", 30),
+                ("Ana Torres", TipoRepartidor.Caminante, "San Borja", 15),
+                ("Miguel Castro", TipoRepartidor.Caminante, "Barranco", 12),
+                ("Rosa Quispe", TipoRepartidor.Caminante, "Lince", 15),
+            };
+
+            foreach (var r in repartidores)
+                db.Repartidores.Add(new Repartidor
+                {
+                    Nombre = r.Nombre,
+                    Tipo = r.Tipo,
+                    ZonaHabitualId = zonas.TryGetValue(r.Zona, out var zonaId) ? zonaId : null,
+                    CapacidadTarjetas = r.Capacidad,
+                    Activo = true
+                });
+
+            await db.SaveChangesAsync();
+        }
+
+        if (cargarDemo && !await db.InventarioBoveda.AnyAsync())
+        {
+            var tarjetasEnBoveda = await db.Tarjetas
+                .Where(t => t.Estado == EstadoTarjeta.EnCustodia
+                         || t.Estado == EstadoTarjeta.IngresadaEnCustodia
+                         || t.Estado == EstadoTarjeta.NoClasificable
+                         || t.Estado == EstadoTarjeta.ApartadaPorFraude)
+                .OrderBy(t => t.Id)
+                .Take(12)
+                .ToListAsync();
+
+            var ubicaciones = new[] { "Bóveda - Estante A-1", "Bóveda - Estante A-2", "Bóveda - Caja fuerte 1" };
+            for (var i = 0; i < tarjetasEnBoveda.Count; i++)
+                db.InventarioBoveda.Add(new InventarioBoveda
+                {
+                    TarjetaId = tarjetasEnBoveda[i].Id,
+                    Ubicacion = ubicaciones[i % ubicaciones.Length],
+                    EstadoFisico = tarjetasEnBoveda[i].Estado == EstadoTarjeta.ApartadaPorFraude
+                        ? "Apartada por fraude"
+                        : "En custodia",
+                    FechaActualizacion = DateTime.UtcNow
+                });
+
+            await db.SaveChangesAsync();
+        }
+
         if (cargarDemo && !await db.DireccionesFraudulentas.AnyAsync() && !string.IsNullOrWhiteSpace(email))
         {
             var adminDemo = await sp.GetRequiredService<UserManager<ApplicationUser>>().FindByEmailAsync(email);

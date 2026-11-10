@@ -21,12 +21,14 @@ public class TarjetaEstadoService : ITarjetaEstadoService
         [EstadoTarjeta.CitaProgramada] = new[] { EstadoTarjeta.AsignadaARuta, EstadoTarjeta.PendienteDeAsignacion, EstadoTarjeta.NoClasificable },
         [EstadoTarjeta.PendienteDeAsignacion] = new[] { EstadoTarjeta.AsignadaARuta },
         [EstadoTarjeta.NoClasificable] = new[] { EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.PendienteDeAsignacion },
-        [EstadoTarjeta.AsignadaARuta] = new[] { EstadoTarjeta.Entregada, EstadoTarjeta.Devuelta, EstadoTarjeta.EnCustodia, EstadoTarjeta.ConIncidencia, EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.ExtraviadaConIndiciosDeFraude },
-        [EstadoTarjeta.ConIncidencia] = new[] { EstadoTarjeta.Devuelta, EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.ExtraviadaConIndiciosDeFraude },
+        [EstadoTarjeta.AsignadaARuta] = new[] { EstadoTarjeta.Entregada, EstadoTarjeta.Devuelta, EstadoTarjeta.EnCustodia, EstadoTarjeta.ConIncidencia, EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.ExtraviadaConIndiciosDeFraude, EstadoTarjeta.PendienteDeAsignacion },
+        [EstadoTarjeta.ConIncidencia] = new[] { EstadoTarjeta.Devuelta, EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.ExtraviadaConIndiciosDeFraude, EstadoTarjeta.PendienteDeAsignacion },
         [EstadoTarjeta.Devuelta] = new[] { EstadoTarjeta.EnCustodia, EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.ApartadaPorFraude },
-        [EstadoTarjeta.EnCustodia] = new[] { EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.ApartadaPorFraude },
+        [EstadoTarjeta.EnCustodia] = new[] { EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.ApartadaPorFraude, EstadoTarjeta.PendienteDeAsignacion },
         [EstadoTarjeta.ApartadaPorFraude] = new[] { EstadoTarjeta.Devuelta, EstadoTarjeta.EnCustodia },
-        // Entregada y ExtraviadaConIndiciosDeFraude son estados finales
+        // Fase 7: una tarjeta extraviada puede reaparecer y volver a custodia
+        [EstadoTarjeta.ExtraviadaConIndiciosDeFraude] = new[] { EstadoTarjeta.EnCustodia },
+        // Entregada es estado final
     };
 
     public void Cambiar(Tarjeta tarjeta, EstadoTarjeta nuevo, string usuarioId, string? observacion = null)
