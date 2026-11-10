@@ -1,0 +1,56 @@
+@model ProsegurGDT.Web.Models.DashboardDescargadorViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Rutas por descargar, apartado de defraudación y reportes de la jornada</p>
+    </div>
+    <a asp-controller="Descargo" asp-action="Index" class="btn btn-primary">Descargo de tarjetas</a>
+</div>
+
+@if (Model.FraudePorRegistrar > 0)
+{
+    <div class="pg-aviso pg-aviso-riesgo">
+        @Model.FraudePorRegistrar @(Model.FraudePorRegistrar == 1 ? "tarjeta espera" : "tarjetas esperan") su registro en el acta de fraude
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Rutas por procesar</small><strong>@Model.RutasPorProcesar</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Tarjetas por verificar</small><strong>@Model.TarjetasPendientes</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Rutas cerradas</small><strong>@Model.RutasCerradas</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Reportes generados</small><strong>@Model.ReportesGenerados</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Rutas pendientes de descargo</h2>
+    @if (Model.Rutas.Count == 0)
+    {
+        <p class="text-muted mb-2">No hay rutas pendientes.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Por verificar</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Rutas)
+                {
+                    <tr>
+                        <td>@r.Repartidor</td>
+                        <td>@r.Sector</td>
+                        <td class="text-end">@r.Pendientes</td>
+                        <td>@r.Estado</td>
+                        <td class="text-end"><a asp-controller="Descargo" asp-action="Procesar" asp-route-id="@r.HojaRutaId">Procesar →</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <div class="d-flex gap-3">
+        <a asp-controller="ReportesDescargo" asp-action="Index">Reportes de descargo →</a>
+        <a asp-controller="Defraudacion" asp-action="Index">Apartado de defraudación →</a>
+    </div>
+</div>

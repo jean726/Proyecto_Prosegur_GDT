@@ -1,0 +1,56 @@
+@model ProsegurGDT.Web.Models.DashboardBovedaViewModel
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="pg-dash-cab">
+    <div>
+        <h1>Inicio</h1>
+        <p>Tarjetas de fraude por ingresar y estado del inventario de bóveda</p>
+    </div>
+    <a asp-controller="Defraudacion" asp-action="Index" class="btn btn-primary">Apartado de defraudación</a>
+</div>
+
+@if (Model.FraudePorIngresar > 0)
+{
+    <div class="pg-aviso pg-aviso-riesgo">
+        @Model.FraudePorIngresar @(Model.FraudePorIngresar == 1 ? "tarjeta de fraude espera" : "tarjetas de fraude esperan") su ingreso a bóveda
+    </div>
+}
+
+<div class="pg-metricas">
+    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Fraude por ingresar</small><strong>@Model.FraudePorIngresar</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ingresadas hoy</small><strong>@Model.IngresadasHoy</strong></div>
+    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas en bóveda</small><strong>@Model.InventarioTotal</strong></div>
+    <div class="pg-tarjeta pg-metrica"><small>Con etiqueta de fraude</small><strong>@Model.InventarioFraude</strong></div>
+</div>
+
+<div class="pg-tarjeta pg-bloque">
+    <h2 class="h6 mb-2">Próximas a ingresar</h2>
+    @if (Model.Pendientes.Count == 0)
+    {
+        <p class="text-muted mb-2">No hay tarjetas pendientes de ingreso.</p>
+    }
+    else
+    {
+        <table class="table mb-2">
+            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Registrada</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Pendientes)
+                {
+                    <tr>
+                        <td>@a.Codigo</td>
+                        <td>@a.Cliente</td>
+                        <td>@a.Origen.Texto()</td>
+                        <td>@HoraLima.Convertir(a.FechaRegistro).ToString("dd/MM/yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <div class="d-flex gap-3">
+        <a asp-controller="Defraudacion" asp-action="Index">Registrar ingresos →</a>
+        <a asp-controller="Defraudacion" asp-action="Inventario">Inventario de bóveda →</a>
+    </div>
+</div>

@@ -50,7 +50,64 @@ namespace ProsegurGDT.Web.Controllers
             if (User.IsInRole(Roles.Verificador))
                 return View("IndexVerificador", await ConstruirDashboardVerificadorAsync());
 
+            if (User.IsInRole(Roles.Descargador))
+                return View("IndexDescargador", await ConstruirDashboardDescargadorAsync());
+
+            if (User.IsInRole(Roles.EncargadoDeBoveda))
+                return View("IndexBoveda", await ConstruirDashboardBovedaAsync());
+
             return View();
+        }
+
+        private async Task<DashboardDescargadorViewModel> ConstruirDashboardDescargadorAsync()
+        {
+            var hojas = await DescargoReglas.Elegibles(_db).AsNoTracking()
+                .Include(h => h.AsignacionRuta).ThenInclude(r => r!.Repartidor)
+                .AsSplitQuery().ToListAsync();
+            var hojaIds = hojas.Select(h => h.Id).ToList();
+            var rutaIds = hojas.Select(h => h.AsignacionRutaId).ToList();
+            var descargos = await _db.DescargosRuta.Where(d => hojaIds.Contains(d.HojaRutaId)).ToDictionaryAsync(d => d.HojaRutaId);
+            var pendientesPorRuta = (await _db.AsignacionesTarjeta
+                    .Where(a => rutaIds.Contains(a.AsignacionRutaId) && a.Tarjeta!.Estado == EstadoTarjeta.AsignadaARuta)
+                    .Select(a => a.AsignacionRutaId).ToListAsync())
+                .GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
+
+            var abiertas = hojas.Where(h => descargos.GetValueOrDefault(h.Id)?.Estado != EstadoDescargoRuta.Cerrada).ToList();
+            var conActa = _db.ActasFraude.Select(a => a.TarjetaId);
+            var fraude = await _db.DescargosTarjeta.CountAsync(x => x.Verificacion == VerificacionDescargo.DiscrepanciaNoResuelta && !conActa.Contains(x.TarjetaId))
+                       + await _db.ReportesFraude.CountAsync(r => r.Estado == EstadoReporteFraude.Generado && !conActa.Contains(r.TarjetaId));
+
+            return new DashboardDescargadorViewModel
+            {
+                RutasPorProcesar = abiertas.Count,
+                RutasCerradas = hojas.Count - abiertas.Count,
+                TarjetasPendientes = abiertas.Sum(h => pendientesPorRuta.GetValueOrDefault(h.AsignacionRutaId)),
+                FraudePorRegistrar = fraude,
+                ReportesGenerados = await _db.ReportesDescargo.CountAsync(),
+                Rutas = abiertas.Take(6).Select(h => new FilaRutaPendiente(h.Id, h.AsignacionRuta!.Repartidor?.Nombre ?? "—",
+                    h.AsignacionRuta.SectorCobertura ?? "—", pendientesPorRuta.GetValueOrDefault(h.AsignacionRutaId),
+                    (descargos.GetValueOrDefault(h.Id)?.Estado ?? EstadoDescargoRuta.Pendiente).Texto())).ToList()
+            };
+        }
+
+        private async Task<DashboardBovedaViewModel> ConstruirDashboardBovedaAsync()
+        {
+            var actas = await _db.ActasFraude.Include(a => a.Tarjeta).ThenInclude(t => t!.Cliente)
+                .Where(a => a.Estado == EstadoActaFraude.Registrada).OrderBy(a => a.Id).Take(5).ToListAsync();
+            var desde = DateTime.UtcNow.AddHours(-36);
+            var ingresos = await _db.ActasFraude.Where(a => a.FechaIngreso != null && a.FechaIngreso >= desde).Select(a => a.FechaIngreso!.Value).ToListAsync();
+            return new DashboardBovedaViewModel
+            {
+                FraudePorIngresar = await _db.ActasFraude.CountAsync(a => a.Estado == EstadoActaFraude.Registrada),
+                IngresadasHoy = ingresos.Count(f => HoraLima.Convertir(f).Date == HoraLima.Ahora.Date),
+                InventarioTotal = await _db.InventarioBoveda.CountAsync(),
+                InventarioFraude = await _db.InventarioBoveda.CountAsync(i => i.EstadoFisico == DefraudacionService.EstadoFisicoFraude),
+                Pendientes = actas.Select(a => new ActaFraudeFilaVM
+                {
+                    Id = a.Id, Codigo = a.Tarjeta?.Codigo ?? "—", Cliente = a.Tarjeta?.Cliente?.NombreCompleto ?? "—",
+                    Origen = a.Origen, Descripcion = a.Descripcion, Estado = a.Estado, FechaRegistro = a.FechaRegistro
+                }).ToList()
+            };
         }
 
         private async Task<DashboardVerificadorViewModel> ConstruirDashboardVerificadorAsync()
