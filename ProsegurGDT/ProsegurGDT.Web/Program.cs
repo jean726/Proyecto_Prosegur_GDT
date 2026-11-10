@@ -78,7 +78,9 @@ app.Logger.LogWarning("IA umbrales: medio={M} alto={A}",
 
 using (var scope = app.Services.CreateScope())
 {
-    await DbSeeder.SeedAsync(scope.ServiceProvider, app.Environment.IsDevelopment());
+    // Los datos demo se cargan en Development o con Seed:Demo=true (presentación en Azure)
+    var cargarDemo = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:Demo");
+    await DbSeeder.SeedAsync(scope.ServiceProvider, cargarDemo);
 }
 
 if (app.Environment.IsDevelopment())

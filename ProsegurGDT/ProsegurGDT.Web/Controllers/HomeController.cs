@@ -116,7 +116,7 @@ namespace ProsegurGDT.Web.Controllers
                 .ToListAsync();
             modelo.UltimasAcciones = acciones
                 .Select(a => new FilaAccion(a.Accion, a.Detalle, a.UsuarioNombre,
-                    DateTime.SpecifyKind(a.FechaHoraUtc, DateTimeKind.Utc).ToLocalTime()))
+                    HoraLima.Convertir(DateTime.SpecifyKind(a.FechaHoraUtc, DateTimeKind.Utc))))
                 .ToList();
 
             return modelo;
@@ -193,7 +193,7 @@ namespace ProsegurGDT.Web.Controllers
 
         private async Task<DashboardTelefonistaViewModel> ConstruirDashboardTelefonistaAsync()
         {
-            var hoy = DateOnly.FromDateTime(DateTime.Now);
+            var hoy = DateOnly.FromDateTime(HoraLima.Ahora);
             var vigentes = _db.Citas
                 .Where(c => c.Vigente && c.Tarjeta!.Estado == EstadoTarjeta.CitaProgramada);
 
