@@ -1,0 +1,146 @@
+@model ProsegurGDT.Web.Models.DetalleHojaRutaVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Hoja de ruta";
+    var tono = Model.Estado switch
+    {
+        EstadoHojaRuta.PendienteDeCorreccion => "riesgo",
+        EstadoHojaRuta.PendienteDeAprobacion => "pendiente",
+        EstadoHojaRuta.Aprobada => "custodia",
+        _ => "entrega"
+    };
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Hoja de ruta — @Model.Repartidor</h1>
+        <p class="pg-subtitulo">Lote @Model.CodigoHojaControl · Remito @Model.Remito · @Model.Banco · Sector @Model.Sector</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">@Html.ValidationSummary()</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        <span class="pg-estado pg-estado-@tono">@Model.Estado.Texto()</span>
+        <span class="text-muted small">Repartidor: @Model.Repartidor (@Model.TipoRepartidor.Texto()) · Hoja de asignación emitida @HoraLima.Convertir(Model.FechaEmisionAsignacion).ToString("dd/MM/yyyy HH:mm")</span>
+    </div>
+    @if (Model.Discrepancia is not null)
+    {
+        <div class="alert alert-warning mt-3 mb-0">
+            <strong>Discrepancia detectada.</strong> @Model.Discrepancia
+            <div class="small">La hoja no puede aprobarse ni emitirse hasta resolverla. Las hojas de los demás repartidores no se ven afectadas.</div>
+        </div>
+    }
+    @if (Model.AprobadaPor is not null)
+    {
+        <div class="mt-2 small text-muted">Aprobada por @Model.AprobadaPor el @HoraLima.Convertir(Model.FechaAprobacion!.Value).ToString("dd/MM/yyyy HH:mm")</div>
+    }
+    @if (Model.FechaFirma is not null)
+    {
+        <div class="mt-1 small text-muted">Firma de conformidad del repartidor registrada por @Model.FirmaRegistradaPor el @HoraLima.Convertir(Model.FechaFirma.Value).ToString("dd/MM/yyyy HH:mm")</div>
+    }
+    @if (Model.MotivoSinFirma is not null)
+    {
+        <div class="mt-1 small text-danger">El repartidor no firmó: @Model.MotivoSinFirma. Las tarjetas permanecen pendientes de entrega al repartidor hasta obtener la firma.</div>
+    }
+</div>
+
+@if (Model.PuedeGestionar)
+{
+    <div class="pg-tarjeta pg-bloque mb-3 no-imprimir">
+        <h2 class="h6 mb-2">Acciones</h2>
+        @if (Model.Estado == EstadoHojaRuta.PendienteDeAprobacion)
+        {
+            <div class="d-flex flex-wrap gap-2 align-items-start">
+                <form asp-action="Aprobar" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-primary">Verificar y aprobar</button>
+                </form>
+                <form asp-action="Discrepancia" method="post" class="d-flex gap-2 flex-grow-1">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Detalle de la discrepancia que detectó" />
+                    <button type="submit" class="btn btn-outline-danger text-nowrap">Reportar discrepancia</button>
+                </form>
+            </div>
+            <div class="small text-muted mt-2">Al aprobar, el sistema revisa que cada tarjeta siga asignada a ruta, con cita vigente, sin alertas y con dirección completa (RN-05).</div>
+        }
+        else if (Model.Estado == EstadoHojaRuta.PendienteDeCorreccion)
+        {
+            <form asp-action="Resolver" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-primary">Volver a verificar</button>
+            </form>
+            <div class="small text-muted mt-2">Corrija el registro (cita, alerta o dirección) y vuelva a verificar para que la hoja pueda aprobarse.</div>
+        }
+        else if (Model.Estado == EstadoHojaRuta.Aprobada)
+        {
+            <div class="d-flex flex-wrap gap-2 align-items-start">
+                <form asp-action="Firmar" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-primary">Registrar firma del repartidor</button>
+                </form>
+                <form asp-action="SinFirma" method="post" class="d-flex gap-2 flex-grow-1">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Motivo por el que el repartidor no firmó" />
+                    <button type="submit" class="btn btn-outline-danger text-nowrap">Repartidor no firmó</button>
+                </form>
+            </div>
+            <div class="small text-muted mt-2">El repartidor debe firmar la hoja de asignación antes de iniciar su ruta (RN-06).</div>
+        }
+        else
+        {
+            <div class="text-muted">La hoja de ruta está firmada y lista para su ejecución. No requiere más acciones.</div>
+        }
+    </div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>#</th><th>Tarjeta</th><th>Cliente</th><th>Dirección de entrega</th><th>Cita</th><th>Verificación</th></tr>
+            </thead>
+            <tbody>
+                @{ var n = 0; }
+                @foreach (var t in Model.Tarjetas)
+                {
+                    n++;
+                    <tr>
+                        <td>@n</td>
+                        <td class="fw-semibold">@t.Codigo</td>
+                        <td>@t.Cliente</td>
+                        <td>@t.Direccion@(t.Zona is null ? "" : " · " + t.Zona)</td>
+                        <td>
+                            @if (t.FechaCita is not null)
+                            {
+                                <div>@t.FechaCita.Value.ToString("dd/MM/yyyy") @t.HoraCita!.Value.ToString("HH:mm")</div>
+                                <div class="text-muted small">@t.LugarCita</div>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @if (t.Observacion is null) { <span class="pg-estado pg-estado-entrega">Coincide</span> }
+                            else { <span class="pg-estado pg-estado-riesgo">Discrepancia</span><div class="small text-muted">@t.Observacion</div> }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Tarjetas.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">La ruta no tiene tarjetas.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

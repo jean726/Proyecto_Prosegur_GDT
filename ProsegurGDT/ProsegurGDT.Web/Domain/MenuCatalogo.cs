@@ -9,7 +9,7 @@ public static class MenuCatalogo
         new("Ingreso de tarjetas", "Lotes", "Index", new[] { Roles.Supervisor }, true),
         new("Fichas de clientes", "Clientes", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, true),
         new("Citas con clientes", "Citas", "Index", new[] { Roles.AuxiliarTelefonista }, true),
-        new("Hojas de ruta", "HojasRuta", "Index", new[] { Roles.Supervisor }, false),
+        new("Hojas de ruta", "HojasRuta", "Index", new[] { Roles.Supervisor, Roles.AuxiliarTelefonista }, true),
         new("Descargo de tarjetas", "Descargo", "Index", new[] { Roles.Descargador }, false),
         new("Clasificación por zona", "Clasificacion", "Index", new[] { Roles.Clasificador }, true),
         new("Planilla de armado", "Planillas", "Index", new[] { Roles.Clasificador }, true),

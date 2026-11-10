@@ -1,0 +1,93 @@
+@model ProsegurGDT.Web.Models.HojasRutaIndexVM
+@using ProsegurGDT.Web.Domain
+@{
+    ViewData["Title"] = "Hojas de ruta";
+    var porAprobar = Model.Hojas.Count(h => h.Estado == EstadoHojaRuta.PendienteDeAprobacion || h.Estado == EstadoHojaRuta.PendienteDeCorreccion);
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>Hojas de ruta a mensajeros</h1>
+        <p class="pg-subtitulo">@(Model.Hojas.Count == 0 ? "Aún no hay hojas de ruta" : $"{Model.Hojas.Count} hojas de ruta · {porAprobar} por aprobar")</p>
+    </div>
+</div>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (Model.Pendientes.Count > 0)
+{
+    <div class="pg-tarjeta pg-bloque mb-3">
+        <h2 class="h6 mb-2">Hojas de asignación sin hojas de ruta</h2>
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Hoja de control</th><th>Remito</th><th>Emitida</th><th class="text-end">Rutas</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Pendientes)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(p.CodigoHojaControl ?? "—")</td>
+                        <td>@(p.Remito ?? "—")</td>
+                        <td>@HoraLima.Convertir(p.FechaHoraEmision).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end">@p.RutasSinHoja de @p.Rutas</td>
+                        <td class="text-end">
+                            @if (Model.PuedeGestionar)
+                            {
+                                <form asp-action="Generar" asp-route-id="@p.HojaAsignacionId" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-primary">Generar hojas de ruta</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Hoja de control</th>
+                    <th>Repartidor</th>
+                    <th>Sector</th>
+                    <th class="text-end">Tarjetas</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model.Hojas)
+                {
+                    var tono = h.Estado switch
+                    {
+                        EstadoHojaRuta.PendienteDeCorreccion => "riesgo",
+                        EstadoHojaRuta.PendienteDeAprobacion => "pendiente",
+                        EstadoHojaRuta.Aprobada => "custodia",
+                        _ => "entrega"
+                    };
+                    <tr>
+                        <td class="fw-semibold">@(h.CodigoHojaControl ?? "—")</td>
+                        <td>@h.Repartidor</td>
+                        <td>@h.Sector</td>
+                        <td class="text-end">@h.Tarjetas</td>
+                        <td><span class="pg-estado pg-estado-@tono">@h.Estado.Texto()</span></td>
+                        <td class="text-end">
+                            <a asp-action="Detalle" asp-route-id="@h.Id" class="btn btn-sm @(Model.PuedeGestionar ? "btn-primary" : "btn-outline-secondary")">@(Model.PuedeGestionar ? "Revisar" : "Ver")</a>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Hojas.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">Cuando el Analista de Rutas emita una hoja de asignación, podrá generar aquí las hojas de ruta de cada repartidor.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
