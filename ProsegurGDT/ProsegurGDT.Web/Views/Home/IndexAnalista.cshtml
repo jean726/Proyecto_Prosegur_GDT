@@ -1,77 +1,222 @@
-@model ProsegurGDT.Web.Models.DashboardAnalistaViewModel
+@using System.Globalization
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Models
+@model DashboardAnalistaViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Reportes de densidad por asignar y carga de los repartidores hoy</p>
-    </div>
-    <a asp-controller="Asignaciones" asp-action="Index" class="btn btn-primary">Hojas de asignación</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.ReportesPendientes > 0)
-{
-    <div class="pg-aviso">
-        @Model.ReportesPendientes @(Model.ReportesPendientes == 1 ? "lote espera" : "lotes esperan") su hoja de asignación
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 3; // «Ruta»
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Reportes por asignar</small><strong>@Model.ReportesPendientes</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hojas emitidas hoy</small><strong>@Model.HojasHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Tarjetas en ruta hoy</small><strong>@Model.TarjetasEnRutaHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Repartidores activos</small><strong>@Model.RepartidoresActivos</strong></div>
-</div>
+    // Carga de cada repartidor: relación asignadas/capacidad, ordenada de mayor a menor
+    string Estado(FilaRepartidorCarga c) =>
+        c.Asignadas == 0 ? "cero"
+        : c.Asignadas > c.Capacidad ? "over"
+        : c.Asignadas == c.Capacidad ? "lim"
+        : "ok";
+    double Razon(FilaRepartidorCarga c) => c.Capacidad > 0 ? (double)c.Asignadas / c.Capacidad : (c.Asignadas > 0 ? 1 : 0);
 
-<div class="pg-tarjeta pg-bloque mb-3">
-    <h2 class="h6 mb-2">Lotes pendientes de hoja</h2>
-    @if (Model.Pendientes.Count == 0)
-    {
-        <p class="text-muted mb-2">No hay reportes de densidad pendientes.</p>
-    }
+    var cargas = Model.Cargas.OrderByDescending(Razon).ThenBy(c => c.Nombre).ToList();
+    var escala = Math.Max(1.0, cargas.Count > 0 ? cargas.Max(Razon) : 1.0) * 1.06;
+    var exceden = cargas.Count(c => Estado(c) == "over");
+    var alLimite = cargas.Count(c => Estado(c) == "lim");
+    var conMargen = cargas.Count - exceden - alLimite;
+    var libre = cargas.Sum(c => Math.Max(0, c.Capacidad - c.Asignadas));
+
+    var titular = Model.ReportesPendientes > 0
+        ? $"{Model.ReportesPendientes} {Pl(Model.ReportesPendientes, "lote espera", "lotes esperan")} su hoja de asignación."
+        : "Todo al día: ningún lote espera hoja.";
+    var riesgo = exceden > 0
+        ? $"{exceden} {Pl(exceden, "repartidor excede", "repartidores exceden")} su capacidad."
+        : "";
+
+    string subtitulo;
+    if (cargas.Count == 0)
+        subtitulo = "No hay repartidores activos para repartir la carga de hoy.";
+    else if (Model.TarjetasEnRutaHoy == 0)
+        subtitulo = "Aún no se ha emitido ninguna hoja hoy: todos los repartidores tienen su capacidad libre.";
     else
     {
-        <table class="table mb-2">
-            <thead><tr><th>Hoja de control</th><th>Remito</th><th class="text-end">Zonas</th><th>Reporte</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var p in Model.Pendientes)
+        var alto = cargas.First();
+        var bajo = cargas.Last();
+        subtitulo = $"La carga más alta es de {alto.Nombre} ({(int)Math.Round(Razon(alto) * 100)} %) y la más baja, de {bajo.Nombre} ({(int)Math.Round(Razon(bajo) * 100)} %).";
+    }
+
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var hoy = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)hoy.DayOfWeek]} {hoy:dd/MM/yyyy}";
+
+    var siguiente = Model.Pendientes.FirstOrDefault();
+    var cola = Model.Pendientes.Skip(1).ToList();
+
+    var resumenHoy = new (string Texto, int Valor)[]
+    {
+        ("hojas emitidas hoy", Model.HojasHoy),
+        ("tarjetas en ruta hoy", Model.TarjetasEnRutaHoy),
+        ("repartidores activos", Model.RepartidoresActivos)
+    };
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del analista de rutas</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="Asignaciones" asp-action="Index" class="pg-t-boton">Hojas de asignación</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Ruta">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
                 {
-                    <tr>
-                        <td>@p.HojaControl</td>
-                        <td>@p.Remito</td>
-                        <td class="text-end">@p.Zonas</td>
-                        <td>@p.Estado</td>
-                        <td class="text-end"><a asp-controller="Asignaciones" asp-action="Generar" asp-route-id="@p.LoteId">Generar hoja →</a></td>
-                    </tr>
+                    <span class="pg-a-tag">Tu tramo</span>
                 }
-            </tbody>
-        </table>
+            </div>
+            @if (activo)
+            {
+                <div class="pg-a-hoy pg-a-hoy-d">
+                    @foreach (var h in resumenHoy)
+                    {
+                        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "")">
+                            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+                            <span class="pg-a-hoy-t">@h.Texto</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    @foreach (var h in resumenHoy)
+    {
+        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "")">
+            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+            <span class="pg-a-hoy-t">@h.Texto</span>
+        </div>
     }
 </div>
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Carga de repartidores hoy</h2>
-    @if (Model.Cargas.Count == 0)
-    {
-        <p class="text-muted mb-0">No hay repartidores activos.</p>
-    }
-    else
-    {
-        <table class="table mb-0">
-            <thead><tr><th>Repartidor</th><th>Tipo</th><th class="text-end">Asignadas</th><th class="text-end">Capacidad</th></tr></thead>
-            <tbody>
-                @foreach (var c in Model.Cargas)
+<div class="pg-a-cols">
+    <div class="pg-a-izq">
+        @if (siguiente != null)
+        {
+            <section class="pg-a-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                    <span class="pg-t-mono pg-t-tenue">1 de @Model.Pendientes.Count</span>
+                </div>
+                <div class="pg-a-hero-hoja">
+                    <span class="pg-a-hero-sub">Hoja de control</span>
+                    <span class="pg-a-hero-codigo">@siguiente.HojaControl</span>
+                </div>
+                <div class="pg-a-hero-meta">
+                    <div><span class="pg-a-hero-sub">Remito</span><span class="pg-t-mono">@siguiente.Remito</span></div>
+                    <div><span class="pg-a-hero-sub">Zonas</span><span class="pg-t-mono">@siguiente.Zonas</span></div>
+                    <div><span class="pg-a-hero-sub">Reporte</span><span>@siguiente.Estado</span></div>
+                </div>
+                <a asp-controller="Asignaciones" asp-action="Generar" asp-route-id="@siguiente.LoteId" class="pg-a-hero-boton"><span>Generar hoja</span><span class="pg-t-mono">→</span></a>
+            </section>
+
+            <section class="pg-t-panel pg-a-cola" aria-label="En cola">
+                <div class="pg-t-panel-cab">
+                    <h2>En cola</h2>
+                    <span class="pg-t-mono pg-t-tenue">@(cola.Count > 0 ? $"{cola.Count} {Pl(cola.Count, "lote", "lotes")}" : "Sin más lotes")</span>
+                </div>
+                @{ var fc = 0; }
+                @foreach (var p in cola)
                 {
-                    <tr>
-                        <td>@c.Nombre</td>
-                        <td>@c.Tipo</td>
-                        <td class="text-end">@c.Asignadas</td>
-                        <td class="text-end">@(c.Asignadas > c.Capacidad ? Html.Raw($"<span class=\"pg-estado pg-estado-riesgo\">{c.Capacidad}</span>") : Html.Raw(c.Capacidad.ToString()))</td>
-                    </tr>
+                    <div class="pg-a-cola-fila" style="--f:@(fc++)">
+                        <div class="pg-a-cola-id">
+                            <span class="pg-t-mono pg-a-blanco">@p.HojaControl</span>
+                            <span class="pg-t-mono pg-t-nota">@p.Remito · @p.Estado</span>
+                        </div>
+                        <span class="pg-t-mono pg-a-zonas">@p.Zonas @Pl(p.Zonas, "zona", "zonas")</span>
+                        <a asp-controller="Asignaciones" asp-action="Generar" asp-route-id="@p.LoteId">Generar hoja →</a>
+                    </div>
                 }
-            </tbody>
-        </table>
-    }
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">Todo al día.</p>
+                <p class="pg-a-ok-texto">No hay reportes de densidad pendientes. Cuando el clasificador genere uno, el lote aparecerá aquí.</p>
+                <a asp-controller="Asignaciones" asp-action="Index" class="pg-t-boton-sec">Hojas de asignación →</a>
+            </section>
+        }
+    </div>
+
+    <section class="pg-t-panel pg-a-carga" aria-label="Carga de repartidores hoy">
+        <div class="pg-a-carga-cab">
+            <div>
+                <h2>Carga de repartidores hoy</h2>
+                @if (cargas.Count > 0)
+                {
+                    <span class="pg-t-mono pg-t-tenue"><span data-pg-contar="@libre">@libre</span> @Pl(libre, "tarjeta", "tarjetas") de capacidad libre</span>
+                }
+            </div>
+            @if (cargas.Count > 0)
+            {
+                <div class="pg-a-chips">
+                    @if (exceden > 0) {<span class="pg-t-estado pg-t-estado-riesgo"><span class="pg-t-mono">@exceden</span> @Pl(exceden, "excede", "exceden")</span>}
+                    @if (alLimite > 0) {<span class="pg-t-estado pg-t-estado-pendiente"><span class="pg-t-mono">@alLimite</span> al límite</span>}
+                    @if (conMargen > 0) {<span class="pg-t-estado pg-t-estado-custodia"><span class="pg-t-mono">@conMargen</span> con margen</span>}
+                </div>
+            }
+        </div>
+
+        @if (cargas.Count == 0)
+        {
+            <div class="pg-t-vacio">
+                <span class="pg-t-etiqueta">0 repartidores</span>
+                <p class="pg-t-vacio-titulo">No hay repartidores activos.</p>
+                <p class="pg-t-vacio-texto">La carga de cada repartidor aparecerá aquí cuando haya repartidores activos.</p>
+            </div>
+        }
+        else
+        {
+            <div class="pg-a-fila pg-a-fila-cab" aria-hidden="true">
+                <span>Repartidor</span>
+                <span class="pg-a-cab-barra"><span>Asignadas</span><span>│ capacidad</span></span>
+                <span class="num">Asig. / Cap.</span>
+                <span class="num">Uso</span>
+            </div>
+            var fr = 0;
+            foreach (var c in cargas)
+            {
+                var estado = Estado(c);
+                var r = Razon(c);
+                var llenoPct = Math.Min(r, 1.0) / escala * 100;
+                var capPct = 100 / escala;
+                var excesoPct = r > 1 ? (r - 1) / escala * 100 : 0;
+                var uso = (int)Math.Round(r * 100);
+                <div class="pg-a-fila est-@estado" style="--f:@(fr++);--w:@F(llenoPct);--cap:@F(capPct);--ex:@F(excesoPct)">
+                    <div class="pg-a-nombre">
+                        <span class="pg-a-nombre-t">@c.Nombre</span>
+                        <span class="pg-a-tipo">@c.Tipo</span>
+                    </div>
+                    <div class="pg-a-pista" role="img" aria-label="@c.Nombre: @c.Asignadas asignadas de @c.Capacidad de capacidad">
+                        <i class="pg-a-relleno"></i>
+                        <i class="pg-a-exceso"></i>
+                        <i class="pg-a-marca"></i>
+                    </div>
+                    <span class="pg-a-cifras pg-t-mono"><span class="pg-a-asig" data-pg-contar="@c.Asignadas">@c.Asignadas</span><span class="pg-a-barra"> / </span>@c.Capacidad</span>
+                    <span class="pg-a-uso pg-t-mono"><span data-pg-contar="@uso">@uso</span> %</span>
+                </div>
+            }
+        }
+    </section>
 </div>
