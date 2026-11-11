@@ -1,55 +1,72 @@
 ﻿@model ProsegurGDT.Web.Models.DashboardAdminViewModel
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
     var maxRol = Model.PorRol.Count > 0 ? Model.PorRol.Max(r => r.Total) : 1;
+    var titular = $"{Model.Activas} {Pl(Model.Activas, "cuenta activa", "cuentas activas")}.";
+    var riesgo = Model.Bloqueadas > 0
+        ? $"{Model.Bloqueadas} {Pl(Model.Bloqueadas, "bloqueada", "bloqueadas")} ahora."
+        : "";
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Cuentas activas", Model.Activas, "ok"),
+        ("Desactivadas", Model.Desactivadas, "neu"),
+        ("Bloqueadas ahora", Model.Bloqueadas, "riesgo")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Resumen de cuentas y actividad del sistema</p>
-    </div>
-    <a asp-controller="Usuarios" asp-action="Crear" class="btn btn-primary">+ Nuevo usuario</a>
-</div>
+@await Html.PartialAsync("_TorreCab", (Rol: "del administrador", Titular: titular, Riesgo: riesgo, Sub: "Resumen de cuentas y actividad del sistema", Boton: "+ Nuevo usuario", Ctrl: "Usuarios", Act: "Crear"))
+@await Html.PartialAsync("_TorrePlacas", placas)
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Cuentas activas</small><strong>@Model.Activas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-off"><small>Desactivadas</small><strong>@Model.Desactivadas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Bloqueadas ahora</small><strong>@Model.Bloqueadas</strong></div>
-</div>
-
-<div class="pg-dash-cols">
-    <div class="pg-tarjeta">
-        <h2 class="h6 mb-3">Usuarios por rol</h2>
+<div class="pg-t-cols">
+    <section class="pg-t-panel pg-t-lotes" aria-label="Usuarios por rol">
+        <div class="pg-t-panel-cab"><h2>Usuarios por rol</h2></div>
         @if (Model.PorRol.Count == 0)
         {
-            <p class="text-muted mb-0">Aún no hay usuarios con rol asignado.</p>
+            <p class="pg-t-bloque-vacio">Aún no hay usuarios con rol asignado.</p>
         }
-        @foreach (var f in Model.PorRol)
+        else
         {
-            var ancho = (int)Math.Round(100.0 * f.Total / maxRol);
-            <div class="pg-barra-fila">
-                <span>@f.Rol</span>
-                <div class="pg-barra-pista"><span style="width:@(ancho)%"></span></div>
-                <span>@f.Total</span>
+            <div class="pg-t-roles">
+                @{ var fr = 0; }
+                @foreach (var f in Model.PorRol)
+                {
+                    var ancho = (int)Math.Round(100.0 * f.Total / maxRol);
+                    <div class="pg-t-rol">
+                        <span>@f.Rol</span>
+                        <span class="pg-t-medidor" style="--v:@ancho;--f:@(fr++)"><i></i></span>
+                        <span class="pg-t-rol-n">@f.Total</span>
+                    </div>
+                }
             </div>
         }
-    </div>
+    </section>
 
-    <div class="pg-tarjeta">
-        <h2 class="h6 mb-2">Últimas acciones</h2>
+    <section class="pg-t-panel pg-t-lotes" aria-label="Últimas acciones">
+        <div class="pg-t-panel-cab">
+            <h2>Últimas acciones</h2>
+            <a asp-controller="Auditoria" asp-action="Index">Ver toda la auditoría →</a>
+        </div>
         @if (Model.UltimasAcciones.Count == 0)
         {
-            <p class="text-muted mb-0">Todavía no hay acciones registradas.</p>
+            <p class="pg-t-bloque-vacio">Todavía no hay acciones registradas.</p>
         }
-        @foreach (var a in Model.UltimasAcciones)
+        else
         {
-            <div class="pg-accion-fila">
-                <span class="pg-accion-etiqueta">@a.Accion</span>
-                <span>@a.Usuario@(string.IsNullOrWhiteSpace(a.Detalle) ? "" : " · " + a.Detalle)</span>
-                <small class="text-muted">@a.FechaLocal.ToString("dd/MM HH:mm")</small>
+            <div class="pg-t-acciones">
+                @foreach (var a in Model.UltimasAcciones)
+                {
+                    <div class="pg-t-accion-fila">
+                        <span class="pg-t-accion-etiq">@a.Accion</span>
+                        <span>@a.Usuario@(string.IsNullOrWhiteSpace(a.Detalle) ? "" : " · " + a.Detalle)</span>
+                        <span class="pg-t-hora">@a.FechaLocal.ToString("dd/MM HH:mm")</span>
+                    </div>
+                }
             </div>
         }
-        <div class="mt-3"><a asp-controller="Auditoria" asp-action="Index">Ver toda la auditoría →</a></div>
-    </div>
+    </section>
 </div>
