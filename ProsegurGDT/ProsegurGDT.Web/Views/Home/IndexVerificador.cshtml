@@ -2,53 +2,58 @@
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    var titular = Model.HojasPorRevisar > 0
+        ? $"{Model.HojasPorRevisar} {Pl(Model.HojasPorRevisar, "hoja de ruta espera", "hojas de ruta esperan")} tu revisión."
+        : "Todo al día.";
+
+    var accion = Model.HojasPorRevisar > 0
+        ? (Titulo: $"Revisar {Model.HojasPorRevisar} {Pl(Model.HojasPorRevisar, "hoja aprobada", "hojas aprobadas")}", Detalle: $"{Model.TarjetasEnRevision} {Pl(Model.TarjetasEnRevision, "tarjeta", "tarjetas")} en revisión · reporta la que parezca sospechosa", Boton: "Reportes de fraude", Ctrl: "Fraude", Act: "Index", Id: (int?)null)
+        : (Titulo: "No hay hojas por revisar", Detalle: "Aparecerán cuando el Supervisor apruebe nuevas hojas de ruta.", Boton: "Reportes de fraude", Ctrl: "Fraude", Act: "Index", Id: (int?)null);
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Hojas por revisar", Model.HojasPorRevisar, "cola"),
+        ("Tarjetas en revisión", Model.TarjetasEnRevision, "info"),
+        ("Reportes hoy", Model.ReportesHoy, "riesgo"),
+        ("Reportes en total", Model.ReportesTotal, "neu")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Hojas de ruta aprobadas por revisar y reportes de fraude</p>
+@await Html.PartialAsync("_TorreCab", (Rol: "del verificador", Titular: titular, Riesgo: "", Sub: "Hojas de ruta aprobadas por revisar y reportes de fraude", Boton: "Reportes de fraude", Ctrl: "Fraude", Act: "Index"))
+@await Html.PartialAsync("_TorreTira", new[] { 3 })
+@await Html.PartialAsync("_TorreAccion", accion)
+@await Html.PartialAsync("_TorrePlacas", placas)
+
+<section class="pg-t-panel pg-t-bloque" aria-label="Últimos reportes de fraude">
+    <div class="pg-t-panel-cab">
+        <h2>Últimos reportes de fraude</h2>
+        <a asp-controller="Fraude" asp-action="Index">Ver todos →</a>
     </div>
-    <a asp-controller="Fraude" asp-action="Index" class="btn btn-primary">Reportes de fraude</a>
-</div>
-
-@if (Model.HojasPorRevisar > 0)
-{
-    <div class="pg-aviso">
-        @Model.HojasPorRevisar @(Model.HojasPorRevisar == 1 ? "hoja de ruta espera" : "hojas de ruta esperan") tu revisión
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hojas por revisar</small><strong>@Model.HojasPorRevisar</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Tarjetas en revisión</small><strong>@Model.TarjetasEnRevision</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Reportes hoy</small><strong>@Model.ReportesHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Reportes en total</small><strong>@Model.ReportesTotal</strong></div>
-</div>
-
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Últimos reportes de fraude</h2>
     @if (Model.Recientes.Count == 0)
     {
-        <p class="text-muted mb-0">Aún no generaste reportes de fraude.</p>
+        <p class="pg-t-bloque-vacio">Aún no generaste reportes de fraude.</p>
     }
     else
     {
-        <table class="table mb-2">
+        <table class="pg-t-tabla apilada">
             <thead><tr><th>#</th><th>Tarjeta</th><th>Indicador</th><th>Fecha</th><th></th></tr></thead>
             <tbody>
+                @{ var fila = 0; }
                 @foreach (var r in Model.Recientes)
                 {
-                    <tr>
-                        <td>@r.Id</td>
-                        <td>@r.Codigo</td>
-                        <td>@r.Tipo</td>
-                        <td>@HoraLima.Convertir(r.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
-                        <td class="text-end"><a asp-controller="Fraude" asp-action="Detalle" asp-route-id="@r.Id">Ver →</a></td>
+                    <tr style="--f:@(fila++)">
+                        <td class="pg-t-mono pg-t-tenue" data-etiqueta="#">@r.Id</td>
+                        <td class="pg-t-mono fuerte" data-etiqueta="Tarjeta">@r.Codigo</td>
+                        <td data-etiqueta="Indicador">@r.Tipo</td>
+                        <td class="pg-t-mono pg-t-tenue" data-etiqueta="Fecha">@HoraLima.Convertir(r.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="acc"><a asp-controller="Fraude" asp-action="Detalle" asp-route-id="@r.Id">Ver →</a></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-    <a asp-controller="Fraude" asp-action="Index">Ver todos →</a>
-</div>
+</section>
