@@ -1602,6 +1602,79 @@ button.pg-enviando, input.pg-enviando {
     .pg-f-tarjeta::after { content: " · Programada"; }
 }
 
+/* ===== Fase 11: dashboard del Descargador ===== */
+.pg-d-cols { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.6fr); gap: 22px; align-items: start; }
+.pg-d-izq { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pg-d-cols > .pg-t-panel { margin-bottom: 0; }
+.pg-a-paso.pg-d-resultado { flex: 5.5; }
+.pg-d-hoy { display: flex; gap: 26px; }
+.pg-d-hoy .pg-a-hoy-n { font-size: 1.375rem; white-space: nowrap; }
+
+.pg-d-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pg-d-fraude, .pg-d-cierre { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: 1px solid var(--t-linea); background: var(--t-panel); border-radius: 8px; min-width: 0; }
+.pg-d-fraude.con-riesgo { border-color: rgba(255, 107, 107, .45); background: rgba(255, 107, 107, .07); }
+.pg-d-tit { font-size: .8rem; font-weight: 600; color: #fff; }
+.pg-d-fr-n { font-size: 2.25rem; font-weight: 500; line-height: 1; color: #5b6471; font-variant-numeric: tabular-nums; }
+.pg-d-fraude.con-riesgo .pg-d-fr-n { color: var(--t-riesgo); }
+.pg-d-fr-t { font-size: .8rem; line-height: 1.4; color: #b9c0ca; text-wrap: pretty; }
+.pg-d-link { margin-top: auto; font-size: .875rem; }
+.pg-d-link.riesgo { color: #ff8a8a; font-weight: 600; }
+.pg-d-ci-n { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pg-d-ci-n > div { display: flex; flex-direction: column; gap: 2px; }
+.pg-d-ci-n .pg-t-mono { font-size: 1.75rem; font-weight: 500; line-height: 1.05; color: #fff; font-variant-numeric: tabular-nums; }
+.pg-d-ci-n .pg-t-mono.cero { color: #5b6471; }
+.pg-d-ci-n small { font-size: .75rem; color: #b9c0ca; }
+
+.pg-d-rutas { display: flex; flex-direction: column; overflow: hidden; }
+.pg-d-rutas-cab { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px 14px; }
+.pg-d-rutas-cab > div { display: flex; flex-direction: column; gap: 4px; }
+.pg-d-rutas-cab h2 { margin: 0; font-size: .9rem; font-weight: 600; color: #fff; }
+.pg-d-rutas-sub { font-size: .8rem; color: var(--t-texto-3); }
+.pg-d-rutas-n { font-size: .8rem; color: #b9c0ca; white-space: nowrap; }
+.pg-d-fila { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 190px 84px; gap: 14px; align-items: center; padding: 0 22px; }
+.pg-d-fila-cab { padding-top: 8px; padding-bottom: 8px; border-top: 1px solid var(--t-linea-suave); border-bottom: 1px solid var(--t-linea-suave); }
+.pg-d-ruta { height: 60px; border-bottom: 1px solid #161a20; animation: pg-t-entra .5s ease both; animation-delay: calc(var(--f) * 60ms + 300ms); }
+.pg-d-ruta:hover { background: #141820; }
+.pg-d-quien { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pg-d-rep { font-size: .95rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-d-sector { font-size: .75rem; color: #c7ccd3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-d-sector.nada { color: #6b7380; }
+.pg-d-carga { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: center; }
+.pg-d-pend { font-size: 1rem; font-weight: 500; color: var(--t-cola); text-align: right; font-variant-numeric: tabular-nums; }
+.pg-d-carga .pg-a-pista { height: 8px; }
+.pg-d-carga .pg-a-relleno { opacity: .85; }
+.pg-d-estado { justify-self: start; font-size: .75rem; font-weight: 500; padding: 3px 9px; border-radius: 3px; border: 1px solid #3a414c; color: #b9c0ca; white-space: nowrap; }
+.pg-d-estado.proceso { background: var(--t-cola); border-color: var(--t-cola); color: #111418; }
+.pg-d-estado.doc { border-color: #9aa2ad; color: var(--t-texto); }
+.pg-d-proc { justify-self: end; font-size: .875rem; font-weight: 500; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pg-d-ruta { animation: none; }
+}
+
+@media (max-width: 1280px) {
+    .pg-d-fila { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 170px 76px; gap: 10px; }
+}
+
+@media (max-width: 1100px) {
+    .pg-d-cols { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .pg-a-paso.pg-d-resultado { flex: 2.4; }
+    .pg-d-duo { grid-template-columns: 1fr; }
+    .pg-d-rutas-cab { padding: 14px 14px 10px; }
+    .pg-d-fila-cab { display: none; }
+    .pg-d-ruta { height: auto; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; padding: 12px 14px; border-top: 1px solid var(--t-linea-suave); border-bottom: 0; }
+    .pg-d-quien { grid-column: 1 / -1; grid-row: 1; flex-direction: row; align-items: baseline; gap: 8px; }
+    .pg-d-sector { flex: none; }
+    .pg-d-carga { grid-column: 1 / -1; grid-row: 2; }
+    .pg-d-carga .pg-a-pista { height: 6px; grid-column: 2; grid-row: 1; }
+    .pg-d-pend { grid-column: 1; grid-row: 1; text-align: left; }
+    .pg-d-estado { grid-column: 1; grid-row: 3; }
+    .pg-d-proc { grid-column: 2; grid-row: 3; display: flex; align-items: center; height: 44px; }
+}
+
 @media print {
     .no-imprimir, .pg-lateral, .pg-barra, .pg-pie, .alert, .pg-encabezado .btn { display: none !important; }
     .pg-contenido { margin: 0 !important; padding: 0 !important; }
