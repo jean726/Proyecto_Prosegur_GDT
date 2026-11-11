@@ -6,6 +6,7 @@
     <title>@ViewData["Title"] - Prosegur GDT</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/fuentes.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProsegurGDT.Web.styles.css" asp-append-version="true" />
 </head>
@@ -13,7 +14,7 @@
     var autenticado = User.Identity?.IsAuthenticated == true;
     var ctrlActual = ViewContext.RouteData.Values["controller"]?.ToString();
 }
-<body class="@(autenticado ? "pg-con-lateral" : "pg-sin-lateral")">
+<body class="@(autenticado ? "pg-con-lateral" : "pg-sin-lateral") @(ViewData["Torre"] is true ? "pg-torre" : "")">
     @if (autenticado)
     {
         <aside class="pg-lateral">

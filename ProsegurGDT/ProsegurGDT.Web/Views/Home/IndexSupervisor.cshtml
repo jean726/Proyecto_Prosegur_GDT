@@ -2,84 +2,154 @@
 @model ProsegurGDT.Web.Models.DashboardSupervisorViewModel
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    var nombres = EtapasTarjeta.Nombres;
+    var total = Model.PorEtapa.Sum();
+    var max = Model.PorEtapa.Max();
+    var iMax = max > 0 ? Array.IndexOf(Model.PorEtapa, max) : -1;
+    var porRevisar = Model.HojasPorAprobar + Model.HojasPorFirmar;
+
+    string titular;
+    if (porRevisar > 0)
+        titular = $"{porRevisar} {Pl(porRevisar, "hoja espera", "hojas esperan")} tu revisión.";
+    else if (Model.IntentosAgotados > 0)
+        titular = $"{Model.IntentosAgotados} {Pl(Model.IntentosAgotados, "tarjeta espera", "tarjetas esperan")} tu decisión.";
+    else if (Model.LotesRecientes.Count == 0)
+        titular = "Aún no hay lotes registrados.";
+    else
+        titular = "Todo al día.";
+    var titularRiesgo = Model.HojasConDiscrepancia > 0
+        ? $"{Model.HojasConDiscrepancia} con discrepancia por corregir."
+        : "";
+    var subtitulo = iMax >= 0
+        ? $"El cuello de botella está en {nombres[iMax]}: {max} {Pl(max, "tarjeta", "tarjetas")}, el {(int)Math.Round(100.0 * max / total)} % del flujo."
+        : "No hay tarjetas en ninguna etapa. Registra un lote para iniciar el flujo.";
+
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var hoy = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)hoy.DayOfWeek]} {hoy:dd/MM/yyyy}";
+
+    // (título, nota, valor, tono)
+    var decisiones = new (string Titulo, string Nota, int Valor, string Tono)[]
+    {
+        ("Hojas con discrepancia", "Pendientes de corrección", Model.HojasConDiscrepancia, "riesgo"),
+        ("Hojas por aprobar", "Esperan tu aprobación", Model.HojasPorAprobar, "cola"),
+        ("Hojas por firmar", "Aprobadas, falta tu firma", Model.HojasPorFirmar, "cola"),
+        ("Intentos de contacto agotados", "Tarjetas que esperan tu decisión", Model.IntentosAgotados, "cola"),
+        ("Rutas sin hoja de ruta", "Por planificar", Model.RutasSinHoja, "info")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Lotes y avance de tarjetas por etapa</p>
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del supervisor</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (titularRiesgo != "") {<span class="pg-t-riesgo"> @titularRiesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
     </div>
-    <a asp-controller="Lotes" asp-action="Registrar" class="btn btn-primary">+ Registrar lote</a>
+    <a asp-controller="Lotes" asp-action="Registrar" class="pg-t-boton">+ Registrar lote</a>
 </div>
 
-@if (Model.IntentosAgotados > 0)
-{
-    <div class="pg-aviso">
-        @Model.IntentosAgotados @(Model.IntentosAgotados == 1 ? "tarjeta con intentos de contacto agotados espera" : "tarjetas con intentos de contacto agotados esperan") tu decisión
+<section class="pg-t-panel pg-t-flujo" aria-label="Tarjetas por etapa">
+    <div class="pg-t-panel-cab">
+        <h2>Tarjetas por etapa</h2>
+        <span class="pg-t-mono pg-t-tenue"><span data-pg-contar="@total">@total</span> @Pl(total, "tarjeta", "tarjetas") en curso</span>
+        <span class="pg-t-nota">Altura proporcional a la etapa con más tarjetas</span>
     </div>
-}
-
-@if (Model.HojasConDiscrepancia > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.HojasConDiscrepancia @(Model.HojasConDiscrepancia == 1 ? "hoja de ruta tiene" : "hojas de ruta tienen") una discrepancia pendiente de corrección
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Rutas sin hoja de ruta</small><strong>@Model.RutasSinHoja</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Hojas por aprobar</small><strong>@Model.HojasPorAprobar</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Hojas por firmar</small><strong>@Model.HojasPorFirmar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Reporte de entregas de hoy</small><strong style="font-size:1.1rem">@(Model.ReporteHoy ?? "Sin diseñar")</strong></div>
-</div>
-<div class="mb-3 d-flex gap-3">
-    <a asp-controller="HojasRuta" asp-action="Index">Hojas de ruta →</a>
-    <a asp-controller="ReportesEntregas" asp-action="Index">Reporte de entregas →</a>
-</div>
-
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-3">Tarjetas por etapa</h2>
-    <div class="pg-etapas">
-        @for (var i = 0; i < EtapasTarjeta.Nombres.Length; i++)
+    <div class="pg-t-etapas">
+        @for (var i = 0; i < nombres.Length; i++)
         {
-            <div class="pg-etapa @(Model.PorEtapa[i] > 0 ? "con-datos" : "")">
-                <div class="pg-etapa-barra"></div>
-                <strong>@Model.PorEtapa[i]</strong>
-                <small>@EtapasTarjeta.Nombres[i]</small>
+            var n = Model.PorEtapa[i];
+            var cuello = i == iMax;
+            var pct = max > 0 ? (int)Math.Round(100.0 * n / max) : 0;
+            var share = total > 0 ? (int)Math.Round(100.0 * n / total) + " %" : "—";
+            <div class="pg-t-etapa @(cuello ? "cuello" : "") @(n == 0 ? "cero" : "")" style="--v:@pct;--i:@i">
+                <div class="pg-t-etapa-cab">
+                    <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                    @if (cuello)
+                    {
+                        <span class="pg-t-cuello" title="Cuello de botella"><span class="pg-t-pulso"></span>Cuello</span>
+                    }
+                </div>
+                <div class="pg-t-etapa-cifra">
+                    <span class="pg-t-num" data-pg-contar="@n">@n</span>
+                    <span class="pg-t-share">@share</span>
+                </div>
+                <div class="pg-t-barra"><i></i></div>
             </div>
         }
     </div>
-</div>
+</section>
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Lotes recientes</h2>
-    @if (Model.LotesRecientes.Count == 0)
-    {
-        <p class="text-muted mb-0">Aún no hay lotes registrados.</p>
-    }
-    else
-    {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th>Tarjetas</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var l in Model.LotesRecientes)
-                {
-                    var (tono, texto) = l.Estado == EstadoLote.DiscrepanciaDetectada
-                        ? ("riesgo", "Discrepancia")
-                        : l.Tarjetas == 0 ? ("pendiente", "Sin ficha") : ("custodia", "Ingresado");
-                    <tr>
-                        <td>@l.Remito</td>
-                        <td>@l.Banco</td>
-                        <td>@l.Recibido.ToString("dd/MM/yyyy")</td>
-                        <td>@l.Tarjetas</td>
-                        <td><span class="pg-estado pg-estado-@tono">@texto</span></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    
-    }
-    <a asp-controller="Lotes" asp-action="Index">Ver todos los lotes →</a>
+<div class="pg-t-cols">
+    <div class="pg-t-col-izq">
+        <section class="pg-t-panel" aria-label="Requiere tu decisión">
+            <div class="pg-t-panel-cab">
+                <h2>Requiere tu decisión</h2>
+                <a asp-controller="HojasRuta" asp-action="Index">Hojas de ruta →</a>
+            </div>
+            @foreach (var d in decisiones)
+            {
+                var cero = d.Valor == 0;
+                <div class="pg-t-decision @(cero ? "cero" : "pg-t-tono-" + d.Tono)">
+                    <span class="pg-t-marca"></span>
+                    <div class="pg-t-decision-texto">
+                        <span class="pg-t-decision-titulo">@d.Titulo</span>
+                        <span class="pg-t-decision-nota">@(cero ? "Al día" : d.Nota)</span>
+                    </div>
+                    <span class="pg-t-mono pg-t-decision-num" data-pg-contar="@d.Valor">@d.Valor</span>
+                </div>
+            }
+        </section>
+
+        <section class="pg-t-panel pg-t-reporte" aria-label="Reporte de entregas de hoy">
+            <div>
+                <span class="pg-t-nota">Reporte de entregas de hoy</span>
+                <span class="pg-t-mono pg-t-reporte-valor @(Model.ReporteHoy != null ? "ok" : "pendiente")">@(Model.ReporteHoy ?? "Sin diseñar")</span>
+            </div>
+            <a asp-controller="ReportesEntregas" asp-action="Index" class="pg-t-boton-sec">Reporte de entregas →</a>
+        </section>
+    </div>
+
+    <section class="pg-t-panel pg-t-lotes" aria-label="Lotes recientes">
+        <div class="pg-t-panel-cab">
+            <h2>Lotes recientes</h2>
+            <a asp-controller="Lotes" asp-action="Index">Ver todos los lotes →</a>
+        </div>
+        @if (Model.LotesRecientes.Count == 0)
+        {
+            <div class="pg-t-vacio">
+                <span class="pg-t-etiqueta">0 lotes</span>
+                <p class="pg-t-vacio-titulo">Aún no hay lotes registrados.</p>
+                <p class="pg-t-vacio-texto">Cuando registres el primero, sus tarjetas entrarán en la etapa Ingreso.</p>
+                <a asp-controller="Lotes" asp-action="Registrar" class="pg-t-boton">+ Registrar lote</a>
+            </div>
+        }
+        else
+        {
+            <table class="pg-t-tabla">
+                <thead>
+                    <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th class="num">Tarjetas</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    @{ var fila = 0; }
+                    @foreach (var l in Model.LotesRecientes)
+                    {
+                        var (tono, texto) = l.Estado == EstadoLote.DiscrepanciaDetectada
+                            ? ("riesgo", "Discrepancia")
+                            : l.Tarjetas == 0 ? ("pendiente", "Sin ficha") : ("custodia", "Ingresado");
+                        <tr style="--f:@(fila++)">
+                            <td class="pg-t-mono pg-t-remito" data-etiqueta="Remito">@l.Remito</td>
+                            <td data-etiqueta="Banco">@l.Banco</td>
+                            <td class="pg-t-mono pg-t-tenue" data-etiqueta="Recibido">@l.Recibido.ToString("dd/MM/yyyy")</td>
+                            <td class="num pg-t-mono @(l.Tarjetas == 0 ? "pg-t-tenue" : "")" data-etiqueta="Tarjetas">@l.Tarjetas</td>
+                            <td data-etiqueta="Estado"><span class="pg-t-estado pg-t-estado-@tono"><span class="pg-t-punto"></span>@texto</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
 </div>
