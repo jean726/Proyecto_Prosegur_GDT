@@ -1,0 +1,9 @@
+@model (string Titulo, string Detalle, string Boton, string Ctrl, string Act, int? Id)
+<section class="pg-t-accion" aria-label="Siguiente acción">
+    <div class="pg-t-accion-texto">
+        <span class="pg-t-etiqueta pg-t-amarillo">Siguiente acción</span>
+        <p class="pg-t-accion-titulo">@Model.Titulo</p>
+        <p class="pg-t-accion-detalle">@Model.Detalle</p>
+    </div>
+    <a asp-controller="@Model.Ctrl" asp-action="@Model.Act" asp-route-id="@Model.Id" class="pg-t-boton">@Model.Boton</a>
+</section>

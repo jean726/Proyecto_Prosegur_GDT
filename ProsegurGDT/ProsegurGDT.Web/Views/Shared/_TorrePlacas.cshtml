@@ -1,0 +1,11 @@
+@model IReadOnlyList<(string Etiqueta, int Valor, string Tono)>
+<div class="pg-t-placas">
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var p = Model[i];
+        <div class="pg-t-placa @(p.Valor == 0 ? "t-cero" : "t-" + p.Tono)" style="--i:@i">
+            <span class="pg-t-placa-etiqueta">@p.Etiqueta</span>
+            <span class="pg-t-placa-num" data-pg-contar="@p.Valor">@p.Valor</span>
+        </div>
+    }
+</div>

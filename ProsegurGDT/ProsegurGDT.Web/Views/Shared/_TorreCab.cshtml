@@ -1,0 +1,15 @@
+@using ProsegurGDT.Web.Domain
+@model (string Rol, string Titular, string Riesgo, string Sub, string Boton, string Ctrl, string Act)
+@{
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var hoy = HoraLima.Ahora;
+    var fecha = $"{dias[(int)hoy.DayOfWeek]} {hoy:dd/MM/yyyy}";
+}
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel @Model.Rol</span><span class="pg-t-sep">/</span><span>@fecha</span></span>
+        <h1 class="pg-t-titular">@Model.Titular@if (!string.IsNullOrEmpty(Model.Riesgo)) {<span class="pg-t-riesgo">@(string.IsNullOrEmpty(Model.Titular) ? "" : " ")@Model.Riesgo</span>}</h1>
+        <p class="pg-t-sub">@Model.Sub</p>
+    </div>
+    <a asp-controller="@Model.Ctrl" asp-action="@Model.Act" class="pg-t-boton">@Model.Boton</a>
+</div>

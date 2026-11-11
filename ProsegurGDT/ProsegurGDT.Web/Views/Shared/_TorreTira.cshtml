@@ -1,0 +1,11 @@
+@using ProsegurGDT.Web.Domain
+@model int[]
+<nav class="pg-t-tira" aria-label="Flujo de tarjetas: tu tramo está resaltado">
+    @for (var i = 0; i < EtapasTarjeta.Nombres.Length; i++)
+    {
+        <div class="pg-t-paso @(Model.Contains(i) ? "activo" : "")" style="--i:@i">
+            <span class="pg-t-paso-n">@((i + 1).ToString("00"))</span>
+            <span class="pg-t-paso-nom">@EtapasTarjeta.Nombres[i]</span>
+        </div>
+    }
+</nav>
