@@ -1,54 +1,180 @@
-@model ProsegurGDT.Web.Models.DashboardVerificadorViewModel
+@using System.Globalization
 @using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
+@model ProsegurGDT.Web.Models.DashboardVerificadorViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Hojas de ruta aprobadas por revisar y reportes de fraude</p>
-    </div>
-    <a asp-controller="Fraude" asp-action="Index" class="btn btn-primary">Reportes de fraude</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.HojasPorRevisar > 0)
-{
-    <div class="pg-aviso">
-        @Model.HojasPorRevisar @(Model.HojasPorRevisar == 1 ? "hoja de ruta espera" : "hojas de ruta esperan") tu revisión
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 3; // «Ruta»: el verificador revisa las hojas de ruta
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hojas por revisar</small><strong>@Model.HojasPorRevisar</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Tarjetas en revisión</small><strong>@Model.TarjetasEnRevision</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Reportes hoy</small><strong>@Model.ReportesHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Reportes en total</small><strong>@Model.ReportesTotal</strong></div>
-</div>
+    var hr = Model.HojasPorRevisar;
+    var te = Model.TarjetasEnRevision;
+    var rh = Model.ReportesHoy;
+    var rt = Model.ReportesTotal;
+    var recientes = Model.Recientes;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Últimos reportes de fraude</h2>
-    @if (Model.Recientes.Count == 0)
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var ahora = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)ahora.DayOfWeek]} {ahora:dd/MM/yyyy}";
+
+    // El ViewModel entrega el indicador como texto del enum; se presenta aquí con su ortografía
+    string Indicador(string t)
     {
-        <p class="text-muted mb-0">Aún no generaste reportes de fraude.</p>
+        var k = (t ?? "").Replace(" ", "").ToLowerInvariant();
+        return k switch
+        {
+            "identidadnocoincide" => "Identidad no coincide",
+            "documentoinconsistente" => "Documento inconsistente",
+            "direccionsospechosa" => "Dirección sospechosa",
+            "entregafueradecita" => "Entrega fuera de cita",
+            "otro" => "Otro",
+            _ => t ?? "—"
+        };
     }
-    else
+    bool EsHoy(DateTime f) => HoraLima.Convertir(f).Date == ahora.Date;
+
+    string titular;
+    if (hr > 0) titular = $"{hr} {Pl(hr, "hoja de ruta espera", "hojas de ruta esperan")} tu revisión.";
+    else if (rt > 0) titular = "Sin hojas por revisar.";
+    else titular = "Todo al día.";
+    var riesgo = rh > 0 ? $"{rh} {Pl(rh, "reporte", "reportes")} de fraude hoy." : "";
+
+    string subtitulo;
+    if (hr > 0) subtitulo = $"{Pl(hr, "Contiene", "Contienen")} {te} {Pl(te, "tarjeta", "tarjetas")} en revisión.";
+    else if (recientes.Count > 0)
     {
-        <table class="table mb-2">
-            <thead><tr><th>#</th><th>Tarjeta</th><th>Indicador</th><th>Fecha</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var r in Model.Recientes)
+        var u = recientes[0];
+        var ind = Indicador(u.Tipo);
+        subtitulo = $"El último reporte, #{u.Id}, es de la tarjeta {u.Codigo}" + (ind == "Otro" ? "." : $" ({ind.ToLowerInvariant()}).");
+    }
+    else subtitulo = "Aún no generaste reportes de fraude.";
+
+    var pctHoy = rt > 0 ? Math.Min(100.0, 100.0 * rh / rt) : 0;
+    var pctResto = rt > 0 ? 100.0 - pctHoy : 0;
+    var notaRep = rt == 0 ? "Sin reportes" : rh > 0 ? $"{Pl(rh, "Generado", "Generados")} hoy, de {rt}" : "Ninguno hoy";
+    var fi = 0;
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del verificador</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="Fraude" asp-action="Index" class="pg-t-boton">Reportes de fraude</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Ruta">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo pg-v-ruta" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
                 {
-                    <tr>
-                        <td>@r.Id</td>
-                        <td>@r.Codigo</td>
-                        <td>@r.Tipo</td>
-                        <td>@HoraLima.Convertir(r.FechaHora).ToString("dd/MM/yyyy HH:mm")</td>
-                        <td class="text-end"><a asp-controller="Fraude" asp-action="Detalle" asp-route-id="@r.Id">Ver →</a></td>
-                    </tr>
+                    <span class="pg-a-tag">Tu tramo</span>
                 }
-            </tbody>
-        </table>
+            </div>
+            @if (activo)
+            {
+                <div class="pg-d-hoy pg-a-hoy-d">
+                    <div class="pg-a-hoy-item @(hr == 0 ? "cero" : "pg-f-pend")"><span class="pg-a-hoy-n" data-pg-contar="@hr">@hr</span><span class="pg-a-hoy-t">hojas por revisar</span></div>
+                    <div class="pg-a-hoy-item @(te == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@te">@te</span><span class="pg-a-hoy-t">tarjetas en revisión</span></div>
+                    <div class="pg-a-hoy-item @(rh == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (rh > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@rh">@rh</span></span><span class="pg-a-hoy-t">reportes hoy</span></div>
+                    <div class="pg-a-hoy-item @(rt == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@rt">@rt</span><span class="pg-a-hoy-t">reportes en total</span></div>
+                </div>
+            }
+        </div>
     }
-    <a asp-controller="Fraude" asp-action="Index">Ver todos →</a>
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    <div class="pg-a-hoy-item @(hr == 0 ? "cero" : "pg-f-pend")"><span class="pg-a-hoy-n" data-pg-contar="@hr">@hr</span><span class="pg-a-hoy-t">hojas por revisar</span></div>
+    <div class="pg-a-hoy-item @(te == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@te">@te</span><span class="pg-a-hoy-t">tarjetas en revisión</span></div>
+    <div class="pg-a-hoy-item @(rh == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (rh > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@rh">@rh</span></span><span class="pg-a-hoy-t">reportes hoy</span></div>
+</div>
+
+<div class="pg-v-cols">
+    <div class="pg-v-izq">
+        @if (hr > 0)
+        {
+            <section class="pg-a-hero pg-c-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                </div>
+                <div class="pg-c-hero-n">
+                    <span class="pg-c-hero-cifra pg-t-mono" data-pg-contar="@hr">@hr</span>
+                    <span class="pg-c-hero-lbl">@Pl(hr, "hoja de ruta aprobada o firmada por revisar", "hojas de ruta aprobadas o firmadas por revisar")</span>
+                </div>
+                <div class="pg-v-tarj">
+                    <span class="pg-t-mono pg-v-tarj-n" data-pg-contar="@te">@te</span>
+                    <span class="pg-v-tarj-t">@Pl(te, "tarjeta en revisión", "tarjetas en revisión")</span>
+                </div>
+                <a asp-controller="Fraude" asp-action="Index" class="pg-a-hero-boton"><span>Reportes de fraude</span><span class="pg-t-mono">→</span></a>
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">@(rt > 0 ? "Sin hojas por revisar." : "Todo al día.")</p>
+                <p class="pg-a-ok-texto">No hay hojas de ruta aprobadas o firmadas esperando revisión.</p>
+                <a asp-controller="Fraude" asp-action="Index" class="pg-t-boton-sec">Reportes de fraude →</a>
+            </section>
+        }
+
+        <section class="pg-v-rep @(rh > 0 ? "con-riesgo" : "")" aria-label="Reportes de fraude">
+            <div class="pg-v-rep-cab"><h2>Reportes de fraude</h2><span class="pg-v-rep-nota">@notaRep</span></div>
+            <div class="pg-v-rep-n">
+                <div><span class="pg-t-mono @(rh == 0 ? "cero" : "riesgo")">@if (rh > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@rh">@rh</span></span><small>generados hoy</small></div>
+                <div><span class="pg-t-mono @(rt == 0 ? "cero" : "")" data-pg-contar="@rt">@rt</span><small>en total</small></div>
+            </div>
+            @if (rt > 0)
+            {
+                <div class="pg-v-rep-barra" role="img" aria-label="@rh de @rt reportes generados hoy">
+                    <i class="h" style="--w:@F(pctHoy)"></i><i class="r" style="--w:@F(pctResto)"></i>
+                </div>
+            }
+        </section>
+    </div>
+
+    <section class="pg-t-panel pg-v-ult" aria-label="Últimos reportes de fraude">
+        <div class="pg-v-ult-cab">
+            <h2>Últimos reportes de fraude</h2>
+            <span class="pg-v-ult-sub">Del más reciente al más antiguo.</span>
+        </div>
+        @if (recientes.Count > 0)
+        {
+            <div class="pg-v-fila pg-v-fila-cab pg-t-etiqueta"><span>Nº</span><span>Tarjeta</span><span>Indicador</span><span>Fecha · hora</span><span></span></div>
+            foreach (var r in recientes)
+            {
+                var hoy = EsHoy(r.FechaHora);
+                var local = HoraLima.Convertir(r.FechaHora);
+                <div class="pg-v-fila pg-v-rfila @(hoy ? "hoy" : "")" style="--f:@(fi++)">
+                    <span class="pg-t-mono pg-v-num">#@r.Id</span>
+                    <span class="pg-t-mono pg-v-cod">@r.Codigo</span>
+                    <span class="pg-v-ind">@Indicador(r.Tipo)</span>
+                    <span class="pg-t-mono pg-v-cuando">
+                        <span class="pg-v-hoy">@if (hoy) {<span class="pg-v-hoy-t">Hoy</span>}</span>
+                        <span><span class="pg-v-fecha">@local.ToString("dd/MM/yyyy")</span> <span class="pg-v-hora">@local.ToString("HH:mm")</span></span>
+                    </span>
+                    <a asp-controller="Fraude" asp-action="Detalle" asp-route-id="@r.Id" class="pg-v-ver">Ver →</a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">0 reportes</span>
+                <p>Aún no generaste reportes de fraude.</p>
+            </div>
+        }
+        <a asp-controller="Fraude" asp-action="Index" class="pg-b-ver"><span>Ver todos</span><span class="pg-t-mono">→</span></a>
+    </section>
 </div>
