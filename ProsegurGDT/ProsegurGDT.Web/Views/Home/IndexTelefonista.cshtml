@@ -1,53 +1,177 @@
-﻿@model ProsegurGDT.Web.Models.DashboardTelefonistaViewModel
+@using System.Globalization
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
+@model ProsegurGDT.Web.Models.DashboardTelefonistaViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Contactos pendientes y citas programadas</p>
-    </div>
-    <a asp-controller="Citas" asp-action="Index" class="btn btn-primary">Gestionar citas</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
 
-@if (Model.IntentosAgotados > 0)
-{
-    <div class="pg-aviso">
-        @Model.IntentosAgotados @(Model.IntentosAgotados == 1 ? "tarjeta con intentos de contacto agotados: ya está escalada" : "tarjetas con intentos de contacto agotados: ya están escaladas") al Supervisor
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    // Tramos del rol: «Contacto» (1) y «Cita» (2)
+    bool EsTramo(int i) => i == 1 || i == 2;
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Pendientes de contacto</small><strong>@Model.PendientesContacto</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Intentos agotados</small><strong>@Model.IntentosAgotados</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Citas programadas</small><strong>@Model.CitasProgramadas</strong></div>
-</div>
+    var pend = Model.PendientesContacto;
+    var ag = Model.IntentosAgotados;
+    var cp = Model.CitasProgramadas;
+    var citas = Model.ProximasCitas;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Próximas citas</h2>
-    @if (Model.ProximasCitas.Count == 0)
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var ahora = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)ahora.DayOfWeek]} {ahora:dd/MM/yyyy}";
+    var hoy = DateOnly.FromDateTime(ahora);
+    var manana = hoy.AddDays(1);
+
+    string titular;
+    var riesgo = ag > 0 ? $"{ag} con intentos agotados." : "";
+    if (pend > 0) titular = $"{pend} {Pl(pend, "tarjeta pendiente", "tarjetas pendientes")} de contacto.";
+    else if (ag > 0 || cp > 0) titular = "Sin contactos pendientes.";
+    else titular = "Todo al día.";
+
+    string subtitulo;
+    if (citas.Count > 0)
     {
-        <p class="text-muted mb-2">No hay citas próximas.</p>
+        var c0 = citas[0];
+        var cuando = c0.Fecha == hoy ? "hoy" : c0.Fecha == manana ? "mañana" : $"el {c0.Fecha:dd/MM}";
+        subtitulo = $"La próxima cita es {cuando} a las {c0.Hora:HH:mm}, con {c0.Cliente}.";
     }
-    else
+    else subtitulo = "No hay citas próximas.";
+
+    var fi = 0;
+    string Rel(DateOnly f) => f == hoy ? "Hoy" : f == manana ? "Mañana" : "";
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del auxiliar telefonista</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="Citas" asp-action="Index" class="pg-t-boton">Gestionar citas</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Contacto y Cita">
+    @for (var i = 0; i < nombres.Length; i++)
     {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Tarjeta</th><th>Cliente</th><th>Fecha y hora</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var c in Model.ProximasCitas)
+        var activo = EsTramo(i);
+        <div class="pg-a-paso @(activo ? "activo" : "") @(i == 1 ? "pg-f-contacto" : i == 2 ? "pg-f-cita" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (i == 1)
                 {
-                    <tr>
-                        <td>@c.Tarjeta</td>
-                        <td>@c.Cliente</td>
-                        <td>@c.Fecha.ToString("dd/MM") @c.Hora.ToString("HH:mm")</td>
-                        <td><span class="pg-estado pg-estado-custodia">Programada</span></td>
-                    </tr>
+                    <span class="pg-a-tag">Tu tramo</span>
                 }
-            </tbody>
-        </table>
+            </div>
+            @if (i == 1)
+            {
+                <div class="pg-f-hoy pg-a-hoy-d">
+                    <div class="pg-a-hoy-item @(pend == 0 ? "cero" : "pg-f-pend")">
+                        <span class="pg-a-hoy-n" data-pg-contar="@pend">@pend</span>
+                        <span class="pg-a-hoy-t">pendientes de contacto</span>
+                    </div>
+                    <div class="pg-a-hoy-item @(ag == 0 ? "cero" : "pg-c-riesgo")">
+                        <span class="pg-a-hoy-n">@if (ag > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@ag">@ag</span></span>
+                        <span class="pg-a-hoy-t">intentos agotados</span>
+                    </div>
+                </div>
+            }
+            else if (i == 2)
+            {
+                <div class="pg-f-hoy pg-a-hoy-d">
+                    <div class="pg-a-hoy-item @(cp == 0 ? "cero" : "")">
+                        <span class="pg-a-hoy-n" data-pg-contar="@cp">@cp</span>
+                        <span class="pg-a-hoy-t">citas programadas</span>
+                    </div>
+                </div>
+            }
+        </div>
     }
-    <a asp-controller="Citas" asp-action="Index">Ir a citas con clientes →</a>
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    <div class="pg-a-hoy-item @(pend == 0 ? "cero" : "pg-f-pend")">
+        <span class="pg-a-hoy-n" data-pg-contar="@pend">@pend</span>
+        <span class="pg-a-hoy-t">pendientes de contacto</span>
+    </div>
+    <div class="pg-a-hoy-item @(ag == 0 ? "cero" : "pg-c-riesgo")">
+        <span class="pg-a-hoy-n">@if (ag > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@ag">@ag</span></span>
+        <span class="pg-a-hoy-t">intentos agotados</span>
+    </div>
+    <div class="pg-a-hoy-item @(cp == 0 ? "cero" : "")">
+        <span class="pg-a-hoy-n" data-pg-contar="@cp">@cp</span>
+        <span class="pg-a-hoy-t">citas programadas</span>
+    </div>
+</div>
+
+<div class="pg-f-cols">
+    <div class="pg-f-izq">
+        @if (pend > 0)
+        {
+            <section class="pg-a-hero pg-c-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                </div>
+                <div class="pg-c-hero-n">
+                    <span class="pg-c-hero-cifra pg-t-mono" data-pg-contar="@pend">@pend</span>
+                    <span class="pg-c-hero-lbl">@Pl(pend, "tarjeta pendiente de contacto o de cita", "tarjetas pendientes de contacto o de cita")</span>
+                </div>
+                <p class="pg-c-hero-txt">Contacta a los clientes y programa su cita de entrega.</p>
+                <a asp-controller="Citas" asp-action="Index" class="pg-a-hero-boton"><span>Gestionar citas</span><span class="pg-t-mono">→</span></a>
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">@(ag > 0 || cp > 0 ? "Sin contactos pendientes." : "Todo al día.")</p>
+                <p class="pg-a-ok-texto">No hay tarjetas pendientes de contacto ni de cita.</p>
+                <a asp-controller="Citas" asp-action="Index" class="pg-t-boton-sec">Gestionar citas →</a>
+            </section>
+        }
+
+        <section class="pg-f-ag @(ag > 0 ? "con-riesgo" : "")" aria-label="Intentos de contacto agotados">
+            <span class="pg-f-ag-n pg-t-mono" data-pg-contar="@ag">@ag</span>
+            <div class="pg-f-ag-t">
+                <span class="pg-f-ag-tit">@if (ag > 0) {<span class="pg-t-mono pg-f-ag-ico" aria-hidden="true">▲</span>}@(ag > 0 ? $"{Pl(ag, "Tarjeta", "Tarjetas")} con intentos de contacto agotados" : "Sin intentos agotados")</span>
+                <span class="pg-f-ag-sub">@(ag > 0 ? $"{Pl(ag, "Ya está escalada", "Ya están escaladas")} al Supervisor." : "Ninguna tarjeta ha agotado sus intentos de contacto.")</span>
+            </div>
+        </section>
+    </div>
+
+    <section class="pg-t-panel pg-f-citas" aria-label="Próximas citas">
+        <div class="pg-f-citas-cab">
+            <div>
+                <h2>Próximas citas</h2>
+                <span class="pg-f-citas-sub">Ordenadas por fecha y hora.</span>
+            </div>
+            <span class="pg-t-mono pg-f-citas-n"><span data-pg-contar="@cp">@cp</span> @Pl(cp, "programada", "programadas")</span>
+        </div>
+        @if (citas.Count > 0)
+        {
+            <div class="pg-f-fila pg-f-fila-cab pg-t-etiqueta"><span>Tarjeta</span><span>Cliente</span><span>Fecha · hora</span><span class="der">Estado</span></div>
+            @foreach (var c in citas)
+            {
+                var rel = Rel(c.Fecha);
+                <div class="pg-f-fila pg-f-cita-fila @(rel == "Hoy" ? "hoy" : "") @(rel != "" ? "con-rel" : "")" style="--f:@(fi++)">
+                    <span class="pg-t-mono pg-f-tarjeta">@c.Tarjeta</span>
+                    <span class="pg-f-cliente">@c.Cliente</span>
+                    <span class="pg-t-mono pg-f-cuando">
+                        <span class="pg-f-rel">@if (rel != "") {<span class="pg-f-rel-t @(rel == "Hoy" ? "hoy" : "")">@rel</span>}</span>
+                        <span class="pg-f-fecha">@c.Fecha.ToString("dd/MM")</span>
+                        <span class="pg-f-hora">@c.Hora.ToString("HH:mm")</span>
+                    </span>
+                    <span class="pg-f-prog der">Programada</span>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">Sin citas</span>
+                <p>No hay citas próximas.</p>
+            </div>
+        }
+        <a asp-controller="Citas" asp-action="Index" class="pg-b-ver"><span>Ir a citas con clientes</span><span class="pg-t-mono">→</span></a>
+    </section>
 </div>

@@ -1532,6 +1532,76 @@ button.pg-enviando, input.pg-enviando {
     .pg-c-nc-fila { padding: 8px 14px; flex-wrap: wrap; min-height: 48px; }
 }
 
+/* ===== Fase 11: dashboard del Auxiliar Telefonista ===== */
+.pg-f-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 22px; align-items: start; }
+.pg-f-izq { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pg-f-cols > .pg-t-panel { margin-bottom: 0; }
+.pg-a-paso.pg-f-contacto { flex: 3.2; }
+.pg-a-paso.pg-f-cita { flex: 2; }
+.pg-f-hoy { display: flex; gap: 28px; }
+.pg-a-hoy-item.pg-f-pend .pg-a-hoy-n { color: var(--t-cola); }
+
+.pg-f-ag { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; padding: 18px 22px; border: 1px solid var(--t-linea); background: var(--t-panel); border-radius: 8px; }
+.pg-f-ag.con-riesgo { border-color: rgba(255, 107, 107, .45); background: rgba(255, 107, 107, .07); }
+.pg-f-ag-n { font-size: 2.75rem; font-weight: 500; line-height: 1; color: #5b6471; font-variant-numeric: tabular-nums; }
+.pg-f-ag.con-riesgo .pg-f-ag-n { color: var(--t-riesgo); }
+.pg-f-ag-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pg-f-ag-tit { display: flex; align-items: center; gap: 8px; font-size: .95rem; font-weight: 600; color: var(--t-texto); }
+.pg-f-ag.con-riesgo .pg-f-ag-tit { color: #fff; }
+.pg-f-ag-ico { color: var(--t-riesgo); }
+.pg-f-ag-sub { font-size: .875rem; color: #b9c0ca; }
+
+.pg-f-citas { display: flex; flex-direction: column; overflow: hidden; }
+.pg-f-citas-cab { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px 14px; }
+.pg-f-citas-cab > div { display: flex; flex-direction: column; gap: 4px; }
+.pg-f-citas-cab h2 { margin: 0; font-size: .9rem; font-weight: 600; color: #fff; }
+.pg-f-citas-sub { font-size: .8rem; color: var(--t-texto-3); }
+.pg-f-citas-n { font-size: .8rem; color: #b9c0ca; white-space: nowrap; }
+.pg-f-fila { display: grid; grid-template-columns: 128px minmax(0, 1fr) 176px 96px; gap: 14px; align-items: center; padding: 0 22px; }
+.pg-f-fila .der { justify-self: end; text-align: right; }
+.pg-f-fila-cab { padding-top: 8px; padding-bottom: 8px; border-top: 1px solid var(--t-linea-suave); border-bottom: 1px solid var(--t-linea-suave); }
+.pg-f-cita-fila { height: 64px; border-bottom: 1px solid #161a20; animation: pg-t-entra .5s ease both; animation-delay: calc(var(--f) * 70ms + 350ms); }
+.pg-f-cita-fila:hover { background: #141820; }
+.pg-f-cita-fila.hoy { background: rgba(255, 204, 0, .05); }
+.pg-f-tarjeta { font-size: .95rem; color: #fff; }
+.pg-f-cliente { font-size: .95rem; color: var(--t-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-f-cuando { display: grid; grid-template-columns: 64px 48px 44px; align-items: center; gap: 8px; font-size: .95rem; color: var(--t-texto); font-variant-numeric: tabular-nums; }
+.pg-f-hora { color: var(--t-cola); }
+.pg-f-rel-t { font-family: var(--t-sans, inherit); font-size: .7rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--t-texto); border: 1px solid #4a525e; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.pg-f-rel-t.hoy { color: #111418; background: var(--t-cola); border-color: var(--t-cola); }
+.pg-f-prog { font-size: .75rem; font-weight: 500; color: #c7ccd3; border: 1px solid #2f353e; padding: 3px 9px; border-radius: 3px; }
+.pg-f-sin { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 30px; text-align: center; border-top: 1px solid var(--t-linea-suave); background: repeating-linear-gradient(-45deg, transparent 0 14px, #14181e 14px 15px); }
+.pg-f-sin .pg-t-etiqueta { color: var(--t-texto-3); }
+.pg-f-sin p { margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--t-texto); }
+
+@media (prefers-reduced-motion: reduce) {
+    .pg-f-cita-fila { animation: none; }
+}
+
+@media (max-width: 1100px) {
+    .pg-f-cols { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .pg-a-paso.pg-f-contacto, .pg-a-paso.pg-f-cita { flex: 2; }
+    .pg-f-ag { padding: 14px; gap: 12px; }
+    .pg-f-ag-n { font-size: 2rem; }
+    .pg-f-citas-cab { padding: 14px 14px 10px; }
+    .pg-f-fila-cab { display: none; }
+    .pg-f-cita-fila { grid-template-columns: 62px minmax(0, 1fr); grid-template-rows: auto auto; gap: 2px 12px; height: auto; min-height: 60px; padding: 8px 14px; align-content: center; }
+    .pg-f-cuando { display: contents; }
+    .pg-f-prog, .pg-f-rel { display: none; }
+    .pg-f-cita-fila.con-rel .pg-f-rel { display: block; grid-column: 1; grid-row: 2; }
+    .pg-f-cita-fila.con-rel .pg-f-rel-t { border: 0; background: none; padding: 0; font-size: .7rem; color: #b9c0ca; }
+    .pg-f-cita-fila.con-rel .pg-f-rel-t.hoy { color: var(--t-cola); }
+    .pg-f-cita-fila.con-rel .pg-f-fecha { display: none; }
+    .pg-f-hora { grid-column: 1; grid-row: 1; font-size: 1rem; font-weight: 500; }
+    .pg-f-fecha { grid-column: 1; grid-row: 2; font-size: .75rem; color: #b9c0ca; }
+    .pg-f-cliente { grid-column: 2; grid-row: 1; font-size: .875rem; color: #fff; }
+    .pg-f-tarjeta { grid-column: 2; grid-row: 2; font-size: .75rem; color: #b9c0ca; }
+    .pg-f-tarjeta::after { content: " · Programada"; }
+}
+
 @media print {
     .no-imprimir, .pg-lateral, .pg-barra, .pg-pie, .alert, .pg-encabezado .btn { display: none !important; }
     .pg-contenido { margin: 0 !important; padding: 0 !important; }
