@@ -1,52 +1,58 @@
 ﻿@model ProsegurGDT.Web.Models.DashboardClasificadorViewModel
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    var titular = Model.PorClasificar > 0
+        ? $"{Model.PorClasificar} {Pl(Model.PorClasificar, "tarjeta por clasificar", "tarjetas por clasificar")}."
+        : (Model.YaClasificadas > 0 ? "Clasificación al día." : "Todo al día.");
+    var riesgo = Model.NoClasificables > 0
+        ? $"{Model.NoClasificables} {Pl(Model.NoClasificables, "no clasificable por dirección con alerta", "no clasificables por dirección con alerta")}."
+        : "";
+
+    var accion = Model.PorClasificar > 0
+        ? (Titulo: $"Clasificar {Model.PorClasificar} {Pl(Model.PorClasificar, "tarjeta", "tarjetas")} por zona", Detalle: "Las tarjetas con alerta de dirección quedan bloqueadas hasta que el Buscador decida.", Boton: "Ir a clasificar", Ctrl: "Clasificacion", Act: "Index", Id: (int?)null)
+        : (Titulo: "No hay tarjetas por clasificar", Detalle: "Cuando ingrese un lote nuevo aparecerá aquí.", Boton: "Ir a clasificar", Ctrl: "Clasificacion", Act: "Index", Id: (int?)null);
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Por clasificar", Model.PorClasificar, "cola"),
+        ("Ya clasificadas", Model.YaClasificadas, "ok"),
+        ("No clasificables", Model.NoClasificables, "riesgo")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Tarjetas pendientes de clasificar y bloqueadas por riesgo</p>
+@await Html.PartialAsync("_TorreCab", (Rol: "del clasificador", Titular: titular, Riesgo: riesgo, Sub: "Tarjetas pendientes de clasificar y bloqueadas por riesgo", Boton: "Ir a clasificar", Ctrl: "Clasificacion", Act: "Index"))
+@await Html.PartialAsync("_TorreTira", new[] { 2 })
+@await Html.PartialAsync("_TorreAccion", accion)
+@await Html.PartialAsync("_TorrePlacas", placas)
+
+<section class="pg-t-panel pg-t-bloque" aria-label="Tarjetas no clasificables">
+    <div class="pg-t-panel-cab">
+        <h2>Tarjetas no clasificables</h2>
+        <a asp-controller="DireccionesFraudulentas" asp-action="Index">Ver direcciones fraudulentas →</a>
     </div>
-    <a asp-controller="Clasificacion" asp-action="Index" class="btn btn-primary">Ir a clasificar</a>
-</div>
-
-@if (Model.NoClasificables > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.NoClasificables @(Model.NoClasificables == 1 ? "tarjeta no clasificable por dirección con alerta" : "tarjetas no clasificables por dirección con alerta")
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Por clasificar</small><strong>@Model.PorClasificar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ya clasificadas</small><strong>@Model.YaClasificadas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>No clasificables</small><strong>@Model.NoClasificables</strong></div>
-</div>
-
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Tarjetas no clasificables</h2>
     @if (Model.CodigosNoClasificables.Count == 0)
     {
-        <p class="text-muted mb-2">No hay tarjetas no clasificables.</p>
+        <p class="pg-t-bloque-vacio">No hay tarjetas no clasificables.</p>
     }
     else
     {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Tarjeta</th><th>Motivo</th><th>Estado</th></tr>
-            </thead>
+        <table class="pg-t-tabla apilada">
+            <thead><tr><th>Tarjeta</th><th>Motivo</th><th>Estado</th></tr></thead>
             <tbody>
+                @{ var fila = 0; }
                 @foreach (var codigo in Model.CodigosNoClasificables)
                 {
-                    <tr>
-                        <td>@codigo</td>
-                        <td>Dirección con alerta</td>
-                        <td><span class="pg-estado pg-estado-riesgo">No clasificable</span></td>
+                    <tr style="--f:@(fila++)">
+                        <td class="pg-t-mono fuerte" data-etiqueta="Tarjeta">@codigo</td>
+                        <td data-etiqueta="Motivo">Dirección con alerta</td>
+                        <td data-etiqueta="Estado"><span class="pg-t-estado pg-t-estado-riesgo"><span class="pg-t-punto"></span>No clasificable</span></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-    <a asp-controller="DireccionesFraudulentas" asp-action="Index">Ver direcciones fraudulentas →</a>
-</div>
+</section>
