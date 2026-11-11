@@ -1,77 +1,93 @@
 @model ProsegurGDT.Web.Models.DashboardAnalistaViewModel
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    var titular = Model.ReportesPendientes > 0
+        ? $"{Model.ReportesPendientes} {Pl(Model.ReportesPendientes, "lote espera", "lotes esperan")} su hoja de asignación."
+        : "Todo al día.";
+    var excedidos = Model.Cargas.Count(c => c.Asignadas > c.Capacidad);
+    var riesgo = excedidos > 0
+        ? $"{excedidos} {Pl(excedidos, "repartidor excede", "repartidores exceden")} su capacidad."
+        : "";
+
+    var primera = Model.Pendientes.FirstOrDefault();
+    var accion = primera != null
+        ? (Titulo: $"Generar la hoja del remito {primera.Remito}", Detalle: $"{primera.HojaControl} · {primera.Zonas} {Pl(primera.Zonas, "zona", "zonas")} · reporte {primera.Estado}", Boton: "Generar hoja", Ctrl: "Asignaciones", Act: "Generar", Id: (int?)primera.LoteId)
+        : (Titulo: "No hay lotes pendientes de hoja", Detalle: "Cuando el Clasificador genere un reporte de densidad aparecerá aquí.", Boton: "Hojas de asignación", Ctrl: "Asignaciones", Act: "Index", Id: (int?)null);
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Reportes por asignar", Model.ReportesPendientes, "cola"),
+        ("Hojas emitidas hoy", Model.HojasHoy, "info"),
+        ("Tarjetas en ruta hoy", Model.TarjetasEnRutaHoy, "ok"),
+        ("Repartidores activos", Model.RepartidoresActivos, "neu")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Reportes de densidad por asignar y carga de los repartidores hoy</p>
+@await Html.PartialAsync("_TorreCab", (Rol: "del analista de rutas", Titular: titular, Riesgo: riesgo, Sub: "Reportes de densidad por asignar y carga de los repartidores hoy", Boton: "Hojas de asignación", Ctrl: "Asignaciones", Act: "Index"))
+@await Html.PartialAsync("_TorreTira", new[] { 3 })
+@await Html.PartialAsync("_TorreAccion", accion)
+@await Html.PartialAsync("_TorrePlacas", placas)
+
+<section class="pg-t-panel pg-t-bloque" aria-label="Lotes pendientes de hoja">
+    <div class="pg-t-panel-cab">
+        <h2>Lotes pendientes de hoja</h2>
     </div>
-    <a asp-controller="Asignaciones" asp-action="Index" class="btn btn-primary">Hojas de asignación</a>
-</div>
-
-@if (Model.ReportesPendientes > 0)
-{
-    <div class="pg-aviso">
-        @Model.ReportesPendientes @(Model.ReportesPendientes == 1 ? "lote espera" : "lotes esperan") su hoja de asignación
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Reportes por asignar</small><strong>@Model.ReportesPendientes</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Hojas emitidas hoy</small><strong>@Model.HojasHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Tarjetas en ruta hoy</small><strong>@Model.TarjetasEnRutaHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Repartidores activos</small><strong>@Model.RepartidoresActivos</strong></div>
-</div>
-
-<div class="pg-tarjeta pg-bloque mb-3">
-    <h2 class="h6 mb-2">Lotes pendientes de hoja</h2>
     @if (Model.Pendientes.Count == 0)
     {
-        <p class="text-muted mb-2">No hay reportes de densidad pendientes.</p>
+        <p class="pg-t-bloque-vacio">No hay reportes de densidad pendientes.</p>
     }
     else
     {
-        <table class="table mb-2">
-            <thead><tr><th>Hoja de control</th><th>Remito</th><th class="text-end">Zonas</th><th>Reporte</th><th></th></tr></thead>
+        <table class="pg-t-tabla apilada">
+            <thead><tr><th>Hoja de control</th><th>Remito</th><th class="num">Zonas</th><th>Reporte</th><th></th></tr></thead>
             <tbody>
+                @{ var fp = 0; }
                 @foreach (var p in Model.Pendientes)
                 {
-                    <tr>
-                        <td>@p.HojaControl</td>
-                        <td>@p.Remito</td>
-                        <td class="text-end">@p.Zonas</td>
-                        <td>@p.Estado</td>
-                        <td class="text-end"><a asp-controller="Asignaciones" asp-action="Generar" asp-route-id="@p.LoteId">Generar hoja →</a></td>
+                    <tr style="--f:@(fp++)">
+                        <td class="pg-t-mono fuerte" data-etiqueta="Hoja de control">@p.HojaControl</td>
+                        <td class="pg-t-mono" data-etiqueta="Remito">@p.Remito</td>
+                        <td class="num pg-t-mono" data-etiqueta="Zonas">@p.Zonas</td>
+                        <td data-etiqueta="Reporte">@p.Estado</td>
+                        <td class="acc"><a asp-controller="Asignaciones" asp-action="Generar" asp-route-id="@p.LoteId">Generar hoja →</a></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-</div>
+</section>
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Carga de repartidores hoy</h2>
+<section class="pg-t-panel pg-t-bloque" aria-label="Carga de repartidores hoy">
+    <div class="pg-t-panel-cab">
+        <h2>Carga de repartidores hoy</h2>
+        <span class="pg-t-nota">Tarjetas asignadas frente a la capacidad</span>
+    </div>
     @if (Model.Cargas.Count == 0)
     {
-        <p class="text-muted mb-0">No hay repartidores activos.</p>
+        <p class="pg-t-bloque-vacio">No hay repartidores activos.</p>
     }
     else
     {
-        <table class="table mb-0">
-            <thead><tr><th>Repartidor</th><th>Tipo</th><th class="text-end">Asignadas</th><th class="text-end">Capacidad</th></tr></thead>
+        <table class="pg-t-tabla apilada">
+            <thead><tr><th>Repartidor</th><th>Tipo</th><th>Carga</th><th class="num">Asignadas / capacidad</th></tr></thead>
             <tbody>
+                @{ var fc = 0; }
                 @foreach (var c in Model.Cargas)
                 {
-                    <tr>
-                        <td>@c.Nombre</td>
-                        <td>@c.Tipo</td>
-                        <td class="text-end">@c.Asignadas</td>
-                        <td class="text-end">@(c.Asignadas > c.Capacidad ? Html.Raw($"<span class=\"pg-estado pg-estado-riesgo\">{c.Capacidad}</span>") : Html.Raw(c.Capacidad.ToString()))</td>
+                    var pct = c.Capacidad > 0 ? (int)Math.Round(100.0 * c.Asignadas / c.Capacidad) : (c.Asignadas > 0 ? 100 : 0);
+                    var nivel = c.Asignadas > c.Capacidad ? "exceso" : (c.Capacidad > 0 && c.Asignadas == c.Capacidad ? "lleno" : "");
+                    <tr style="--f:@(fc++)">
+                        <td class="fuerte" data-etiqueta="Repartidor">@c.Nombre</td>
+                        <td data-etiqueta="Tipo">@c.Tipo</td>
+                        <td data-etiqueta="Carga"><span class="pg-t-medidor @nivel" style="--v:@pct"><i></i></span></td>
+                        <td class="num pg-t-mono @(nivel == "exceso" ? "pg-t-riesgo" : "")" data-etiqueta="Asignadas / capacidad">@c.Asignadas / @c.Capacidad</td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-</div>
+</section>
