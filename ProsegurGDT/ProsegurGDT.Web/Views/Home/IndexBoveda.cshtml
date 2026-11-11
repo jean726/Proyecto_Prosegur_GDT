@@ -2,55 +2,62 @@
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    var titular = Model.FraudePorIngresar > 0 ? "" : "Bóveda al día.";
+    var riesgo = Model.FraudePorIngresar > 0
+        ? $"{Model.FraudePorIngresar} {Pl(Model.FraudePorIngresar, "tarjeta de fraude espera", "tarjetas de fraude esperan")} su ingreso a bóveda."
+        : "";
+
+    var primera = Model.Pendientes.FirstOrDefault();
+    var accion = primera != null
+        ? (Titulo: $"Ingresar la tarjeta {primera.Codigo}", Detalle: $"{primera.Cliente} · {primera.Origen.Texto()} · registrada {HoraLima.Convertir(primera.FechaRegistro):dd/MM/yyyy HH:mm}", Boton: "Registrar ingresos", Ctrl: "Defraudacion", Act: "Index", Id: (int?)null)
+        : (Titulo: "No hay tarjetas pendientes de ingreso", Detalle: "Las actas de fraude registradas por el Descargador aparecerán aquí.", Boton: "Inventario de bóveda", Ctrl: "Defraudacion", Act: "Inventario", Id: (int?)null);
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Fraude por ingresar", Model.FraudePorIngresar, "riesgo"),
+        ("Ingresadas hoy", Model.IngresadasHoy, "ok"),
+        ("Tarjetas en bóveda", Model.InventarioTotal, "info"),
+        ("Con etiqueta de fraude", Model.InventarioFraude, "neu")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Tarjetas de fraude por ingresar y estado del inventario de bóveda</p>
+@await Html.PartialAsync("_TorreCab", (Rol: "de la bóveda", Titular: titular, Riesgo: riesgo, Sub: "Tarjetas de fraude por ingresar y estado del inventario de bóveda", Boton: "Apartado de defraudación", Ctrl: "Defraudacion", Act: "Index"))
+@await Html.PartialAsync("_TorreTira", new[] { 4 })
+@await Html.PartialAsync("_TorreAccion", accion)
+@await Html.PartialAsync("_TorrePlacas", placas)
+
+<section class="pg-t-panel pg-t-bloque" aria-label="Próximas a ingresar">
+    <div class="pg-t-panel-cab">
+        <h2>Próximas a ingresar</h2>
     </div>
-    <a asp-controller="Defraudacion" asp-action="Index" class="btn btn-primary">Apartado de defraudación</a>
-</div>
-
-@if (Model.FraudePorIngresar > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.FraudePorIngresar @(Model.FraudePorIngresar == 1 ? "tarjeta de fraude espera" : "tarjetas de fraude esperan") su ingreso a bóveda
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Fraude por ingresar</small><strong>@Model.FraudePorIngresar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ingresadas hoy</small><strong>@Model.IngresadasHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas en bóveda</small><strong>@Model.InventarioTotal</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Con etiqueta de fraude</small><strong>@Model.InventarioFraude</strong></div>
-</div>
-
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Próximas a ingresar</h2>
     @if (Model.Pendientes.Count == 0)
     {
-        <p class="text-muted mb-2">No hay tarjetas pendientes de ingreso.</p>
+        <p class="pg-t-bloque-vacio">No hay tarjetas pendientes de ingreso.</p>
     }
     else
     {
-        <table class="table mb-2">
+        <table class="pg-t-tabla apilada">
             <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Registrada</th></tr></thead>
             <tbody>
+                @{ var fila = 0; }
                 @foreach (var a in Model.Pendientes)
                 {
-                    <tr>
-                        <td>@a.Codigo</td>
-                        <td>@a.Cliente</td>
-                        <td>@a.Origen.Texto()</td>
-                        <td>@HoraLima.Convertir(a.FechaRegistro).ToString("dd/MM/yyyy HH:mm")</td>
+                    <tr style="--f:@(fila++)">
+                        <td class="pg-t-mono fuerte" data-etiqueta="Tarjeta">@a.Codigo</td>
+                        <td data-etiqueta="Titular">@a.Cliente</td>
+                        <td data-etiqueta="Origen">@a.Origen.Texto()</td>
+                        <td class="pg-t-mono pg-t-tenue" data-etiqueta="Registrada">@HoraLima.Convertir(a.FechaRegistro).ToString("dd/MM/yyyy HH:mm")</td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-    <div class="d-flex gap-3">
+    <div class="pg-t-pie">
         <a asp-controller="Defraudacion" asp-action="Index">Registrar ingresos →</a>
         <a asp-controller="Defraudacion" asp-action="Inventario">Inventario de bóveda →</a>
     </div>
-</div>
+</section>
