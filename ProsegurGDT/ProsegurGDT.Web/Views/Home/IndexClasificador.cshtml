@@ -1,52 +1,196 @@
-﻿@model ProsegurGDT.Web.Models.DashboardClasificadorViewModel
+﻿@using System.Globalization
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
+@model ProsegurGDT.Web.Models.DashboardClasificadorViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Tarjetas pendientes de clasificar y bloqueadas por riesgo</p>
-    </div>
-    <a asp-controller="Clasificacion" asp-action="Index" class="btn btn-primary">Ir a clasificar</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.NoClasificables > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.NoClasificables @(Model.NoClasificables == 1 ? "tarjeta no clasificable por dirección con alerta" : "tarjetas no clasificables por dirección con alerta")
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 2; // «Cita»: la clasificación ocurre antes de armar rutas
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Por clasificar</small><strong>@Model.PorClasificar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ya clasificadas</small><strong>@Model.YaClasificadas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>No clasificables</small><strong>@Model.NoClasificables</strong></div>
-</div>
+    var por = Model.PorClasificar;
+    var ya = Model.YaClasificadas;
+    var no = Model.NoClasificables;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Tarjetas no clasificables</h2>
-    @if (Model.CodigosNoClasificables.Count == 0)
+    string titular;
+    string riesgo = "";
+    string subtitulo;
+    if (por > 0)
     {
-        <p class="text-muted mb-2">No hay tarjetas no clasificables.</p>
+        titular = $"{por} {Pl(por, "tarjeta", "tarjetas")} por clasificar.";
+        if (no > 0) riesgo = $"{no} no se {Pl(no, "puede", "pueden")} clasificar.";
+        subtitulo = no > 0
+            ? "Las no clasificables tienen una dirección con alerta y quedan fuera de ruta hasta que se resuelva."
+            : "Ninguna tarjeta está bloqueada por riesgo.";
+    }
+    else if (no > 0)
+    {
+        titular = "Todo clasificado.";
+        riesgo = $"{no} {Pl(no, "tarjeta bloqueada", "tarjetas bloqueadas")}.";
+        subtitulo = "No quedan tarjetas por clasificar; solo las que tienen una dirección con alerta.";
     }
     else
     {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Tarjeta</th><th>Motivo</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
+        titular = "Todo al día.";
+        subtitulo = "No hay tarjetas por clasificar ni bloqueadas por riesgo.";
+    }
+
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var hoy = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)hoy.DayOfWeek]} {hoy:dd/MM/yyyy}";
+
+    var contadores = new (string Texto, int Valor, string Tono)[]
+    {
+        ("por clasificar", por, "cola"),
+        ("ya clasificadas", ya, "neu"),
+        ("no clasificables", no, "riesgo")
+    };
+
+    var total = por + ya + no;
+    double Ancho(int v) => total > 0 ? 100.0 * v / total : 0;
+    string Pct(int v)
+    {
+        if (total == 0) return "";
+        var r = (int)Math.Round(100.0 * v / total);
+        return v > 0 && r == 0 ? "<1 %" : $"{r} %";
+    }
+    var pctYa = total > 0 ? (int)Math.Round(100.0 * ya / total) : 0;
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del clasificador</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="Clasificacion" asp-action="Index" class="pg-t-boton">Ir a clasificar</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Cita">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
+                {
+                    <span class="pg-a-tag">Tu tramo</span>
+                }
+            </div>
+            @if (activo)
+            {
+                <div class="pg-a-hoy pg-a-hoy-d">
+                    @foreach (var h in contadores)
+                    {
+                        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "") @(h.Tono == "riesgo" && h.Valor > 0 ? "pg-c-riesgo" : "")">
+                            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+                            <span class="pg-a-hoy-t">@h.Texto</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    @foreach (var h in contadores)
+    {
+        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "") @(h.Tono == "riesgo" && h.Valor > 0 ? "pg-c-riesgo" : "")">
+            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+            <span class="pg-a-hoy-t">@h.Texto</span>
+        </div>
+    }
+</div>
+
+<div class="pg-c-cols">
+    <div class="pg-c-izq">
+        @if (por > 0)
+        {
+            <section class="pg-a-hero pg-c-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                </div>
+                <div class="pg-c-hero-n">
+                    <span class="pg-c-hero-cifra pg-t-mono" data-pg-contar="@por">@por</span>
+                    <span class="pg-c-hero-lbl">@Pl(por, "tarjeta por clasificar", "tarjetas por clasificar")</span>
+                </div>
+                <p class="pg-c-hero-txt">Clasifícalas para que puedan pasar a ruta.</p>
+                <a asp-controller="Clasificacion" asp-action="Index" class="pg-a-hero-boton"><span>Ir a clasificar</span><span class="pg-t-mono">→</span></a>
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">@(no > 0 ? "Todo clasificado." : "Todo al día.")</p>
+                <p class="pg-a-ok-texto">@(no > 0
+                    ? $"No quedan tarjetas por clasificar. Revisa {(no == 1 ? "la tarjeta bloqueada" : $"las {no} bloqueadas")} en el panel de al lado."
+                    : "No hay tarjetas por clasificar. Cuando ingrese un lote nuevo aparecerán aquí.")</p>
+                <a asp-controller="Clasificacion" asp-action="Index" class="pg-t-boton-sec">Ir a clasificar →</a>
+            </section>
+        }
+
+        <section class="pg-t-panel pg-c-avance" aria-label="Avance de clasificación">
+            <div class="pg-c-av-cab">
+                <h2>Avance de clasificación</h2>
+                @if (total > 0)
+                {
+                    <span class="pg-t-mono pg-c-av-pct"><span data-pg-contar="@pctYa">@pctYa</span> % <small>clasificado</small></span>
+                }
+            </div>
+            @if (total > 0)
+            {
+                <div class="pg-c-barra" role="img" aria-label="@ya ya clasificadas, @no no clasificables y @por por clasificar">
+                    <i class="v" style="--w:@F(Ancho(ya))"></i><i class="r" style="--w:@F(Ancho(no))"></i><i class="p" style="--w:@F(Ancho(por))"></i>
+                </div>
+                <div class="pg-c-ley">
+                    <div><span class="pg-c-etq"><i class="v"></i>Ya clasificadas</span><span class="pg-t-mono pg-c-n"><span data-pg-contar="@ya">@ya</span> <small>@Pct(ya)</small></span></div>
+                    <div><span class="pg-c-etq"><i class="r"></i>No clasificables</span><span class="pg-t-mono pg-c-n @(no > 0 ? "riesgo" : "")"><span data-pg-contar="@no">@no</span> <small>@Pct(no)</small></span></div>
+                    <div><span class="pg-c-etq"><i class="p"></i>Por clasificar</span><span class="pg-t-mono pg-c-n @(por > 0 ? "pend" : "")"><span data-pg-contar="@por">@por</span> <small>@Pct(por)</small></span></div>
+                </div>
+            }
+            else
+            {
+                <p class="pg-c-vacio">Aún no hay tarjetas para clasificar.</p>
+            }
+        </section>
+    </div>
+
+    <section class="pg-t-panel pg-c-nc @(no > 0 ? "con-riesgo" : "")" aria-label="Tarjetas no clasificables">
+        <div class="pg-c-nc-cab">
+            <div>
+                <h2>Tarjetas no clasificables</h2>
+                <span class="pg-c-nc-sub">Bloqueadas por riesgo: no pueden pasar a ruta.@if (no > Model.CodigosNoClasificables.Count && Model.CodigosNoClasificables.Count > 0) { <text> Se muestran las @Model.CodigosNoClasificables.Count más recientes.</text> }</span>
+            </div>
+            <span class="pg-t-mono pg-c-nc-n @(no > 0 ? "riesgo" : "")" data-pg-contar="@no">@no</span>
+        </div>
+        @if (Model.CodigosNoClasificables.Count > 0)
+        {
+            <div class="pg-c-nc-cols pg-t-etiqueta"><span>Tarjeta</span><span>Motivo</span></div>
+            <div class="pg-c-nc-lista">
+                @{ var fi = 0; }
                 @foreach (var codigo in Model.CodigosNoClasificables)
                 {
-                    <tr>
-                        <td>@codigo</td>
-                        <td>Dirección con alerta</td>
-                        <td><span class="pg-estado pg-estado-riesgo">No clasificable</span></td>
-                    </tr>
+                    <div class="pg-c-nc-fila" style="--f:@(fi++)">
+                        <span class="pg-t-mono pg-c-nc-cod"><i></i>@codigo</span>
+                        <span class="pg-t-estado pg-t-estado-riesgo"><span class="pg-t-mono">▲</span> Dirección con alerta</span>
+                    </div>
                 }
-            </tbody>
-        </table>
-    }
-    <a asp-controller="DireccionesFraudulentas" asp-action="Index">Ver direcciones fraudulentas →</a>
+            </div>
+        }
+        else
+        {
+            <div class="pg-c-nc-libre">
+                <span class="pg-t-etiqueta">Sin bloqueos</span>
+                <p>No hay tarjetas no clasificables.</p>
+            </div>
+        }
+        <a asp-controller="DireccionesFraudulentas" asp-action="Index" class="pg-b-ver"><span>Ver direcciones fraudulentas</span><span class="pg-t-mono">→</span></a>
+    </section>
 </div>
