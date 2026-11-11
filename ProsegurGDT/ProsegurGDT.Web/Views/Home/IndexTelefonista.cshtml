@@ -1,53 +1,64 @@
 ﻿@model ProsegurGDT.Web.Models.DashboardTelefonistaViewModel
 @{
     ViewData["Title"] = "Inicio";
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+
+    string titular;
+    if (Model.PendientesContacto > 0)
+        titular = $"{Model.PendientesContacto} {Pl(Model.PendientesContacto, "tarjeta espera", "tarjetas esperan")} tu llamada.";
+    else if (Model.CitasProgramadas > 0)
+        titular = $"{Model.CitasProgramadas} {Pl(Model.CitasProgramadas, "cita programada", "citas programadas")}.";
+    else
+        titular = "Todo al día.";
+    var sub = Model.IntentosAgotados > 0
+        ? $"{Model.IntentosAgotados} {Pl(Model.IntentosAgotados, "tarjeta con intentos agotados ya está escalada", "tarjetas con intentos agotados ya están escaladas")} al Supervisor."
+        : "Contactos pendientes y citas programadas";
+
+    var primera = Model.ProximasCitas.FirstOrDefault();
+    var accion = primera != null
+        ? (Titulo: $"Próxima cita: {primera.Cliente}", Detalle: $"{primera.Tarjeta} · {primera.Fecha:dd/MM} {primera.Hora:HH:mm}", Boton: "Gestionar citas", Ctrl: "Citas", Act: "Index", Id: (int?)null)
+        : (Titulo: "No hay citas próximas", Detalle: "Registra el resultado de tus llamadas para programar nuevas citas.", Boton: "Gestionar citas", Ctrl: "Citas", Act: "Index", Id: (int?)null);
+
+    var placas = new (string Etiqueta, int Valor, string Tono)[]
+    {
+        ("Pendientes de contacto", Model.PendientesContacto, "cola"),
+        ("Intentos agotados", Model.IntentosAgotados, "info"),
+        ("Citas programadas", Model.CitasProgramadas, "ok")
+    };
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Contactos pendientes y citas programadas</p>
+@await Html.PartialAsync("_TorreCab", (Rol: "de la telefonista", Titular: titular, Riesgo: "", Sub: sub, Boton: "Gestionar citas", Ctrl: "Citas", Act: "Index"))
+@await Html.PartialAsync("_TorreTira", new[] { 1, 2 })
+@await Html.PartialAsync("_TorreAccion", accion)
+@await Html.PartialAsync("_TorrePlacas", placas)
+
+<section class="pg-t-panel pg-t-bloque" aria-label="Próximas citas">
+    <div class="pg-t-panel-cab">
+        <h2>Próximas citas</h2>
+        <a asp-controller="Citas" asp-action="Index">Ir a citas con clientes →</a>
     </div>
-    <a asp-controller="Citas" asp-action="Index" class="btn btn-primary">Gestionar citas</a>
-</div>
-
-@if (Model.IntentosAgotados > 0)
-{
-    <div class="pg-aviso">
-        @Model.IntentosAgotados @(Model.IntentosAgotados == 1 ? "tarjeta con intentos de contacto agotados: ya está escalada" : "tarjetas con intentos de contacto agotados: ya están escaladas") al Supervisor
-    </div>
-}
-
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Pendientes de contacto</small><strong>@Model.PendientesContacto</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Intentos agotados</small><strong>@Model.IntentosAgotados</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Citas programadas</small><strong>@Model.CitasProgramadas</strong></div>
-</div>
-
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Próximas citas</h2>
     @if (Model.ProximasCitas.Count == 0)
     {
-        <p class="text-muted mb-2">No hay citas próximas.</p>
+        <p class="pg-t-bloque-vacio">No hay citas próximas.</p>
     }
     else
     {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Tarjeta</th><th>Cliente</th><th>Fecha y hora</th><th>Estado</th></tr>
-            </thead>
+        <table class="pg-t-tabla apilada">
+            <thead><tr><th>Tarjeta</th><th>Cliente</th><th>Fecha y hora</th><th>Estado</th></tr></thead>
             <tbody>
+                @{ var fila = 0; }
                 @foreach (var c in Model.ProximasCitas)
                 {
-                    <tr>
-                        <td>@c.Tarjeta</td>
-                        <td>@c.Cliente</td>
-                        <td>@c.Fecha.ToString("dd/MM") @c.Hora.ToString("HH:mm")</td>
-                        <td><span class="pg-estado pg-estado-custodia">Programada</span></td>
+                    <tr style="--f:@(fila++)">
+                        <td class="pg-t-mono fuerte" data-etiqueta="Tarjeta">@c.Tarjeta</td>
+                        <td data-etiqueta="Cliente">@c.Cliente</td>
+                        <td class="pg-t-mono pg-t-tenue" data-etiqueta="Fecha y hora">@c.Fecha.ToString("dd/MM") @c.Hora.ToString("HH:mm")</td>
+                        <td data-etiqueta="Estado"><span class="pg-t-estado pg-t-estado-custodia"><span class="pg-t-punto"></span>Programada</span></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
-    <a asp-controller="Citas" asp-action="Index">Ir a citas con clientes →</a>
-</div>
+</section>
