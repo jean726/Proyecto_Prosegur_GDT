@@ -25,7 +25,7 @@
     // El ViewModel entrega el indicador como texto del enum; se presenta aquí con su ortografía
     string Indicador(string t)
     {
-        var k = (t ?? "").Replace(" ", "").ToLowerInvariant();
+        var k = (t ?? "").Replace(" ", "").Replace("ó", "o").ToLowerInvariant();
         return k switch
         {
             "identidadnocoincide" => "Identidad no coincide",

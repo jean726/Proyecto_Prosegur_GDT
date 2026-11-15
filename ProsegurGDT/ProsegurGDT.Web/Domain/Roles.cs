@@ -12,6 +12,15 @@ public static class Roles
     public const string Buscador = "Buscador";
     public const string AnalistaDeRutas = "AnalistaDeRutas";
 
+    /// <summary>Nombre del rol para mostrar: «AnalistaDeRutas» → «Analista de Rutas».</summary>
+    public static string Etiqueta(string? rol)
+    {
+        if (string.IsNullOrEmpty(rol)) return "";
+        var palabras = System.Text.RegularExpressions.Regex.Split(rol, "(?<!^)(?=[A-Z])")
+            .Select(w => w == "De" ? "de" : w == "Boveda" ? "Bóveda" : w);
+        return string.Join(' ', palabras);
+    }
+
     public static readonly string[] Todos =
     {
         Administrador, Supervisor, AuxiliarTelefonista, Verificador, Descargador,

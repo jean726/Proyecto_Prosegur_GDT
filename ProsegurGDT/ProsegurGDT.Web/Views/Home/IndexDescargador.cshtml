@@ -44,7 +44,7 @@
     // El ViewModel entrega el estado como texto del enum; se presenta aquí con su ortografía
     (string Texto, string Clase) Estado(string e)
     {
-        var k = (e ?? "").Replace(" ", "").ToLowerInvariant();
+        var k = (e ?? "").Replace(" ", "").Replace("ó", "o").ToLowerInvariant();
         return k switch
         {
             "enproceso" => ("En proceso", "proceso"),
