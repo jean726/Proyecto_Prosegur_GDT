@@ -1,13 +1,16 @@
 ﻿@model ProsegurGDT.Web.Models.DireccionesIndexVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Direcciones fraudulentas"; var esBuscador = User.IsInRole(Roles.Buscador);
+    ViewData["Title"] = "Direcciones fraudulentas"; ViewData["Torre"] = true; var esBuscador = User.IsInRole(Roles.Buscador);
 }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Registro de direcciones fraudulentas</h2>
+<div class="pg-encabezado">
+    <div>
+        <h1>Registro de direcciones fraudulentas</h1>
+        <p class="pg-subtitulo">@Model.Items.Count() @(Model.Items.Count() == 1 ? "dirección registrada" : "direcciones registradas")</p>
+    </div>
     @if (esBuscador)
     {
-        <div>
+        <div class="d-flex gap-2 flex-wrap">
             <a asp-action="Alertas" class="btn btn-outline-danger">Alertas pendientes <span class="badge bg-danger">@Model.AlertasPendientes</span></a>
             <a asp-action="Crear" class="btn btn-primary">Registrar dirección</a>
         </div>
@@ -22,24 +25,24 @@
     <div class="alert alert-danger">@err</div>
 }
 
-<div class="card mb-3">
-    <div class="card-header">Probar el motor de similitud</div>
-    <div class="card-body">
-        <form method="get" class="row g-2">
-            <div class="col-md-7"><input name="probar" value="@Model.Probar" class="form-control" placeholder="Ej.: Av Larco 105 Mirafores" /></div>
-            <div class="col-md-2"><button class="btn btn-outline-primary">Evaluar</button></div>
-        </form>
-        <div class="small text-muted mt-2">Alerta media ≥ @Model.UmbralMedio.ToString("P0"); alerta alta ≥ @Model.UmbralAlto.ToString("P0").</div>
-        @if (Model.Coincidencias is not null)
-        {
-            <table class="table table-sm mt-2">
-                <thead class="table-light"><tr><th>Dirección registrada</th><th>Puntaje</th><th>Resultado</th><th>Detalle</th></tr></thead>
+<div class="pg-tarjeta mb-3">
+    <h2 class="h6 mb-3">Probar el motor de similitud</h2>
+    <form method="get" class="row g-2">
+        <div class="col-md-7"><input name="probar" value="@Model.Probar" class="form-control" placeholder="Ej.: Av Larco 105 Mirafores" aria-label="Dirección a evaluar" /></div>
+        <div class="col-md-2"><button class="btn btn-outline-primary">Evaluar</button></div>
+    </form>
+    <div class="small text-muted mt-2">Alerta media ≥ @Model.UmbralMedio.ToString("P0"); alerta alta ≥ @Model.UmbralAlto.ToString("P0").</div>
+    @if (Model.Coincidencias is not null)
+    {
+        <div class="table-responsive mt-2">
+            <table class="table table-sm">
+                <thead><tr><th>Dirección registrada</th><th>Puntaje</th><th>Resultado</th><th>Detalle</th></tr></thead>
                 <tbody>
                     @foreach (var c in Model.Coincidencias)
                     {
                         <tr>
                             <td>@c.Direccion</td>
-                            <td>@c.Puntaje.ToString("P1")</td>
+                            <td class="pg-t-mono">@c.Puntaje.ToString("P1")</td>
                             <td>
                                 @if (c.Puntaje >= Model.UmbralAlto)
                                 {
@@ -47,12 +50,10 @@
                                 }
                                 else if (c.Puntaje >= Model.UmbralMedio)
                                 {
-
                                     <span class="badge bg-warning text-dark">Media</span>
                                 }
                                 else
                                 {
-
                                     <span class="badge bg-secondary">Sin alerta</span>
                                 }
                             </td>
@@ -65,54 +66,59 @@
                     }
                 </tbody>
             </table>
-        }
-    </div>
+        </div>
+    }
 </div>
 
 @if (esBuscador)
 {
     <form asp-action="Reindexar" method="post" class="mb-2"><button class="btn btn-sm btn-outline-secondary">Recalcular vectores</button></form>
 }
-<table class="table table-sm table-hover align-middle">
-    <thead class="table-light"><tr><th>Dirección</th><th>Motivo</th><th>Origen</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-        @foreach (var d in Model.Items)
-        {
-            <tr>
-                <td>@d.DireccionOriginal</td>
-                <td>@d.Motivo</td>
-                <td>@d.Origen</td>
-                <td>
-                    @if (d.Estado == EstadoDireccion.Validada)
-                    {
-                        <span class="badge bg-success">Validada</span>
-                    }
-                    else if (d.Estado == EstadoDireccion.Pendiente)
-                    {
-
-                        <span class="badge bg-warning text-dark">Pendiente</span>
-                    }
-                    else
-                    {
-
-                        <span class="badge bg-secondary">Dada de baja</span>
-                    }
-                </td>
-                <td class="text-end">
-                    @if (esBuscador)
-                    {
-                        if (d.Estado == EstadoDireccion.Pendiente)
-                        {
-                            <form asp-action="Validar" asp-route-id="@d.Id" method="post" class="d-inline"><button class="btn btn-sm btn-outline-success">Validar</button></form>
-                        }
-                        if (d.Estado != EstadoDireccion.Descartada)
-                        {
-
-                            <form asp-action="Descartar" asp-route-id="@d.Id" method="post" class="d-inline" onsubmit="return confirm('¿Dar de baja esta dirección?');"><button class="btn btn-sm btn-outline-danger">Dar de baja</button></form>
-                        }
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Dirección</th><th>Motivo</th><th>Origen</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var d in Model.Items)
+                {
+                    <tr>
+                        <td>@d.DireccionOriginal</td>
+                        <td>@d.Motivo</td>
+                        <td>@d.Origen</td>
+                        <td>
+                            @if (d.Estado == EstadoDireccion.Validada)
+                            {
+                                <span class="badge bg-success">Validada</span>
+                            }
+                            else if (d.Estado == EstadoDireccion.Pendiente)
+                            {
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Dada de baja</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (esBuscador)
+                            {
+                                if (d.Estado == EstadoDireccion.Pendiente)
+                                {
+                                    <form asp-action="Validar" asp-route-id="@d.Id" method="post" class="d-inline"><button class="btn btn-sm btn-outline-success">Validar</button></form>
+                                }
+                                if (d.Estado != EstadoDireccion.Descartada)
+                                {
+                                    <form asp-action="Descartar" asp-route-id="@d.Id" method="post" class="d-inline" onsubmit="return confirm('¿Dar de baja esta dirección?');"><button class="btn btn-sm btn-outline-danger">Dar de baja</button></form>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no hay direcciones registradas.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
