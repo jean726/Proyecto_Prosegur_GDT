@@ -1,7 +1,7 @@
 @model IEnumerable<ProsegurGDT.Web.Models.LoteConciliacionFilaVM>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Conciliación de tarjetas";
+    ViewData["Title"] = "Conciliación de tarjetas"; ViewData["Torre"] = true;
     var total = Model.Count();
     var pendientes = Model.Count(f => f.Pendiente);
 }

@@ -2062,3 +2062,8 @@ button.pg-enviando, input.pg-enviando {
     .pg-torre .pg-contenido .pg-tarjeta-tabla { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .pg-torre .pg-contenido .pg-tarjeta-tabla .table { min-width: 640px; }
 }
+
+.pg-torre .pg-contenido .card-header { background: transparent; border-bottom: 1px solid var(--t-linea); color: #fff; font-weight: 600; font-size: .9rem; }
+.pg-torre .pg-contenido .card-body { color: var(--t-texto); }
+
+.pg-torre .pg-contenido .pg-metricas { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
