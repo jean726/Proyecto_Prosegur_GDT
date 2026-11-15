@@ -1,4 +1,4 @@
-@model ProsegurGDT.Web.Models.NuevoReporteFraudeVM
+﻿@model ProsegurGDT.Web.Models.NuevoReporteFraudeVM
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Nuevo reporte de fraude"; ViewData["Torre"] = true;
@@ -31,6 +31,11 @@
 <form asp-action="Nuevo" method="post" class="pg-tarjeta pg-bloque">
     <input type="hidden" asp-for="HojaRutaId" />
     <input type="hidden" asp-for="TarjetaId" />
+    <input type="hidden" asp-for="SuplantacionId" />
+    @if (Model.SuplantacionId is not null)
+    {
+        <div class="alert alert-warning">Este reporte parte de una sospecha de suplantación enviada por el repartidor desde campo. Revise y complete la descripción antes de generarlo.</div>
+    }
     <div class="mb-3">
         <label asp-for="Tipo" class="form-label">Indicador de fraude detectado</label>
         <select asp-for="Tipo" class="form-select" asp-items="Html.GetEnumSelectList<TipoIndicadorFraude>()">

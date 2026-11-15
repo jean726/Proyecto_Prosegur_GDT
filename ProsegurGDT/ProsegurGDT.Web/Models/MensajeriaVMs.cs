@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ProsegurGDT.Web.Domain;
 
 namespace ProsegurGDT.Web.Models;
@@ -104,6 +104,20 @@ public class FraudeIndexVM
 {
     public List<HojaRevisionFilaVM> Hojas { get; set; } = new();
     public List<ReporteFraudeFilaVM> Reportes { get; set; } = new();
+    public List<SuplantacionFilaVM> Suplantaciones { get; set; } = new();
+}
+
+// B2 (CU30): sospecha de suplantación reportada por el repartidor desde la app móvil
+public class SuplantacionFilaVM
+{
+    public int Id { get; set; }
+    public int HojaRutaId { get; set; }
+    public int TarjetaId { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Cliente { get; set; } = "—";
+    public string Repartidor { get; set; } = "—";
+    public string Descripcion { get; set; } = string.Empty;
+    public DateTime FechaHora { get; set; }
 }
 
 public class RevisarHojaVM
@@ -130,6 +144,8 @@ public class NuevoReporteFraudeVM
 {
     public int HojaRutaId { get; set; }
     public int TarjetaId { get; set; }
+    // B2: reporte de suplantación de campo que origina este reporte (se marca como atendido al generarlo)
+    public int? SuplantacionId { get; set; }
 
     [Required(ErrorMessage = "Seleccione el indicador de fraude detectado.")]
     public TipoIndicadorFraude? Tipo { get; set; }
