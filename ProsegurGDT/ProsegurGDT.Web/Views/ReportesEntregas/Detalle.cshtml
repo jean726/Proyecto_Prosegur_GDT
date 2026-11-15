@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.DetalleReporteEntregasVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Reporte de entregas";
+    ViewData["Title"] = "Reporte de entregas"; ViewData["Torre"] = true;
     var remitido = Model.Estado == EstadoReporteEntregas.Remitido;
 }
 <div class="pg-encabezado">

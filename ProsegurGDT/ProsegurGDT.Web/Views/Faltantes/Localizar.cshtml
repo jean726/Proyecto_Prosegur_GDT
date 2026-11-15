@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.LocalizarFaltanteVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Localizar tarjeta";
+    ViewData["Title"] = "Localizar tarjeta"; ViewData["Torre"] = true;
     var abierta = Model.Estado == EstadoIncidencia.Abierta;
 }
 <div class="pg-encabezado">

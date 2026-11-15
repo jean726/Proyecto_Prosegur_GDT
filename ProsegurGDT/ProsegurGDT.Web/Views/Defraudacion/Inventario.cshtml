@@ -2,7 +2,7 @@
 @using ProsegurGDT.Web.Domain
 @using ProsegurGDT.Web.Services
 @{
-    ViewData["Title"] = "Inventario de bóveda";
+    ViewData["Title"] = "Inventario de bóveda"; ViewData["Torre"] = true;
     var fraude = Model.Count(i => i.EstadoFisico == DefraudacionService.EstadoFisicoFraude);
 }
 <div class="pg-encabezado">

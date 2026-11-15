@@ -1,56 +1,183 @@
+@using System.Globalization
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
 @model ProsegurGDT.Web.Models.DashboardDescargadorViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Rutas por descargar, apartado de defraudación y reportes de la jornada</p>
-    </div>
-    <a asp-controller="Descargo" asp-action="Index" class="btn btn-primary">Descargo de tarjetas</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.FraudePorRegistrar > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.FraudePorRegistrar @(Model.FraudePorRegistrar == 1 ? "tarjeta espera" : "tarjetas esperan") su registro en el acta de fraude
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 4; // «Resultado»: el descargo registra el resultado de lo entregado
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Rutas por procesar</small><strong>@Model.RutasPorProcesar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Tarjetas por verificar</small><strong>@Model.TarjetasPendientes</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Rutas cerradas</small><strong>@Model.RutasCerradas</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Reportes generados</small><strong>@Model.ReportesGenerados</strong></div>
-</div>
+    var rp = Model.RutasPorProcesar;
+    var tp = Model.TarjetasPendientes;
+    var rc = Model.RutasCerradas;
+    var fr = Model.FraudePorRegistrar;
+    var rg = Model.ReportesGenerados;
+    var rutas = Model.Rutas;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Rutas pendientes de descargo</h2>
-    @if (Model.Rutas.Count == 0)
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var ahora = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)ahora.DayOfWeek]} {ahora:dd/MM/yyyy}";
+
+    string titular;
+    if (rp > 0)
+        titular = tp > 0
+            ? $"{tp} {Pl(tp, "tarjeta", "tarjetas")} por verificar en {rp} {Pl(rp, "ruta", "rutas")}."
+            : $"{rp} {Pl(rp, "ruta", "rutas")} por procesar.";
+    else if (fr > 0 || rc > 0 || rg > 0) titular = "Sin rutas por procesar.";
+    else titular = "Todo al día.";
+    var riesgo = fr > 0 ? $"{fr} {Pl(fr, "espera", "esperan")} su registro en el acta de fraude." : "";
+
+    string subtitulo;
+    if (rutas.Count > 0)
     {
-        <p class="text-muted mb-2">No hay rutas pendientes.</p>
+        var top = rutas.OrderByDescending(r => r.Pendientes).First();
+        subtitulo = $"Entre las rutas listadas, la de {top.Repartidor} tiene más tarjetas por verificar ({top.Pendientes}).";
     }
-    else
+    else if (fr > 0) subtitulo = "Registra las tarjetas en el acta de fraude desde el apartado de defraudación.";
+    else subtitulo = "No hay rutas pendientes.";
+
+    // El ViewModel entrega el estado como texto del enum; se presenta aquí con su ortografía
+    (string Texto, string Clase) Estado(string e)
     {
-        <table class="table mb-2">
-            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Por verificar</th><th>Estado</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var r in Model.Rutas)
+        var k = (e ?? "").Replace(" ", "").Replace("ó", "o").ToLowerInvariant();
+        return k switch
+        {
+            "enproceso" => ("En proceso", "proceso"),
+            "pendientededocumentacion" => ("Pendiente de documentación", "doc"),
+            "pendiente" => ("Pendiente", "pend"),
+            _ => (e ?? "—", "pend")
+        };
+    }
+
+    var max = Math.Max(1, rutas.Count == 0 ? 1 : rutas.Max(r => r.Pendientes));
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del descargador</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="Descargo" asp-action="Index" class="pg-t-boton">Descargo de tarjetas</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Resultado">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo pg-d-resultado" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
                 {
-                    <tr>
-                        <td>@r.Repartidor</td>
-                        <td>@r.Sector</td>
-                        <td class="text-end">@r.Pendientes</td>
-                        <td>@r.Estado</td>
-                        <td class="text-end"><a asp-controller="Descargo" asp-action="Procesar" asp-route-id="@r.HojaRutaId">Procesar →</a></td>
-                    </tr>
+                    <span class="pg-a-tag">Tu tramo</span>
                 }
-            </tbody>
-        </table>
+            </div>
+            @if (activo)
+            {
+                <div class="pg-d-hoy pg-a-hoy-d">
+                    <div class="pg-a-hoy-item @(tp == 0 ? "cero" : "pg-f-pend")"><span class="pg-a-hoy-n" data-pg-contar="@tp">@tp</span><span class="pg-a-hoy-t">tarjetas por verificar</span></div>
+                    <div class="pg-a-hoy-item @(rp == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@rp">@rp</span><span class="pg-a-hoy-t">rutas por procesar</span></div>
+                    <div class="pg-a-hoy-item @(fr == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (fr > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@fr">@fr</span></span><span class="pg-a-hoy-t">fraude por registrar</span></div>
+                    <div class="pg-a-hoy-item @(rc == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@rc">@rc</span><span class="pg-a-hoy-t">rutas cerradas</span></div>
+                    <div class="pg-a-hoy-item @(rg == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@rg">@rg</span><span class="pg-a-hoy-t">reportes generados</span></div>
+                </div>
+            }
+        </div>
     }
-    <div class="d-flex gap-3">
-        <a asp-controller="ReportesDescargo" asp-action="Index">Reportes de descargo →</a>
-        <a asp-controller="Defraudacion" asp-action="Index">Apartado de defraudación →</a>
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    <div class="pg-a-hoy-item @(tp == 0 ? "cero" : "pg-f-pend")"><span class="pg-a-hoy-n" data-pg-contar="@tp">@tp</span><span class="pg-a-hoy-t">tarjetas por verificar</span></div>
+    <div class="pg-a-hoy-item @(rp == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@rp">@rp</span><span class="pg-a-hoy-t">rutas por procesar</span></div>
+    <div class="pg-a-hoy-item @(fr == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (fr > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@fr">@fr</span></span><span class="pg-a-hoy-t">fraude por registrar</span></div>
+</div>
+
+<div class="pg-d-cols">
+    <div class="pg-d-izq">
+        @if (tp > 0)
+        {
+            <section class="pg-a-hero pg-c-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                </div>
+                <div class="pg-c-hero-n">
+                    <span class="pg-c-hero-cifra pg-t-mono" data-pg-contar="@tp">@tp</span>
+                    <span class="pg-c-hero-lbl">@Pl(tp, "tarjeta por verificar", "tarjetas por verificar") en @rp @Pl(rp, "ruta abierta", "rutas abiertas")</span>
+                </div>
+                <a asp-controller="Descargo" asp-action="Index" class="pg-a-hero-boton"><span>Descargo de tarjetas</span><span class="pg-t-mono">→</span></a>
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">@(fr > 0 || rc > 0 || rg > 0 || rp > 0 ? "Sin rutas por procesar." : "Todo al día.")</p>
+                <p class="pg-a-ok-texto">@(fr > 0
+                    ? $"No quedan tarjetas por verificar en las rutas abiertas. Aún hay {fr} por registrar en el acta de fraude."
+                    : "No quedan tarjetas por verificar en las rutas abiertas.")</p>
+                <a asp-controller="Descargo" asp-action="Index" class="pg-t-boton-sec">Descargo de tarjetas →</a>
+            </section>
+        }
+
+        <div class="pg-d-duo">
+            <section class="pg-d-fraude @(fr > 0 ? "con-riesgo" : "")" aria-label="Fraude por registrar">
+                <span class="pg-d-tit">Fraude por registrar</span>
+                <span class="pg-d-fr-n pg-t-mono">@if (fr > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@fr">@fr</span></span>
+                <span class="pg-d-fr-t">@(fr > 0 ? $"{Pl(fr, "Tarjeta espera", "Tarjetas esperan")} su registro en el acta de fraude." : "Sin fraude por registrar.")</span>
+                <a asp-controller="Defraudacion" asp-action="Index" class="pg-d-link @(fr > 0 ? "riesgo" : "")">Apartado de defraudación →</a>
+            </section>
+            <section class="pg-d-cierre" aria-label="Rutas cerradas y reportes">
+                <span class="pg-d-tit">Rutas cerradas y reportes</span>
+                <div class="pg-d-ci-n">
+                    <div><span class="pg-t-mono @(rc == 0 ? "cero" : "")" data-pg-contar="@rc">@rc</span><small>rutas cerradas</small></div>
+                    <div><span class="pg-t-mono @(rg == 0 ? "cero" : "")" data-pg-contar="@rg">@rg</span><small>reportes generados</small></div>
+                </div>
+                <a asp-controller="ReportesDescargo" asp-action="Index" class="pg-d-link">Reportes de descargo →</a>
+            </section>
+        </div>
     </div>
+
+    <section class="pg-t-panel pg-d-rutas" aria-label="Rutas pendientes de descargo">
+        <div class="pg-d-rutas-cab">
+            <div>
+                <h2>Rutas pendientes de descargo</h2>
+                <span class="pg-d-rutas-sub">Barra relativa a la ruta con más tarjetas por verificar.</span>
+            </div>
+            <span class="pg-t-mono pg-d-rutas-n"><span data-pg-contar="@rp">@rp</span> @Pl(rp, "abierta", "abiertas")</span>
+        </div>
+        @if (rutas.Count > 0)
+        {
+            <div class="pg-d-fila pg-d-fila-cab pg-t-etiqueta"><span>Repartidor · sector</span><span>Por verificar</span><span>Estado</span><span></span></div>
+            var fi = 0;
+            foreach (var r in rutas)
+            {
+                var est = Estado(r.Estado);
+                <div class="pg-d-fila pg-d-ruta" style="--f:@(fi++);--w:@F(100.0 * r.Pendientes / max);--c:var(--t-cola)">
+                    <span class="pg-d-quien">
+                        <span class="pg-d-rep">@r.Repartidor</span>
+                        <span class="pg-t-mono pg-d-sector @(r.Sector == "—" ? "nada" : "")">@r.Sector</span>
+                    </span>
+                    <span class="pg-d-carga">
+                        <span class="pg-t-mono pg-d-pend">@r.Pendientes</span>
+                        <span class="pg-a-pista"><i class="pg-a-relleno"></i></span>
+                    </span>
+                    <span class="pg-d-estado @est.Clase">@est.Texto</span>
+                    <a asp-controller="Descargo" asp-action="Procesar" asp-route-id="@r.HojaRutaId" class="pg-d-proc">Procesar →</a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">0 rutas abiertas</span>
+                <p>No hay rutas pendientes.</p>
+            </div>
+        }
+    </section>
 </div>

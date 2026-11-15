@@ -1,52 +1,220 @@
-﻿@model ProsegurGDT.Web.Models.DashboardBuscadorViewModel
+﻿@using System.Globalization
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Models
+@using ProsegurGDT.Web.Services
+@inject IConfiguracionOperativa Cfg
+@model DashboardBuscadorViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Alertas por revisar y estado del registro de direcciones</p>
-    </div>
-    <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="btn btn-primary">Revisar alertas</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.AlertasPendientes > 0)
-{
-    <div class="pg-aviso">
-        @Model.AlertasPendientes @(Model.AlertasPendientes == 1 ? "alerta espera" : "alertas esperan") tu decisión
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 2; // «Cita»: la clasificación y sus alertas ocurren antes de armar rutas
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Alertas pendientes</small><strong>@Model.AlertasPendientes</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Direcciones por validar</small><strong>@Model.DireccionesPorValidar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Direcciones validadas</small><strong>@Model.DireccionesValidadas</strong></div>
-</div>
+    var medio = Cfg.UmbralMedio * 100;
+    var alto = Cfg.UmbralAlto * 100;
+    bool EsAlta(FilaAlertaCritica a) => a.Puntaje >= Cfg.UmbralAlto;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Alertas más críticas</h2>
-    @if (Model.AlertasCriticas.Count == 0)
+    var criticas = Model.AlertasCriticas;
+    var principal = criticas.FirstOrDefault();
+    var otras = criticas.Skip(1).ToList();
+    var altasVisibles = criticas.Count(EsAlta);
+    var hayAlertas = criticas.Count > 0;
+
+    string titular;
+    string subtitulo;
+    if (Model.AlertasPendientes > 0)
     {
-        <p class="text-muted mb-2">No hay alertas pendientes.</p>
+        titular = $"{Model.AlertasPendientes} {Pl(Model.AlertasPendientes, "alerta espera", "alertas esperan")} tu decisión.";
+        subtitulo = principal != null
+            ? $"La más crítica, {principal.Tarjeta}, coincide al {(int)Math.Round(principal.Puntaje * 100)} % con una dirección fraudulenta registrada. Descártala o confírmala desde Revisar alertas."
+            : "Descártalas o confírmalas desde Revisar alertas.";
+    }
+    else if (Model.DireccionesPorValidar > 0)
+    {
+        titular = $"{Model.DireccionesPorValidar} {Pl(Model.DireccionesPorValidar, "dirección por validar", "direcciones por validar")}.";
+        subtitulo = "No hay alertas pendientes. Valida las direcciones registradas para que la IA las use en próximas comparaciones.";
     }
     else
     {
-        <table class="table mb-2">
-            <thead>
-                <tr><th>Tarjeta</th><th>Coincide con</th><th>Similitud</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var a in Model.AlertasCriticas)
-                {
-                    <tr>
-                        <td>@a.Tarjeta</td>
-                        <td>@a.Direccion</td>
-                        <td><span class="pg-estado pg-estado-riesgo">@a.Puntaje.ToString("P0")</span></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        titular = "Todo al día.";
+        subtitulo = "No hay alertas que decidir ni direcciones por validar.";
     }
-    <a asp-controller="DireccionesFraudulentas" asp-action="Alertas">Ver todas las alertas →</a>
+    // Solo se ven las 3 alertas más críticas: si las 3 son altas, puede haber más
+    var riesgo = altasVisibles == 0 ? ""
+        : altasVisibles >= 3 ? "3 o más con coincidencia alta."
+        : $"{altasVisibles} con coincidencia alta.";
+
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var hoy = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)hoy.DayOfWeek]} {hoy:dd/MM/yyyy}";
+
+    var contadores = new (string Texto, int Valor, string Tono)[]
+    {
+        ("alertas pendientes", Model.AlertasPendientes, "cola"),
+        ("direcciones por validar", Model.DireccionesPorValidar, "cola"),
+        ("direcciones validadas", Model.DireccionesValidadas, "neu")
+    };
+
+    var totalDir = Model.DireccionesValidadas + Model.DireccionesPorValidar;
+    var pctValidadas = totalDir > 0 ? (int)Math.Round(100.0 * Model.DireccionesValidadas / totalDir) : 0;
+    var pctPorValidar = totalDir > 0 ? 100 - pctValidadas : 0;
+
+    var vacioTexto = Model.DireccionesPorValidar > 0
+        ? $"No hay alertas de dirección que decidir. Quedan {Model.DireccionesPorValidar} {Pl(Model.DireccionesPorValidar, "dirección", "direcciones")} por validar en el registro."
+        : "No hay alertas de dirección que decidir. Cuando la IA detecte una coincidencia, aparecerá aquí.";
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del buscador</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
+    </div>
+    <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="pg-t-boton">Revisar alertas</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Cita">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
+                {
+                    <span class="pg-a-tag">Tu tramo</span>
+                }
+            </div>
+            @if (activo)
+            {
+                <div class="pg-a-hoy pg-a-hoy-d">
+                    @foreach (var h in contadores)
+                    {
+                        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "")">
+                            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+                            <span class="pg-a-hoy-t">@h.Texto</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    @foreach (var h in contadores)
+    {
+        <div class="pg-a-hoy-item @(h.Valor == 0 ? "cero" : "")">
+            <span class="pg-a-hoy-n" data-pg-contar="@h.Valor">@h.Valor</span>
+            <span class="pg-a-hoy-t">@h.Texto</span>
+        </div>
+    }
+</div>
+
+<div class="pg-b-cols">
+    @if (principal != null)
+    {
+        var esAlta = EsAlta(principal);
+        var pct = (int)Math.Round(principal.Puntaje * 100);
+        <section class="pg-b-hero @(esAlta ? "alta" : "media")" aria-label="Siguiente acción" style="--v:@F(principal.Puntaje * 100);--m:@F(medio);--a:@F(alto)">
+            <div class="pg-a-hero-cab">
+                <span class="pg-a-hero-etiqueta">@if (esAlta) {<span class="pg-a-pulso"></span>}else {<span class="pg-b-punto"></span>}Siguiente acción · la alerta más crítica</span>
+                <span class="pg-t-mono pg-t-tenue">1 de @Model.AlertasPendientes @Pl(Model.AlertasPendientes, "pendiente", "pendientes")</span>
+            </div>
+            <div class="pg-a-hero-hoja">
+                <span class="pg-a-hero-sub">Tarjeta</span>
+                <span class="pg-a-hero-codigo pg-b-codigo">@principal.Tarjeta</span>
+            </div>
+            <div class="pg-b-dir">
+                <span class="pg-a-hero-sub">Coincide con la dirección fraudulenta</span>
+                <span class="pg-b-dir-texto">@principal.Direccion</span>
+            </div>
+            <div class="pg-b-simil">
+                <div class="pg-b-simil-cab">
+                    <div class="pg-b-simil-t">
+                        <span class="pg-a-hero-sub">Similitud</span>
+                        <span class="pg-b-nivel"><span class="pg-t-mono">@(esAlta ? "▲" : "●")</span>@(esAlta ? "Coincidencia alta" : "Coincidencia media")</span>
+                    </div>
+                    <span class="pg-b-pct pg-t-mono"><span data-pg-contar="@pct">@pct</span> %</span>
+                </div>
+                <div class="pg-b-medidor pg-b-medidor-g" role="img" aria-label="Similitud del @pct por ciento; umbral medio @((int)Math.Round(medio)), umbral alto @((int)Math.Round(alto))">
+                    <i class="pg-b-zona-m"></i><i class="pg-b-zona-a"></i><i class="pg-b-relleno"></i><i class="pg-b-marca pg-b-marca-m"></i><i class="pg-b-marca pg-b-marca-a"></i>
+                </div>
+                <div class="pg-b-escala pg-t-mono" aria-hidden="true">
+                    <span class="e0">0</span><span class="em">@((int)Math.Round(medio)) · media</span><span class="ea">@((int)Math.Round(alto)) · alta</span><span class="e100">100</span>
+                </div>
+            </div>
+            <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="pg-a-hero-boton"><span>Revisar alertas</span><span class="pg-t-mono">→</span></a>
+        </section>
+    }
+    else
+    {
+        <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+            <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+            <p class="pg-a-ok-titulo">Todo al día.</p>
+            <p class="pg-a-ok-texto">@vacioTexto</p>
+            @if (Model.DireccionesPorValidar > 0)
+            {
+                <a asp-controller="DireccionesFraudulentas" asp-action="Index" class="pg-t-boton-sec">Ir al registro de direcciones →</a>
+            }
+            else
+            {
+                <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="pg-t-boton-sec">Ver todas las alertas →</a>
+            }
+        </section>
+    }
+
+    <div class="pg-b-der">
+        <section class="pg-t-panel" aria-label="Otras alertas críticas">
+            <div class="pg-t-panel-cab">
+                <h2>Otras alertas críticas</h2>
+                <span class="pg-t-mono pg-t-tenue">@(otras.Count > 0 ? $"{otras.Count} más" : "")</span>
+            </div>
+            @{ var fo = 0; }
+            @foreach (var a in otras)
+            {
+                var alta = EsAlta(a);
+                var p = (int)Math.Round(a.Puntaje * 100);
+                <div class="pg-b-otra @(alta ? "alta" : "media")" style="--f:@(fo++);--v:@F(a.Puntaje * 100);--m:@F(medio);--a:@F(alto)">
+                    <div class="pg-b-otra-cab">
+                        <span class="pg-t-mono pg-a-blanco">@a.Tarjeta</span>
+                        <span class="pg-b-otra-nivel"><span class="pg-b-nivel-t">@(alta ? "▲ Alta" : "● Media")</span><span class="pg-t-mono pg-b-otra-pct"><span data-pg-contar="@p">@p</span> %</span></span>
+                    </div>
+                    <span class="pg-b-otra-dir">@a.Direccion</span>
+                    <div class="pg-b-medidor pg-b-medidor-p" role="img" aria-label="Similitud del @p por ciento"><i class="pg-b-relleno"></i><i class="pg-b-marca pg-b-marca-m"></i><i class="pg-b-marca pg-b-marca-a"></i></div>
+                </div>
+            }
+            @if (otras.Count == 0)
+            {
+                <p class="pg-t-bloque-vacio">@(hayAlertas ? "No hay más alertas críticas." : "No hay alertas pendientes.")</p>
+            }
+            <a asp-controller="DireccionesFraudulentas" asp-action="Alertas" class="pg-b-ver"><span>Ver todas las alertas</span><span class="pg-t-mono">→</span></a>
+        </section>
+
+        <section class="pg-t-panel pg-b-reg" aria-label="Registro de direcciones fraudulentas">
+            <div class="pg-b-reg-cab">
+                <h2>Registro de direcciones fraudulentas</h2>
+                <span class="pg-t-mono pg-t-tenue"><span data-pg-contar="@totalDir">@totalDir</span> registradas</span>
+            </div>
+            @if (totalDir > 0)
+            {
+                <div class="pg-b-reg-barra" role="img" aria-label="@Model.DireccionesValidadas validadas y @Model.DireccionesPorValidar por validar">
+                    <i class="v" style="--w:@pctValidadas"></i><i class="p" style="--w:@pctPorValidar"></i>
+                </div>
+                <div class="pg-b-reg-leyenda">
+                    <div><span class="pg-b-reg-etq"><i class="v"></i>Validadas</span><span class="pg-t-mono pg-b-reg-n"><span data-pg-contar="@Model.DireccionesValidadas">@Model.DireccionesValidadas</span> <small>@pctValidadas %</small></span></div>
+                    <div><span class="pg-b-reg-etq"><i class="p"></i>Por validar</span><span class="pg-t-mono pg-b-reg-n @(Model.DireccionesPorValidar > 0 ? "pend" : "")"><span data-pg-contar="@Model.DireccionesPorValidar">@Model.DireccionesPorValidar</span> <small>@pctPorValidar %</small></span></div>
+                </div>
+            }
+            else
+            {
+                <p class="pg-b-reg-vacio">Aún no hay direcciones registradas.</p>
+            }
+            <a asp-controller="DireccionesFraudulentas" asp-action="Index" class="pg-b-reg-link">Ir al registro de direcciones →</a>
+        </section>
+    </div>
 </div>

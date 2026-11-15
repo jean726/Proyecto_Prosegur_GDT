@@ -1,11 +1,15 @@
-﻿@model ProsegurGDT.Web.Models.ClasificarLoteVM
+@model ProsegurGDT.Web.Models.ClasificarLoteVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Clasificar lote";
+    ViewData["Title"] = "Clasificar lote"; ViewData["Torre"] = true;
     var nAlertas = Model.Filas.Count(f => f.Alerta != null);
 }
-<h2>Clasificación de tarjetas por zona</h2>
-<p class="text-muted">Lote @Model.Lote.CodigoHojaControl — Remito @Model.Lote.Remito?.Numero</p>
+<div class="pg-encabezado">
+    <div>
+        <h1>Clasificación de tarjetas por zona</h1>
+        <p class="pg-subtitulo">Lote @Model.Lote.CodigoHojaControl — Remito @Model.Lote.Remito?.Numero</p>
+    </div>
+</div>
 @if (!string.IsNullOrEmpty(Model.Error))
 {
     <div class="alert alert-danger">@Model.Error</div>
@@ -28,8 +32,10 @@
 
 <form asp-action="Guardar" method="post">
     <input type="hidden" name="loteId" value="@Model.Lote.Id" />
-    <table class="table table-sm align-middle">
-        <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección de entrega</th><th>Estado</th><th>Alerta</th><th>Zona</th></tr></thead>
+    <div class="pg-tarjeta pg-tarjeta-tabla mb-3">
+    <div class="table-responsive">
+    <table class="table align-middle">
+        <thead><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección de entrega</th><th>Estado</th><th>Alerta</th><th>Zona</th></tr></thead>
         <tbody>
             @foreach (var f in Model.Filas)
             {
@@ -59,8 +65,10 @@
             }
         </tbody>
     </table>
-    <button class="btn btn-success">Guardar clasificación</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </div>
+    </div>
+    <button class="btn btn-primary">Guardar clasificación</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
 </form>
 
 <div class="card mt-4">

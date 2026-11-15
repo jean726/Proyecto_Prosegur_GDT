@@ -1,56 +1,186 @@
-@model ProsegurGDT.Web.Models.DashboardBovedaViewModel
+@using System.Globalization
 @using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
+@model ProsegurGDT.Web.Models.DashboardBovedaViewModel
 @{
     ViewData["Title"] = "Inicio";
-}
+    ViewData["Torre"] = true;
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Tarjetas de fraude por ingresar y estado del inventario de bóveda</p>
-    </div>
-    <a asp-controller="Defraudacion" asp-action="Index" class="btn btn-primary">Apartado de defraudación</a>
-</div>
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-@if (Model.FraudePorIngresar > 0)
-{
-    <div class="pg-aviso pg-aviso-riesgo">
-        @Model.FraudePorIngresar @(Model.FraudePorIngresar == 1 ? "tarjeta de fraude espera" : "tarjetas de fraude esperan") su ingreso a bóveda
-    </div>
-}
+    var nombres = EtapasTarjeta.Nombres;
+    const int tramo = 4; // «Resultado»: los casos de fraude salen del descargo y llegan a bóveda
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Fraude por ingresar</small><strong>@Model.FraudePorIngresar</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Ingresadas hoy</small><strong>@Model.IngresadasHoy</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-azul"><small>Tarjetas en bóveda</small><strong>@Model.InventarioTotal</strong></div>
-    <div class="pg-tarjeta pg-metrica"><small>Con etiqueta de fraude</small><strong>@Model.InventarioFraude</strong></div>
-</div>
+    var fi = Model.FraudePorIngresar;
+    var ih = Model.IngresadasHoy;
+    var it = Model.InventarioTotal;
+    var ifr = Math.Min(Model.InventarioFraude, it);
+    var pend = Model.Pendientes;
 
-<div class="pg-tarjeta pg-bloque">
-    <h2 class="h6 mb-2">Próximas a ingresar</h2>
-    @if (Model.Pendientes.Count == 0)
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var ahora = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)ahora.DayOfWeek]} {ahora:dd/MM/yyyy}";
+
+    // El ViewModel entrega el origen como texto del enum; se presenta aquí con su ortografía
+    (string Texto, bool Verif) Origen(OrigenFraude o) => o switch
     {
-        <p class="text-muted mb-2">No hay tarjetas pendientes de ingreso.</p>
+        OrigenFraude.DiscrepanciaDeDescargo => ("Discrepancia de descargo", false),
+        OrigenFraude.ReporteDelVerificador => ("Reporte del verificador", true),
+        _ => (o.ToString(), false)
+    };
+
+    string titRojo = "";
+    string titular;
+    string subtitulo;
+    if (fi > 0)
+    {
+        titRojo = $"{fi} {Pl(fi, "tarjeta de fraude", "tarjetas de fraude")}";
+        titular = $" {Pl(fi, "espera", "esperan")} su ingreso a bóveda.";
+        if (pend.Count > 0)
+        {
+            var p0 = pend[0];
+            var l0 = HoraLima.Convertir(p0.FechaRegistro);
+            subtitulo = $"La más antigua, {p0.Codigo}, tiene el acta registrada desde el {l0:dd/MM/yyyy} a las {l0:HH:mm}.";
+        }
+        else subtitulo = "Regístralas desde el apartado de defraudación.";
+    }
+    else if (it > 0 || ih > 0)
+    {
+        titular = "Sin fraude por ingresar.";
+        subtitulo = $"La bóveda custodia {it} {Pl(it, "tarjeta", "tarjetas")}; hoy {Pl(ih, "ingresó", "ingresaron")} {ih}.";
     }
     else
     {
-        <table class="table mb-2">
-            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Registrada</th></tr></thead>
-            <tbody>
-                @foreach (var a in Model.Pendientes)
-                {
-                    <tr>
-                        <td>@a.Codigo</td>
-                        <td>@a.Cliente</td>
-                        <td>@a.Origen.Texto()</td>
-                        <td>@HoraLima.Convertir(a.FechaRegistro).ToString("dd/MM/yyyy HH:mm")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        titular = "Todo al día.";
+        subtitulo = "No hay tarjetas pendientes de ingreso.";
     }
-    <div class="d-flex gap-3">
-        <a asp-controller="Defraudacion" asp-action="Index">Registrar ingresos →</a>
-        <a asp-controller="Defraudacion" asp-action="Inventario">Inventario de bóveda →</a>
+
+    var pctF = it > 0 ? 100.0 * ifr / it : 0;
+    var pctR = it > 0 ? 100.0 - pctF : 0;
+    var filaN = 0;
+}
+
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del encargado de bóveda</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@if (titRojo != "") {<span class="pg-t-riesgo">@titRojo</span>}@titular</h1>
+        <p class="pg-t-sub">@subtitulo</p>
     </div>
+    <a asp-controller="Defraudacion" asp-action="Index" class="pg-t-boton">Apartado de defraudación</a>
+</div>
+
+<nav class="pg-t-panel pg-a-tira" aria-label="Flujo de tarjetas: tu tramo es Resultado">
+    @for (var i = 0; i < nombres.Length; i++)
+    {
+        var activo = i == tramo;
+        <div class="pg-a-paso @(activo ? "activo pg-g-resultado" : "")" style="--i:@i">
+            <div class="pg-a-linea"></div>
+            <div class="pg-a-paso-cab">
+                <span class="pg-t-etiqueta">@((i + 1).ToString("00")) · @nombres[i]</span>
+                @if (activo)
+                {
+                    <span class="pg-a-tag">Tu tramo</span>
+                }
+            </div>
+            @if (activo)
+            {
+                <div class="pg-d-hoy pg-a-hoy-d">
+                    <div class="pg-a-hoy-item @(fi == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (fi > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@fi">@fi</span></span><span class="pg-a-hoy-t">fraude por ingresar</span></div>
+                    <div class="pg-a-hoy-item @(ih == 0 ? "cero" : "pg-g-ok")"><span class="pg-a-hoy-n" data-pg-contar="@ih">@ih</span><span class="pg-a-hoy-t">ingresadas hoy</span></div>
+                    <div class="pg-a-hoy-item @(it == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@it">@it</span><span class="pg-a-hoy-t">en bóveda</span></div>
+                    <div class="pg-a-hoy-item @(ifr == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@ifr">@ifr</span><span class="pg-a-hoy-t">con etiqueta de fraude</span></div>
+                </div>
+            }
+        </div>
+    }
+</nav>
+<div class="pg-t-panel pg-a-hoy pg-a-hoy-m">
+    <div class="pg-a-hoy-item @(fi == 0 ? "cero" : "pg-c-riesgo")"><span class="pg-a-hoy-n">@if (fi > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@fi">@fi</span></span><span class="pg-a-hoy-t">fraude por ingresar</span></div>
+    <div class="pg-a-hoy-item @(ih == 0 ? "cero" : "pg-g-ok")"><span class="pg-a-hoy-n" data-pg-contar="@ih">@ih</span><span class="pg-a-hoy-t">ingresadas hoy</span></div>
+    <div class="pg-a-hoy-item @(it == 0 ? "cero" : "")"><span class="pg-a-hoy-n" data-pg-contar="@it">@it</span><span class="pg-a-hoy-t">en bóveda</span></div>
+</div>
+
+<div class="pg-g-cols">
+    <div class="pg-g-izq">
+        @if (fi > 0)
+        {
+            <section class="pg-a-hero pg-c-hero pg-g-hero" aria-label="Siguiente acción">
+                <div class="pg-a-hero-cab">
+                    <span class="pg-a-hero-etiqueta"><span class="pg-a-pulso"></span>Siguiente acción</span>
+                </div>
+                <div class="pg-c-hero-n">
+                    <span class="pg-c-hero-cifra pg-t-mono"><span aria-hidden="true">▲</span><span data-pg-contar="@fi">@fi</span></span>
+                    <span class="pg-c-hero-lbl">@Pl(fi, "tarjeta de fraude espera su ingreso a bóveda", "tarjetas de fraude esperan su ingreso a bóveda")</span>
+                </div>
+                <p class="pg-c-hero-txt">Ya tienen acta de fraude registrada y esperan su ingreso a bóveda.</p>
+                <a asp-controller="Defraudacion" asp-action="Index" class="pg-a-hero-boton"><span>Apartado de defraudación</span><span class="pg-t-mono">→</span></a>
+            </section>
+        }
+        else
+        {
+            <section class="pg-a-hero pg-a-hero-ok" aria-label="Siguiente acción">
+                <span class="pg-a-hero-etiqueta ok"><span class="pg-a-punto"></span>Siguiente acción</span>
+                <p class="pg-a-ok-titulo">@titular</p>
+                <p class="pg-a-ok-texto">No hay tarjetas con acta de fraude pendiente de ingreso.</p>
+                <a asp-controller="Defraudacion" asp-action="Index" class="pg-t-boton-sec">Apartado de defraudación →</a>
+            </section>
+        }
+
+        <section class="pg-g-inv" aria-label="Inventario de bóveda">
+            <div class="pg-g-inv-cab">
+                <h2>Inventario de bóveda</h2>
+                <span class="pg-g-inv-hoy"><span class="pg-t-mono @(ih > 0 ? "ok" : "")">+@ih</span> ingresadas hoy</span>
+            </div>
+            <div class="pg-g-inv-n">
+                <div><span class="pg-t-mono @(it == 0 ? "cero" : "")" data-pg-contar="@it">@it</span><small>tarjetas en bóveda</small></div>
+                <div><span class="pg-t-mono @(ifr == 0 ? "cero" : "")" data-pg-contar="@ifr">@ifr</span><small>con etiqueta de fraude</small></div>
+            </div>
+            @if (it > 0)
+            {
+                <div class="pg-g-inv-barra" role="img" aria-label="@ifr de @it tarjetas con etiqueta de fraude">
+                    <i class="f" style="--w:@F(pctF)"></i><i class="r" style="--w:@F(pctR)"></i>
+                </div>
+                <div class="pg-g-inv-ley">
+                    <span><i class="f"></i>Con etiqueta de fraude · @((int)Math.Round(pctF)) %</span>
+                    <span><i class="r"></i>Resto</span>
+                </div>
+            }
+            else
+            {
+                <p class="pg-g-inv-vacio">La bóveda no tiene tarjetas.</p>
+            }
+            <a asp-controller="Defraudacion" asp-action="Inventario" class="pg-b-ver"><span>Inventario de bóveda</span><span class="pg-t-mono">→</span></a>
+        </section>
+    </div>
+
+    <section class="pg-t-panel pg-g-pend @(pend.Count > 0 ? "con-riesgo" : "")" aria-label="Próximas a ingresar">
+        <div class="pg-g-pend-cab">
+            <h2>Próximas a ingresar</h2>
+            <span class="pg-g-pend-sub">De la más antigua a la más nueva.@if (fi > pend.Count && pend.Count > 0) { <text> Se muestran las @pend.Count más antiguas.</text> }</span>
+        </div>
+        @if (pend.Count > 0)
+        {
+            <div class="pg-g-fila pg-g-fila-cab pg-t-etiqueta"><span>Tarjeta</span><span>Titular</span><span>Origen</span><span>Registrada</span></div>
+            foreach (var a in pend)
+            {
+                var o = Origen(a.Origen);
+                var l = HoraLima.Convertir(a.FechaRegistro);
+                <div class="pg-g-fila pg-g-pfila" style="--f:@(filaN++)">
+                    <span class="pg-t-mono pg-g-cod">@a.Codigo</span>
+                    <span class="pg-g-tit @(a.Cliente == "—" ? "nada" : "")">@a.Cliente</span>
+                    <span class="pg-g-origen @(o.Verif ? "verif" : "")">@o.Texto</span>
+                    <span class="pg-t-mono pg-g-reg">@l.ToString("dd/MM/yyyy") <span>@l.ToString("HH:mm")</span></span>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">Sin pendientes</span>
+                <p>No hay tarjetas pendientes de ingreso.</p>
+            </div>
+        }
+        <a asp-controller="Defraudacion" asp-action="Index" class="pg-b-ver"><span>Registrar ingresos</span><span class="pg-t-mono">→</span></a>
+    </section>
 </div>

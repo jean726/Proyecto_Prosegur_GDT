@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.ProcesarRutaVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Procesar descargo";
+    ViewData["Title"] = "Procesar descargo"; ViewData["Torre"] = true;
     var motivos = Html.GetEnumSelectList<MotivoNoEntrega>();
 }
 <div class="pg-encabezado">

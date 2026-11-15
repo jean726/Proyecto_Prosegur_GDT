@@ -1,18 +1,40 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Domain.AuditLog>
 @using ProsegurGDT.Web.Domain
-@{ ViewData["Title"] = "Auditoría"; string? q = ViewBag.Q; }
-<h2>Historial de auditoría</h2>
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-4"><input name="q" value="@q" class="form-control" placeholder="Usuario, acción o detalle" /></div>
-    <div class="col-md-2"><button class="btn btn-outline-secondary">Filtrar</button></div>
-</form>
-<table class="table table-sm">
-    <thead class="table-light"><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
-    <tbody>
-    @foreach (var a in Model)
-    {
-        <tr><td>@HoraLima.Convertir(a.FechaHoraUtc).ToString("dd/MM/yyyy HH:mm:ss")</td><td>@a.UsuarioNombre</td>
-            <td>@a.Accion</td><td>@a.Entidad @a.EntidadId</td><td>@a.Detalle</td></tr>
-    }
-    </tbody>
-</table>
+@{ ViewData["Title"] = "Auditoría"; ViewData["Torre"] = true; string? q = ViewBag.Q; }
+<div class="pg-encabezado">
+    <div>
+        <h1>Historial de auditoría</h1>
+        <p class="pg-subtitulo">@Model.Count() @(Model.Count() == 1 ? "registro" : "registros")@(string.IsNullOrWhiteSpace(q) ? "" : " para «" + q + "»")</p>
+    </div>
+</div>
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <form method="get" class="pg-barra-tabla d-flex gap-2 flex-wrap">
+        <input name="q" value="@q" class="form-control" placeholder="Usuario, acción o detalle" aria-label="Filtrar el historial" />
+        <button class="btn btn-outline-secondary">Filtrar</button>
+        @if (!string.IsNullOrWhiteSpace(q))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Quitar filtro</a>
+        }
+    </form>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td class="text-nowrap pg-t-mono">@HoraLima.Convertir(a.FechaHoraUtc).ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td>@a.UsuarioNombre</td>
+                        <td>@a.Accion</td>
+                        <td>@a.Entidad @a.EntidadId</td>
+                        <td>@a.Detalle</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No hay registros que coincidan.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

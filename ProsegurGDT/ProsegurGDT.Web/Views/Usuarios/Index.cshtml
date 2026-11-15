@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Models.UsuarioFilaVM>
 @{
-    ViewData["Title"] = "Usuarios";
+    ViewData["Title"] = "Usuarios"; ViewData["Torre"] = true;
 }
 <div class="pg-encabezado">
     <div>
@@ -26,11 +26,11 @@
         <tbody>
             @foreach (var u in Model)
             {
-                var clave = $"{u.NombreCompleto} {u.Email} {u.Rol}".ToLowerInvariant();
+                var clave = $"{u.NombreCompleto} {u.Email} {u.Rol} {ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)}".ToLowerInvariant();
                 <tr data-buscar="@clave">
                     <td>@u.NombreCompleto</td>
                     <td>@u.Email</td>
-                    <td>@u.Rol</td>
+                    <td>@ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)</td>
                     <td>
                         @if (!u.Activo)
                         {

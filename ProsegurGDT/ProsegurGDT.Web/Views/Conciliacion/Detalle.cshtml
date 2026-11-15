@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.DetalleConciliacionVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Conciliación";
+    ViewData["Title"] = "Conciliación"; ViewData["Torre"] = true;
     var consistente = Model.Estado == EstadoConciliacion.Consistente;
 }
 <div class="pg-encabezado">

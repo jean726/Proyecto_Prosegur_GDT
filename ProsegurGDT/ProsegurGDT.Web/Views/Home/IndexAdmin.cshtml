@@ -1,55 +1,185 @@
-﻿@model ProsegurGDT.Web.Models.DashboardAdminViewModel
+﻿@using System.Globalization
+@using System.Text.RegularExpressions
+@using ProsegurGDT.Web.Domain
+@using ProsegurGDT.Web.Services
+@model ProsegurGDT.Web.Models.DashboardAdminViewModel
 @{
     ViewData["Title"] = "Inicio";
-    var maxRol = Model.PorRol.Count > 0 ? Model.PorRol.Max(r => r.Total) : 1;
+    ViewData["Torre"] = true;
+
+    string Pl(int n, string singular, string plural) => n == 1 ? singular : plural;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    var ac = Model.Activas;
+    var de = Model.Desactivadas;
+    var bl = Model.Bloqueadas;
+    var roles = Model.PorRol;
+    var acciones = Model.UltimasAcciones;
+    var maxRol = roles.Count > 0 ? Math.Max(1, roles.Max(r => r.Total)) : 1;
+
+    var dias = new[] { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
+    var ahora = HoraLima.Ahora;
+    var fechaTxt = $"{dias[(int)ahora.DayOfWeek]} {ahora:dd/MM/yyyy}";
+
+    // La auditoría guarda la acción como código (p. ej. «RegistrarLlamada»); se presenta con palabras y tildes
+    var textos = new Dictionary<string, string>
+    {
+        ["ActualizarReporteEntregas"] = "Actualizar reporte de entregas",
+        ["ClasificarLote"] = "Clasificar lote",
+        ["ConciliarTarjetas"] = "Conciliar tarjetas",
+        ["ConfirmarAlertaDireccion"] = "Confirmar alerta de dirección",
+        ["CrearUsuario"] = "Crear usuario",
+        ["DarDeBajaDireccionFraudulenta"] = "Dar de baja dirección fraudulenta",
+        ["DerivarReporteDescargoAlBanco"] = "Derivar reporte de descargo al banco",
+        ["DesactivarUsuario"] = "Desactivar usuario",
+        ["DesbloquearUsuario"] = "Desbloquear usuario",
+        ["DescargarHojaAsignacion"] = "Descargar hoja de asignación",
+        ["DescartarAlertaDireccion"] = "Descartar alerta de dirección",
+        ["DisenarReporteEntregas"] = "Diseñar reporte de entregas",
+        ["GenerarFichaClientes"] = "Generar ficha de clientes",
+        ["GenerarHojaAsignacion"] = "Generar hoja de asignación",
+        ["GenerarHojasRuta"] = "Generar hojas de ruta",
+        ["GenerarReporteDensidad"] = "Generar reporte de densidad",
+        ["GenerarReporteFraude"] = "Generar reporte de fraude",
+        ["ImprimirHojaAsignacion"] = "Imprimir hoja de asignación",
+        ["IngresarFraudeABoveda"] = "Ingresar fraude a bóveda",
+        ["LocalizarTarjetaFaltante"] = "Localizar tarjeta faltante",
+        ["ModificarFichaCliente"] = "Modificar ficha de cliente",
+        ["ModificarUsuario"] = "Modificar usuario",
+        ["OrganizarDocumentacionMensajero"] = "Organizar documentación del mensajero",
+        ["ProponerDireccionSospechosa"] = "Proponer dirección sospechosa",
+        ["ReactivarUsuario"] = "Reactivar usuario",
+        ["RegistrarActaFraude"] = "Registrar acta de fraude",
+        ["RegistrarDireccionFraudulenta"] = "Registrar dirección fraudulenta",
+        ["RegistrarLlamada"] = "Registrar llamada",
+        ["RegistrarLote"] = "Registrar lote",
+        ["ReindexarDirecciones"] = "Reindexar direcciones",
+        ["RemitirReporteEntregas"] = "Remitir reporte de entregas",
+        ["TarjetaFaltanteNoLocalizada"] = "Tarjeta faltante no localizada",
+        ["ValidarDireccionFraudulenta"] = "Validar dirección fraudulenta",
+        ["VerificarDescargo"] = "Verificar descargo"
+    };
+    var tildes = new Dictionary<string, string>
+    {
+        ["boveda"] = "bóveda", ["direccion"] = "dirección", ["direcciones"] = "direcciones", ["asignacion"] = "asignación",
+        ["clasificacion"] = "clasificación", ["verificacion"] = "verificación", ["documentacion"] = "documentación",
+        ["descripcion"] = "descripción", ["contrasena"] = "contraseña", ["sesion"] = "sesión", ["disenar"] = "diseñar"
+    };
+    string Accion(string codigo)
+    {
+        if (textos.TryGetValue(codigo ?? "", out var t)) return t;
+        var palabras = Regex.Replace(codigo ?? "", "(?<=[a-z])(?=[A-Z])", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select((w, i) =>
+            {
+                var l = w.ToLowerInvariant();
+                l = tildes.GetValueOrDefault(l, l);
+                return i == 0 ? char.ToUpperInvariant(l[0]) + l[1..] : l;
+            });
+        var r = string.Join(" ", palabras);
+        return r == "" ? "—" : r;
+    }
+
+    string titular = ac > 0 ? $"{ac} {Pl(ac, "cuenta activa", "cuentas activas")}." : "Sin cuentas activas.";
+    var riesgo = bl > 0 ? $"{bl} {Pl(bl, "bloqueada", "bloqueadas")} ahora." : "";
+
+    string subtitulo;
+    if (bl > 0) subtitulo = $"{Pl(bl, "Tiene", "Tienen")} un bloqueo vigente por intentos fallidos de inicio de sesión.";
+    else if (acciones.Count > 0)
+    {
+        var a0 = acciones[0];
+        var cuando = a0.FechaLocal.Date == ahora.Date ? $"a las {a0.FechaLocal:HH:mm}" : $"el {a0.FechaLocal:dd/MM} a las {a0.FechaLocal:HH:mm}";
+        subtitulo = $"Última acción: {Accion(a0.Accion).ToLowerInvariant()}, por {a0.Usuario}, {cuando}.";
+    }
+    else subtitulo = "Todavía no hay acciones registradas.";
+
+    var franja = new (string Nombre, string Texto, int Valor, string Tono)[]
+    {
+        ("Activas", Pl(ac, "cuenta activa", "cuentas activas"), ac, "act"),
+        ("Desactivadas", Pl(de, "cuenta desactivada", "cuentas desactivadas"), de, "des"),
+        ("Bloqueadas", bl > 0 ? "bloqueo vigente por intentos fallidos" : "sin bloqueos vigentes", bl, "blo")
+    };
+    var fi = 0;
 }
 
-<div class="pg-dash-cab">
-    <div>
-        <h1>Inicio</h1>
-        <p>Resumen de cuentas y actividad del sistema</p>
+<div class="pg-t-cab">
+    <div class="pg-t-cab-texto">
+        <span class="pg-t-migas"><span>Panel del administrador</span><span class="pg-t-sep">/</span><span>@fechaTxt</span></span>
+        <h1 class="pg-t-titular">@titular@if (riesgo != "") {<span class="pg-t-riesgo"> @riesgo</span>}</h1>
+        <p class="pg-t-sub">@subtitulo</p>
     </div>
-    <a asp-controller="Usuarios" asp-action="Crear" class="btn btn-primary">+ Nuevo usuario</a>
+    <a asp-controller="Usuarios" asp-action="Crear" class="pg-t-boton">+ Nuevo usuario</a>
 </div>
 
-<div class="pg-metricas">
-    <div class="pg-tarjeta pg-metrica pg-metrica-ok"><small>Cuentas activas</small><strong>@Model.Activas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-off"><small>Desactivadas</small><strong>@Model.Desactivadas</strong></div>
-    <div class="pg-tarjeta pg-metrica pg-metrica-riesgo"><small>Bloqueadas ahora</small><strong>@Model.Bloqueadas</strong></div>
-</div>
+<section class="pg-t-panel pg-h-franja" aria-label="Resumen de cuentas">
+    @foreach (var f in franja)
+    {
+        <div class="pg-h-celda @f.Tono @(f.Valor == 0 ? "cero" : "")" style="--i:@(fi++)">
+            <div class="pg-h-linea"></div>
+            <span class="pg-t-etiqueta pg-h-nombre">@f.Nombre</span>
+            <div class="pg-h-dato">
+                <span class="pg-h-n pg-t-mono">@if (f.Tono == "blo" && f.Valor > 0) {<span aria-hidden="true">▲ </span>}<span data-pg-contar="@f.Valor">@f.Valor</span></span>
+                <span class="pg-h-t">@f.Texto</span>
+            </div>
+        </div>
+    }
+</section>
 
-<div class="pg-dash-cols">
-    <div class="pg-tarjeta">
-        <h2 class="h6 mb-3">Usuarios por rol</h2>
-        @if (Model.PorRol.Count == 0)
+<div class="pg-h-cols">
+    <section class="pg-t-panel pg-h-roles" aria-label="Usuarios por rol">
+        <div class="pg-h-cab">
+            <h2>Usuarios por rol</h2>
+            <span class="pg-h-sub">Usuarios activos. Barra relativa al rol con más usuarios.</span>
+        </div>
+        @if (roles.Count > 0)
         {
-            <p class="text-muted mb-0">Aún no hay usuarios con rol asignado.</p>
+            var ri = 0;
+            foreach (var r in roles)
+            {
+                var otros = r.Rol == "Otros roles";
+                <div class="pg-h-rol @(otros ? "otros" : "")" style="--f:@(ri++);--w:@F(100.0 * r.Total / maxRol)">
+                    <div class="pg-h-rol-cab">
+                        <span class="pg-h-rol-n">@r.Rol</span>
+                        <span class="pg-t-mono pg-h-rol-v" data-pg-contar="@r.Total">@r.Total</span>
+                    </div>
+                    <div class="pg-h-pista"><i></i></div>
+                </div>
+            }
         }
-        @foreach (var f in Model.PorRol)
+        else
         {
-            var ancho = (int)Math.Round(100.0 * f.Total / maxRol);
-            <div class="pg-barra-fila">
-                <span>@f.Rol</span>
-                <div class="pg-barra-pista"><span style="width:@(ancho)%"></span></div>
-                <span>@f.Total</span>
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">0 usuarios</span>
+                <p>Aún no hay usuarios con rol asignado.</p>
             </div>
         }
-    </div>
+    </section>
 
-    <div class="pg-tarjeta">
-        <h2 class="h6 mb-2">Últimas acciones</h2>
-        @if (Model.UltimasAcciones.Count == 0)
+    <section class="pg-t-panel pg-h-acc" aria-label="Últimas acciones">
+        <div class="pg-h-cab">
+            <h2>Últimas acciones</h2>
+            <span class="pg-h-sub">De la más reciente a la más antigua.</span>
+        </div>
+        @if (acciones.Count > 0)
         {
-            <p class="text-muted mb-0">Todavía no hay acciones registradas.</p>
+            var ai = 0;
+            foreach (var a in acciones)
+            {
+                <div class="pg-h-fila" style="--f:@(ai++)">
+                    <div class="pg-h-fila-t">
+                        <span class="pg-h-etq">@Accion(a.Accion)</span>
+                        <span class="pg-h-quien"><span>@a.Usuario</span>@if (!string.IsNullOrWhiteSpace(a.Detalle)) {<span class="pg-h-sep"> · </span>@a.Detalle}</span>
+                    </div>
+                    <span class="pg-t-mono pg-h-cuando">@a.FechaLocal.ToString("dd/MM") <span>@a.FechaLocal.ToString("HH:mm")</span></span>
+                </div>
+            }
         }
-        @foreach (var a in Model.UltimasAcciones)
+        else
         {
-            <div class="pg-accion-fila">
-                <span class="pg-accion-etiqueta">@a.Accion</span>
-                <span>@a.Usuario@(string.IsNullOrWhiteSpace(a.Detalle) ? "" : " · " + a.Detalle)</span>
-                <small class="text-muted">@a.FechaLocal.ToString("dd/MM HH:mm")</small>
+            <div class="pg-f-sin">
+                <span class="pg-t-etiqueta">Auditoría vacía</span>
+                <p>Todavía no hay acciones registradas.</p>
             </div>
         }
-        <div class="mt-3"><a asp-controller="Auditoria" asp-action="Index">Ver toda la auditoría →</a></div>
-    </div>
+        <a asp-controller="Auditoria" asp-action="Index" class="pg-b-ver"><span>Ver toda la auditoría</span><span class="pg-t-mono">→</span></a>
+    </section>
 </div>

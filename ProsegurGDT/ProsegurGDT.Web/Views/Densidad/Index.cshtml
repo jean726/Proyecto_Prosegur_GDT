@@ -1,7 +1,7 @@
 @model IEnumerable<ProsegurGDT.Web.Models.LoteDensidadFilaVM>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Reporte de densidad";
+    ViewData["Title"] = "Reporte de densidad"; ViewData["Torre"] = true;
     var total = Model.Count();
     var generados = Model.Count(f => f.ReporteId != null);
 }

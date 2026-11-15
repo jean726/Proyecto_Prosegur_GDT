@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.HojasRutaIndexVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Hojas de ruta";
+    ViewData["Title"] = "Hojas de ruta"; ViewData["Torre"] = true;
     var porAprobar = Model.Hojas.Count(h => h.Estado == EstadoHojaRuta.PendienteDeAprobacion || h.Estado == EstadoHojaRuta.PendienteDeCorreccion);
 }
 <div class="pg-encabezado">

@@ -1,9 +1,13 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Models.LoteClasifFilaVM>
 @{
-    ViewData["Title"] = "Clasificación por zona";
+    ViewData["Title"] = "Clasificación por zona"; ViewData["Torre"] = true;
 }
-<h2>Clasificación por zona</h2>
-<p class="text-muted">Lotes con ficha de clientes generada.</p>
+<div class="pg-encabezado">
+    <div>
+        <h1>Clasificación por zona</h1>
+        <p class="pg-subtitulo">Lotes con ficha de clientes generada.</p>
+    </div>
+</div>
 @if (TempData["Ok"] is string ok)
 {
     <div class="alert alert-success">@ok</div>
@@ -12,31 +16,37 @@
 {
     <div class="alert alert-danger">@err</div>
 }
-<table class="table table-sm table-hover align-middle">
-    <thead class="table-light"><tr><th>Hoja de control</th><th>Remito</th><th class="text-end">Tarjetas</th><th class="text-end">Sin zona</th><th class="text-end">Con alerta</th><th class="text-end">No clasificables</th><th></th></tr></thead>
-    <tbody>
-        @foreach (var f in Model)
-        {
-            <tr>
-                <td>@f.Lote.CodigoHojaControl</td>
-                <td>@f.Lote.Remito?.Numero</td>
-                <td class="text-end">@f.Total</td>
-                <td class="text-end">@f.SinZona</td>
-                <td class="text-end">@if (f.ConAlerta > 0) {
-                    <span class="badge bg-danger">@f.ConAlerta</span>
-                } else
+<div class="pg-tarjeta pg-tarjeta-tabla">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Hoja de control</th><th>Remito</th><th class="text-end">Tarjetas</th><th class="text-end">Sin zona</th><th class="text-end">Con alerta</th><th class="text-end">No clasificables</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var f in Model)
                 {
-
-                    <span>0</span>
+                    <tr>
+                        <td class="pg-t-mono">@f.Lote.CodigoHojaControl</td>
+                        <td>@f.Lote.Remito?.Numero</td>
+                        <td class="text-end pg-t-mono">@f.Total</td>
+                        <td class="text-end pg-t-mono">@f.SinZona</td>
+                        <td class="text-end">
+                            @if (f.ConAlerta > 0)
+                            {
+                                <span class="badge bg-danger">@f.ConAlerta</span>
+                            }
+                            else
+                            {
+                                <span class="pg-t-mono">0</span>
+                            }
+                        </td>
+                        <td class="text-end pg-t-mono">@f.NoClasificables</td>
+                        <td class="text-end"><form asp-action="Evaluar" asp-route-id="@f.Lote.Id" method="post" class="d-inline"><button type="submit" class="btn btn-sm btn-primary">Clasificar</button></form></td>
+                    </tr>
                 }
-            </td>
-            <td class="text-end">@f.NoClasificables</td>
-            <td class="text-end"><form asp-action="Evaluar" asp-route-id="@f.Lote.Id" method="post" class="d-inline"><button type="submit" class="btn btn-sm btn-primary">Clasificar</button></form></td>
-        </tr>
-    }
-    @if (!Model.Any())
-    {
-        <tr><td colspan="7" class="text-muted">No hay lotes con ficha de clientes.</td></tr>
-    }
-</tbody>
-</table>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay lotes con ficha de clientes.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,7 +1,7 @@
 @model IEnumerable<ProsegurGDT.Web.Models.LotePlanillaFilaVM>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Planilla de armado";
+    ViewData["Title"] = "Planilla de armado"; ViewData["Torre"] = true;
     var total = Model.Count();
     var listas = Model.Count(f => f.ListaParaArmar);
     var generadas = Model.Count(f => f.PlanillaId != null);

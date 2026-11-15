@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.DefraudacionIndexVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Apartado de defraudación";
+    ViewData["Title"] = "Apartado de defraudación"; ViewData["Torre"] = true;
     var porIngresar = Model.Actas.Count(a => a.Estado == EstadoActaFraude.Registrada);
 }
 <div class="pg-encabezado">
