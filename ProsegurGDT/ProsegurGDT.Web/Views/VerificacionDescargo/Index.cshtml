@@ -1,7 +1,7 @@
 @model List<ProsegurGDT.Web.Models.VerificacionFilaVM>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Verificación de descargo";
+    ViewData["Title"] = "Verificación de descargo"; ViewData["Torre"] = true;
     var pendientes = Model.Count(v => v.Estado == VerificacionDescargo.DerivadaAlBuscador);
 }
 <div class="pg-encabezado">
