@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Domain.Tarjeta>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Citas con clientes";
+    ViewData["Title"] = "Citas con clientes"; ViewData["Torre"] = true;
     var total = Model.Count();
     var incompletas = Model.Count(t => !FichaCliente.DatosCompletos(t.Cliente!));
     var estadosCola = new[] { EstadoTarjeta.IngresadaEnCustodia, EstadoTarjeta.PendienteDeContacto, EstadoTarjeta.PendienteDeCita };

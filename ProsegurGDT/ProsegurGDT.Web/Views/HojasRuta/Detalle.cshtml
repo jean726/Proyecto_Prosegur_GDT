@@ -1,7 +1,7 @@
 @model ProsegurGDT.Web.Models.DetalleHojaRutaVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Hoja de ruta";
+    ViewData["Title"] = "Hoja de ruta"; ViewData["Torre"] = true;
     var tono = Model.Estado switch
     {
         EstadoHojaRuta.PendienteDeCorreccion => "riesgo",

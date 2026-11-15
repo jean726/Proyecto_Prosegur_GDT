@@ -1,7 +1,7 @@
 ﻿@model ProsegurGDT.Web.Models.GestionarCitaVM
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Gestionar cita";
+    ViewData["Title"] = "Gestionar cita"; ViewData["Torre"] = true;
     var c = Model.Tarjeta!.Cliente!;
     var items = Enum.GetValues<ResultadoLlamada>().Select(r => new SelectListItem(r.Texto(), r.ToString())).ToList();
     var mostrarCita = Model.Resultado == ResultadoLlamada.Exitoso;
