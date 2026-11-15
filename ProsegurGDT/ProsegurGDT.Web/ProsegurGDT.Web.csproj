@@ -16,6 +16,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12" />
     <!-- B1: motor de IA (embeddings) con modelo ONNX -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.32.0" />
+    <!-- B2: API REST /api/v1 para la app móvil del repartidor (JWT y documento OpenAPI) -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <!-- Dependencia transitiva (EF Design) con vulnerabilidades NU1902/NU1903: se fija una versión corregida -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
