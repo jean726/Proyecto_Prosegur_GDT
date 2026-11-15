@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Domain.Lote>
 @using ProsegurGDT.Web.Domain
 @{
-    ViewData["Title"] = "Ingreso de tarjetas";
+    ViewData["Title"] = "Ingreso de tarjetas"; ViewData["Torre"] = true;
     var total = Model.Count();
     var custodia = Model.Count(l => l.Estado == EstadoLote.IngresadoEnCustodia);
     var discrepancias = total - custodia;
