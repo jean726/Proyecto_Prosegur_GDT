@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ProsegurGDT.Web.Data;
 
 namespace ProsegurGDT.Web.Domain;
@@ -24,6 +24,9 @@ public class Repartidor
     public Zona? ZonaHabitual { get; set; }
     public int CapacidadTarjetas { get; set; } = 20;
     public bool Activo { get; set; } = true;
+    // B2: cuenta de Identity con rol Repartidor que usa la app móvil (opcional, única)
+    public string? UsuarioId { get; set; }
+    public ApplicationUser? Usuario { get; set; }
     public ICollection<AsignacionRuta> Asignaciones { get; set; } = new List<AsignacionRuta>();
 }
 

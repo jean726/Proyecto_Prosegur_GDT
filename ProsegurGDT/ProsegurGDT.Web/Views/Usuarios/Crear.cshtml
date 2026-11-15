@@ -20,6 +20,12 @@
             <select asp-for="Rol" class="form-select" asp-items="@(new SelectList(ProsegurGDT.Web.Domain.Roles.Todos.Select(r => new { Valor = r, Texto = ProsegurGDT.Web.Domain.Roles.Etiqueta(r) }), "Valor", "Texto"))"><option value="">-- Seleccione --</option></select>
             <span asp-validation-for="Rol" class="text-danger"></span>
         </div>
+        <div class="col-12" id="bloque-repartidor">
+            <label asp-for="RepartidorId" class="form-label"></label>
+            <select asp-for="RepartidorId" class="form-select" asp-items="@((IEnumerable<SelectListItem>)ViewBag.Repartidores)"><option value="">-- Seleccione --</option></select>
+            <div class="form-text">Solo para el rol Repartidor: la cuenta ingresa por la aplicación móvil, no por la web.</div>
+            <span asp-validation-for="RepartidorId" class="text-danger"></span>
+        </div>
     </div>
     <div class="pg-acciones">
         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -28,4 +34,11 @@
 </form>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const rol = document.getElementById('Rol'), bloque = document.getElementById('bloque-repartidor');
+            const ver = () => bloque.classList.toggle('d-none', rol.value !== 'Repartidor');
+            rol.addEventListener('change', ver); ver();
+        })();
+    </script>
 }

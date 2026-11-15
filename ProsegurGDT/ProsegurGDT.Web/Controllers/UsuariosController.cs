@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
@@ -14,7 +15,8 @@ public class UsuariosController : Controller
 {
     private readonly UserManager<ApplicationUser> _um;
     private readonly IAuditoriaService _audit;
-    public UsuariosController(UserManager<ApplicationUser> um, IAuditoriaService audit) { _um = um; _audit = audit; }
+    private readonly ApplicationDbContext _db;
+    public UsuariosController(UserManager<ApplicationUser> um, IAuditoriaService audit, ApplicationDbContext db) { _um = um; _audit = audit; _db = db; }
 
     public async Task<IActionResult> Index()
     {
@@ -34,12 +36,19 @@ public class UsuariosController : Controller
     }
 
     // ---------- Registrar (subflujo 1; incluye CU27 Asignar rol) ----------
-    [HttpGet] public IActionResult Crear() => View(new UsuarioCrearVM());
+    [HttpGet]
+    public async Task<IActionResult> Crear()
+    {
+        await CargarRepartidoresAsync(null);
+        return View(new UsuarioCrearVM());
+    }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(UsuarioCrearVM vm)
     {
         if (!Roles.Todos.Contains(vm.Rol)) ModelState.AddModelError(nameof(vm.Rol), "Seleccione un rol válido.");
+        if (await ValidarRepartidorAsync(vm.Rol, vm.RepartidorId, null) is string errRep) ModelState.AddModelError(nameof(vm.RepartidorId), errRep);
+        await CargarRepartidoresAsync(null);
         if (!ModelState.IsValid) return View(vm);
 
         if (await _um.FindByEmailAsync(vm.Email) is not null)
@@ -69,7 +78,8 @@ public class UsuariosController : Controller
             return View(vm);
         }
 
-        await _audit.RegistrarAsync("CrearUsuario", "Usuario", u.Id, $"{u.Email}; rol {vm.Rol}");
+        var repartidor = await VincularRepartidorAsync(u.Id, vm.Rol, vm.RepartidorId);
+        await _audit.RegistrarAsync("CrearUsuario", "Usuario", u.Id, $"{u.Email}; rol {vm.Rol}" + (repartidor is null ? "" : $"; repartidor {repartidor}"));
         TempData["Ok"] = "Usuario registrado exitosamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -80,13 +90,15 @@ public class UsuariosController : Controller
     {
         var u = await _um.FindByIdAsync(id);
         if (u is null) return NotFound();
+        await CargarRepartidoresAsync(u.Id);
         return View(new UsuarioEditarVM
         {
             Id = u.Id,
             NombreCompleto = u.NombreCompleto,
             DocumentoIdentidad = u.DocumentoIdentidad ?? "",
             Email = u.Email ?? "",
-            Rol = (await _um.GetRolesAsync(u)).FirstOrDefault() ?? ""
+            Rol = (await _um.GetRolesAsync(u)).FirstOrDefault() ?? "",
+            RepartidorId = await _db.Repartidores.Where(r => r.UsuarioId == u.Id).Select(r => (int?)r.Id).FirstOrDefaultAsync()
         });
     }
 
@@ -94,6 +106,8 @@ public class UsuariosController : Controller
     public async Task<IActionResult> Editar(UsuarioEditarVM vm)
     {
         if (!Roles.Todos.Contains(vm.Rol)) ModelState.AddModelError(nameof(vm.Rol), "Seleccione un rol válido.");
+        if (await ValidarRepartidorAsync(vm.Rol, vm.RepartidorId, vm.Id) is string errRep) ModelState.AddModelError(nameof(vm.RepartidorId), errRep);
+        await CargarRepartidoresAsync(vm.Id);
         if (!ModelState.IsValid) return View(vm);
 
         var u = await _um.FindByIdAsync(vm.Id);
@@ -136,8 +150,13 @@ public class UsuariosController : Controller
             return View(vm);
         }
 
+        var repAntes = await _db.Repartidores.Where(x => x.UsuarioId == u.Id).Select(x => (int?)x.Id).FirstOrDefaultAsync();
+        var repartidor = await VincularRepartidorAsync(u.Id, vm.Rol, vm.RepartidorId);
+        var repDespues = vm.Rol == Roles.Repartidor ? vm.RepartidorId : null;
+        if (repAntes != repDespues && rolActual == vm.Rol) await _um.UpdateSecurityStampAsync(u);   // revoca los tokens de la app móvil
+
         await _audit.RegistrarAsync("ModificarUsuario", "Usuario", u.Id,
-            $"{u.Email}; rol {rolActual}→{vm.Rol}; contraseña cambiada: {(cambioPass ? "sí" : "no")}");
+            $"{u.Email}; rol {rolActual}→{vm.Rol}; contraseña cambiada: {(cambioPass ? "sí" : "no")}" + (repartidor is null ? "" : $"; repartidor {repartidor}"));
         TempData["Ok"] = "Datos del usuario actualizados exitosamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -195,6 +214,40 @@ public class UsuariosController : Controller
             if (!quitar.Succeeded) return quitar;
         }
         return await _um.AddToRoleAsync(u, rol);
+    }
+
+    // ---------- B2: vínculo de la cuenta con el repartidor que usa la app móvil ----------
+    private async Task CargarRepartidoresAsync(string? usuarioId) =>
+        ViewBag.Repartidores = await _db.Repartidores.AsNoTracking()
+            .Where(r => r.Activo && (r.UsuarioId == null || r.UsuarioId == usuarioId))
+            .OrderBy(r => r.Nombre)
+            .Select(r => new SelectListItem(r.Nombre, r.Id.ToString()))
+            .ToListAsync();
+
+    private async Task<string?> ValidarRepartidorAsync(string rol, int? repartidorId, string? usuarioId)
+    {
+        if (rol != Roles.Repartidor) return null;
+        if (repartidorId is null) return "Seleccione el repartidor que usará esta cuenta en la aplicación móvil.";
+        var r = await _db.Repartidores.AsNoTracking().FirstOrDefaultAsync(x => x.Id == repartidorId);
+        if (r is null || !r.Activo) return "El repartidor seleccionado no existe o está inactivo.";
+        if (r.UsuarioId is not null && r.UsuarioId != usuarioId) return "El repartidor seleccionado ya tiene otra cuenta vinculada.";
+        return null;
+    }
+
+    // Deja la cuenta vinculada solo al repartidor elegido (o a ninguno si el rol no es Repartidor). Devuelve su nombre.
+    private async Task<string?> VincularRepartidorAsync(string usuarioId, string rol, int? repartidorId)
+    {
+        var elegido = rol == Roles.Repartidor ? repartidorId : null;
+        foreach (var r in await _db.Repartidores.Where(x => x.UsuarioId == usuarioId && x.Id != elegido).ToListAsync())
+            r.UsuarioId = null;
+        string? nombre = null;
+        if (elegido is int id && await _db.Repartidores.FirstOrDefaultAsync(x => x.Id == id) is { } rep)
+        {
+            rep.UsuarioId = usuarioId;
+            nombre = rep.Nombre;
+        }
+        await _db.SaveChangesAsync();
+        return nombre;
     }
 
     private async Task<bool> EsUltimoAdminActivoAsync(ApplicationUser u)
