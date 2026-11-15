@@ -4,6 +4,8 @@ public interface IEmbeddingService
 {
     string Version { get; }
     int Dimension { get; }
+    // true si el modelo ONNX está cargado; false con el respaldo hash.
+    bool ModeloIaActivo { get; }
     float[] Embed(string textoNormalizado);
 }
 
@@ -12,6 +14,7 @@ public class HashingNgramEmbeddingService : IEmbeddingService
 {
     public string Version => "ngram-hash-v1";
     public int Dimension => 512;
+    public bool ModeloIaActivo => false;
 
     public float[] Embed(string texto)
     {

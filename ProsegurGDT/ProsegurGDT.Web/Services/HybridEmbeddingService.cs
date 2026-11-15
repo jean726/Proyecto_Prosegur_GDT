@@ -1,4 +1,4 @@
-namespace ProsegurGDT.Web.Services;
+﻿namespace ProsegurGDT.Web.Services;
 
 // Motor híbrido (B1): concatena el vector semántico (ONNX) y el de n-gramas (hash) con pesos √w y √(1-w).
 // Con ambos vectores unitarios, Dot(a,b) = w·cos_onnx + (1-w)·cos_hash: el modelo aporta tolerancia a errores de tipeo
@@ -11,6 +11,7 @@ public sealed class HybridEmbeddingService : IEmbeddingService, IDisposable
 
     public string Version { get; }
     public int Dimension => _semantico.Dimension + _hash.Dimension;
+    public bool ModeloIaActivo => _semantico.ModeloIaActivo;
 
     public HybridEmbeddingService(IEmbeddingService semantico, IEmbeddingService hash, double pesoSemantico)
     {
