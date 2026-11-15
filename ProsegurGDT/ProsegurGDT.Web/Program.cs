@@ -1,8 +1,13 @@
+﻿using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Services;
+using ProsegurGDT.Web.Services.Api;
 using Microsoft.AspNetCore.Mvc.DataAnnotations;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +37,18 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.ExpireTimeSpan = TimeSpan.FromMinutes(20);
     o.SlidingExpiration = true;
     o.LoginPath = "/Identity/Account/Login";
+    // RN-29: una cookie con rol Repartidor no es válida en la web (defensa adicional al bloqueo del login)
+    var validarSello = o.Events.OnValidatePrincipal;
+    o.Events.OnValidatePrincipal = async ctx =>
+    {
+        if (ctx.Principal?.IsInRole(ProsegurGDT.Web.Domain.Roles.Repartidor) == true)
+        {
+            ctx.RejectPrincipal();
+            await ctx.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            return;
+        }
+        await validarSello(ctx);
+    };
     o.AccessDeniedPath = "/Home/AccesoDenegado";
 });
 
@@ -78,8 +95,61 @@ builder.Services.AddControllersWithViews(o =>
     o.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((v, c) => $"El valor '{v}' no es válido para {c}.");
     o.ModelBindingMessageProvider.SetValueIsInvalidAccessor(v => $"El valor '{v}' no es válido.");
     o.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(c => $"Falta el valor de {c}.");
-});
+})
+.AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton<IValidationAttributeAdapterProvider, AdaptadorValidacionEspanol>();
+
+// B2 — API REST /api/v1 para la app móvil del Repartidor. Las rutas /api se autentican solo con JWT
+// (las cookies de la web no valen allí y no se redirige al login: responde 401/403).
+var opcionesJwt = builder.Configuration.GetSection(OpcionesJwt.Seccion).Get<OpcionesJwt>() ?? new OpcionesJwt();
+opcionesJwt.Preparar(LoggerFactory.Create(l => l.AddConsole()).CreateLogger("Jwt"));
+builder.Services.AddSingleton(opcionesJwt);
+builder.Services.AddSingleton<ITokenMovilService, TokenMovilService>();
+builder.Services.AddScoped<IRepartidorMovilService, RepartidorMovilService>();
+const string EsquemaPorRuta = "PorRuta";
+builder.Services.AddAuthentication(o =>
+{
+    o.DefaultScheme = EsquemaPorRuta;
+    o.DefaultAuthenticateScheme = EsquemaPorRuta;
+    o.DefaultChallengeScheme = EsquemaPorRuta;
+    o.DefaultForbidScheme = EsquemaPorRuta;
+})
+.AddPolicyScheme(EsquemaPorRuta, "Cookie (web) o JWT (/api)", o => o.ForwardDefaultSelector = ctx =>
+    ctx.Request.Path.StartsWithSegments("/api") ? JwtBearerDefaults.AuthenticationScheme : IdentityConstants.ApplicationScheme)
+.AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = opcionesJwt.Parametros();
+    o.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = ValidadorTokenMovil.ValidarAsync,
+        // 401/403 con ProblemDetails en español, sin redirigir al login de la web
+        OnChallenge = async ctx =>
+        {
+            ctx.HandleResponse();
+            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            ctx.Response.Headers.WWWAuthenticate = "Bearer";
+            await ctx.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Status = 401, Title = "No autorizado",
+                Detail = "Su sesión no es válida o expiró. Inicie sesión nuevamente en la aplicación móvil."
+            }, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json");
+        },
+        OnForbidden = ctx => ctx.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Status = 403, Title = "Acceso denegado",
+            Detail = "Su cuenta no tiene acceso a la aplicación móvil."
+        }, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json")
+    };
+});
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // CU22 por la API: máximo 10 intentos por minuto y dirección IP (además del bloqueo de la cuenta)
+    o.AddPolicy("token-movil", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "?",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
+builder.Services.AddOpenApi("v1", o => o.ShouldInclude = d => d.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
 // Singleton
 builder.Services.AddSingleton<IConfiguracionOperativa, ConfiguracionOperativa>();
 // Strategy: una estrategia por resultado de llamada
@@ -144,6 +214,10 @@ app.Use(async (ctx, next) =>
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
+
+// Documento OpenAPI de /api/v1 (solo en desarrollo): /openapi/v1.json
+if (app.Environment.IsDevelopment()) app.MapOpenApi().AllowAnonymous();
 
 app.MapStaticAssets();
 app.MapControllerRoute(

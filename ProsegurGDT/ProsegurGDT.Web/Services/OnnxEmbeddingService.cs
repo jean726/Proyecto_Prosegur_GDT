@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.ML.OnnxRuntime;
@@ -21,6 +21,7 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 
     public string Version => "onnx-minilm-v2";
     public int Dimension => 384;
+    public bool ModeloIaActivo => true;
 
     public OnnxEmbeddingService(string carpetaModelo)
     {

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsegurGDT.Web.Domain;
@@ -29,11 +29,33 @@ public class FraudeController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Nuevo(int hojaRutaId, int tarjetaId)
+    public async Task<IActionResult> Nuevo(int hojaRutaId, int tarjetaId, int? suplantacionId)
     {
         var vm = await _fraude.NuevoAsync(hojaRutaId, tarjetaId);
         if (vm is null) return NotFound();
+        if (suplantacionId is int sid)
+        {
+            // B2 (CU30): se parte del reporte del repartidor; el Verificador lo revisa y completa
+            var sup = (await _fraude.ListarAsync()).Suplantaciones.FirstOrDefault(s => s.Id == sid && s.TarjetaId == tarjetaId);
+            if (sup is not null)
+            {
+                vm.SuplantacionId = sid;
+                vm.Tipo = TipoIndicadorFraude.IdentidadNoCoincide;
+                vm.Descripcion = $"Reportado por el repartidor {sup.Repartidor} desde campo: {sup.Descripcion}";
+                if (vm.Descripcion.Length > 500) vm.Descripcion = vm.Descripcion[..500];
+            }
+        }
         return View(vm);
+    }
+
+    // B2 (CU30): descartar una sospecha de suplantación tras evaluarla
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DescartarSuplantacion(int id, string observacion)
+    {
+        var r = await _fraude.DescartarSuplantacionAsync(id, observacion, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (r.Ok) await _audit.RegistrarAsync("DescartarSuplantacion", "ReporteSuplantacion", id.ToString(), r.Detalle);
+        TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -55,6 +77,7 @@ public class FraudeController : Controller
         if (vm is null) return NotFound();
         vm.Tipo = entrada.Tipo;
         vm.Descripcion = entrada.Descripcion;
+        vm.SuplantacionId = entrada.SuplantacionId;
         return View(vm);
     }
 

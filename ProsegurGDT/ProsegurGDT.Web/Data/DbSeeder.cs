@@ -89,6 +89,18 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
+        // B2: la cuenta demo repartidor@gdt.local usa la app móvil como «Carlos Mendoza»
+        if (cargarDemo)
+        {
+            var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            var cuenta = await um.FindByEmailAsync($"{Roles.Repartidor.ToLowerInvariant()}@gdt.local");
+            if (cuenta is not null && !await db.Repartidores.AnyAsync(r => r.UsuarioId == cuenta.Id))
+            {
+                var carlos = await db.Repartidores.FirstOrDefaultAsync(r => r.Nombre == "Carlos Mendoza" && r.UsuarioId == null);
+                if (carlos is not null) { carlos.UsuarioId = cuenta.Id; await db.SaveChangesAsync(); }
+            }
+        }
+
         if (cargarDemo && !await db.InventarioBoveda.AnyAsync())
         {
             var tarjetasEnBoveda = await db.Tarjetas

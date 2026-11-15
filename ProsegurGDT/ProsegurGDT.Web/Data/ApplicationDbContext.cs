@@ -47,6 +47,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ReporteDescargo> ReportesDescargo => Set<ReporteDescargo>();
     public DbSet<ReporteDescargoLinea> ReportesDescargoLineas => Set<ReporteDescargoLinea>();
 
+    // B2 — Canal móvil del Repartidor
+    public DbSet<ResultadoCampo> ResultadosCampo => Set<ResultadoCampo>();
+    public DbSet<ReporteSuplantacion> ReportesSuplantacion => Set<ReporteSuplantacion>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
@@ -116,6 +120,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<ReporteDescargo>().HasIndex(x => new { x.FechaJornada, x.Tipo }).IsUnique();
         b.Entity<ReporteDescargoLinea>().HasIndex(x => new { x.ReporteDescargoId, x.DescargoRutaId }).IsUnique();
 
+
+        // B2 — Canal móvil del Repartidor
+        b.Entity<Repartidor>().HasIndex(x => x.UsuarioId).IsUnique().HasFilter("[UsuarioId] IS NOT NULL");
+        b.Entity<ResultadoCampo>().Property(x => x.Resultado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ResultadoCampo>().Property(x => x.Motivo).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ResultadoCampo>().HasIndex(x => new { x.HojaRutaId, x.TarjetaId }).IsUnique();
+        b.Entity<ReporteSuplantacion>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
+        b.Entity<ReporteSuplantacion>().HasIndex(x => new { x.HojaRutaId, x.TarjetaId });
 
         // Cadena de custodia: nada se borra en cascada (evita además errores de "multiple cascade paths")
         foreach (var fk in b.Model.GetEntityTypes()

@@ -86,12 +86,15 @@ public static class DbSeederLoteDemo
                 z.TipoRepartidorRequerido = tipos.GetValueOrDefault(z.ZonaId, TipoRepartidorRequerido.Indiferente);
             var rp = await planillas.GuardarAsync(vm, clasificador.Id);
             if (!rp.Ok) { logger.LogWarning("Lote demo: no se pudo armar la planilla: {Errores}", string.Join(" ", rp.Errores)); return; }
+            var planilla = await db.Planillas.FirstAsync(p => p.LoteId == lote.Id);
+            await AuditarAsync(db, clasificador, "GenerarPlanillaArmado", "Planilla", planilla.Id.ToString(), $"Lote {lote.CodigoHojaControl} (demo)");
         }
 
         if (!await db.ReportesDensidad.AnyAsync(r => r.LoteId == lote.Id))
         {
             var rd = await densidad.GenerarAsync(lote.Id, clasificador.Id);
             if (!rd.Ok) { logger.LogWarning("Lote demo: no se pudo generar el reporte de densidad: {Error}", rd.Error); return; }
+            await AuditarAsync(db, clasificador, "GenerarReporteDensidad", "ReporteDensidad", rd.ReporteId.ToString(), rd.Detalle);
         }
 
         // Analista de Rutas: hoja de asignación con un repartidor por zona
@@ -113,6 +116,7 @@ public static class DbSeederLoteDemo
             var ra = await asignaciones.GenerarAsync(vm, analista.Id);
             if (!ra.Ok) { logger.LogWarning("Lote demo: no se pudo generar la hoja de asignación: {Errores}", string.Join(" ", ra.Errores)); return; }
             hoja = await db.HojasAsignacion.FirstAsync(h => h.LoteId == lote.Id);
+            await AuditarAsync(db, analista, "GenerarHojaAsignacion", "HojaAsignacion", hoja.Id.ToString(), ra.Detalle);
         }
 
         // Supervisor: hojas de ruta pendientes de aprobación
@@ -120,6 +124,7 @@ public static class DbSeederLoteDemo
         {
             var rh = await hojasRuta.GenerarAsync(hoja.Id, supervisor.Id);
             if (!rh.Ok) logger.LogWarning("Lote demo: no se pudieron generar las hojas de ruta: {Error}", rh.Mensaje);
+            else await AuditarAsync(db, supervisor, "GenerarHojasRuta", "HojaAsignacion", hoja.Id.ToString(), rh.Detalle);
         }
     }
 
@@ -226,6 +231,25 @@ public static class DbSeederLoteDemo
         }
 
         await db.SaveChangesAsync();
+
+        // Mismo rastro que deja el flujo real (LotesController / ClientesController)
+        await AuditarAsync(db, supervisor, "RegistrarLote", "Lote", lote.Id.ToString(),
+            $"Remito {NumeroRemito}: declaradas {total}, contadas {total}, ingresado en custodia (demo)");
+        await AuditarAsync(db, supervisor, "GenerarFichaClientes", "Lote", lote.Id.ToString(), $"{total} tarjetas (demo)");
         return lote;
+    }
+
+    // El servicio de auditoría toma el usuario de la sesión HTTP; el sembrado no tiene sesión, así que se registra aquí.
+    private static async Task AuditarAsync(ApplicationDbContext db, ApplicationUser usuario, string accion, string entidad, string entidadId, string? detalle)
+    {
+        db.AuditLogs.Add(new AuditLog
+        {
+            FechaHoraUtc = DateTime.UtcNow,
+            UsuarioId = usuario.Id,
+            UsuarioNombre = usuario.UserName ?? usuario.Email ?? "sistema",
+            Accion = accion, Entidad = entidad, EntidadId = entidadId,
+            Detalle = detalle is { Length: > 500 } ? detalle[..500] : detalle
+        });
+        await db.SaveChangesAsync();
     }
 }

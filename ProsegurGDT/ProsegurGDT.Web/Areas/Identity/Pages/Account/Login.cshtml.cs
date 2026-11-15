@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +50,14 @@ public class LoginModel : PageModel
         returnUrl ??= Url.Content("~/");
         ReturnUrl = returnUrl;
         if (!ModelState.IsValid) return Page();
+
+        // RN-29: el Repartidor opera solo desde la aplicación móvil
+        if (await _userManager.FindByNameAsync(Input.Email) is { } cuenta && await _userManager.IsInRoleAsync(cuenta, ProsegurGDT.Web.Domain.Roles.Repartidor)
+            && await _userManager.CheckPasswordAsync(cuenta, Input.Password))
+        {
+            ModelState.AddModelError(string.Empty, "Las cuentas de repartidor ingresan desde la aplicación móvil, no desde la plataforma web.");
+            return Page();
+        }
 
         var r = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
         if (r.Succeeded) return LocalRedirect(returnUrl);

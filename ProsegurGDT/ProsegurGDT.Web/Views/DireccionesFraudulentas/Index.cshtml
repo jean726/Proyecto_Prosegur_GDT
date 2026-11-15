@@ -1,5 +1,6 @@
 ﻿@model ProsegurGDT.Web.Models.DireccionesIndexVM
 @using ProsegurGDT.Web.Domain
+@inject ProsegurGDT.Web.Services.IEmbeddingService Motor
 @{
     ViewData["Title"] = "Direcciones fraudulentas"; ViewData["Torre"] = true; var esBuscador = User.IsInRole(Roles.Buscador);
 }
@@ -26,7 +27,18 @@
 }
 
 <div class="pg-tarjeta mb-3">
-    <h2 class="h6 mb-3">Probar el motor de similitud</h2>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <h2 class="h6 mb-0">Probar el motor de similitud</h2>
+        @if (Motor.ModeloIaActivo)
+        {
+            <span class="pg-estado pg-estado-entrega" title="Modelo de IA cargado">Motor activo</span>
+        }
+        else
+        {
+            <span class="pg-estado pg-estado-riesgo" title="Modelo de IA no disponible: se usa el respaldo por n-gramas">Motor apagado</span>
+        }
+        <span class="small text-muted pg-t-mono">@Motor.Version</span>
+    </div>
     <form method="get" class="row g-2">
         <div class="col-md-7"><input name="probar" value="@Model.Probar" class="form-control" placeholder="Ej.: Av Larco 105 Mirafores" aria-label="Dirección a evaluar" /></div>
         <div class="col-md-2"><button class="btn btn-outline-primary">Evaluar</button></div>

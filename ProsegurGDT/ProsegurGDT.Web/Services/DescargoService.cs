@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
 using ProsegurGDT.Web.Models;
@@ -342,6 +342,10 @@ public class DescargoService : IDescargoService
         var ids = tarjetas.Select(t => t.Id).ToList();
         var dts = await _db.DescargosTarjeta.AsNoTracking().Where(x => ids.Contains(x.TarjetaId)).ToDictionaryAsync(x => x.TarjetaId);
         var actas = (await _db.ActasFraude.AsNoTracking().Where(a => ids.Contains(a.TarjetaId)).Select(a => a.TarjetaId).ToListAsync()).ToHashSet();
+        var campo = (await _db.ResultadosCampo.AsNoTracking().Where(r => ids.Contains(r.TarjetaId)).ToListAsync())
+            .GroupBy(r => r.TarjetaId).ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.Id).First());
+        var suplantadas = (await _db.ReportesSuplantacion.AsNoTracking().Where(r => ids.Contains(r.TarjetaId) && r.Estado != EstadoReporteSuplantacion.Descartado)
+            .Select(r => r.TarjetaId).ToListAsync()).ToHashSet();
 
         return tarjetas.Select(t =>
         {
@@ -361,7 +365,9 @@ public class DescargoService : IDescargoService
                 Motivo = dt?.Motivo,
                 Detalle = dt?.Detalle,
                 ObservacionBuscador = dt?.ObservacionBuscador,
-                ConActa = actas.Contains(t.Id)
+                ConActa = actas.Contains(t.Id),
+                Campo = campo.GetValueOrDefault(t.Id),
+                SuplantacionReportada = suplantadas.Contains(t.Id)
             };
         }).ToList();
     }

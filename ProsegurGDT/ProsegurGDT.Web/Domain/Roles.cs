@@ -11,6 +11,8 @@ public static class Roles
     public const string Clasificador = "Clasificador";
     public const string Buscador = "Buscador";
     public const string AnalistaDeRutas = "AnalistaDeRutas";
+    // B2: solo opera por la API móvil (/api/v1); la web le rechaza el inicio de sesión (RN-29)
+    public const string Repartidor = "Repartidor";
 
     /// <summary>Nombre del rol para mostrar: «AnalistaDeRutas» → «Analista de Rutas».</summary>
     public static string Etiqueta(string? rol)
@@ -24,6 +26,6 @@ public static class Roles
     public static readonly string[] Todos =
     {
         Administrador, Supervisor, AuxiliarTelefonista, Verificador, Descargador,
-        EncargadoDeBoveda, Clasificador, Buscador, AnalistaDeRutas
+        EncargadoDeBoveda, Clasificador, Buscador, AnalistaDeRutas, Repartidor
     };
 }

@@ -1,4 +1,4 @@
-@model ProsegurGDT.Web.Models.FraudeIndexVM
+﻿@model ProsegurGDT.Web.Models.FraudeIndexVM
 @using ProsegurGDT.Web.Domain
 @{
     ViewData["Title"] = "Reportes de fraude"; ViewData["Torre"] = true;
@@ -14,6 +14,36 @@
 {
     <div class="alert alert-success">@ok</div>
 }
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="pg-tarjeta pg-bloque mb-3">
+    <h2 class="h6 mb-2">Suplantaciones reportadas desde campo <span class="badge @(Model.Suplantaciones.Count > 0 ? "bg-danger" : "bg-secondary")">@Model.Suplantaciones.Count</span></h2>
+    <p class="text-muted small">Sospechas enviadas por los repartidores desde la aplicación móvil al verificar la identidad del receptor. Evalúe cada una: genere el reporte de fraude o descártela indicando el motivo.</p>
+    @if (Model.Suplantaciones.Count == 0)
+    {
+        <div class="text-center text-muted py-3">No hay reportes de suplantación pendientes.</div>
+    }
+    @foreach (var s in Model.Suplantaciones)
+    {
+        <div class="pg-tarjeta pg-bloque mb-2">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <div>
+                    <span class="fw-semibold">@s.Codigo</span> · @s.Cliente
+                    <div class="small text-muted">Repartidor @s.Repartidor · @HoraLima.Convertir(s.FechaHora).ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                <a asp-action="Nuevo" asp-route-hojaRutaId="@s.HojaRutaId" asp-route-tarjetaId="@s.TarjetaId" asp-route-suplantacionId="@s.Id" class="btn btn-sm btn-primary align-self-start">Generar reporte de fraude</a>
+            </div>
+            <div class="small mt-2">@s.Descripcion</div>
+            <form asp-action="DescartarSuplantacion" asp-route-id="@s.Id" method="post" class="d-flex gap-2 mt-2">
+                <input type="text" name="observacion" class="form-control form-control-sm" maxlength="300" minlength="5" required placeholder="Motivo para descartar (p. ej., receptor autorizado verificado)" aria-label="Motivo para descartar" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Descartar</button>
+            </form>
+        </div>
+    }
+</div>
 
 <div class="pg-tarjeta pg-bloque mb-3">
     <h2 class="h6 mb-2">Hojas de ruta aprobadas por revisar</h2>

@@ -18,6 +18,7 @@ public class UsuarioCrearVM
     [Required, EmailAddress, Display(Name = "Correo (será el usuario de acceso)")] public string Email { get; set; } = "";
     [Required, DataType(DataType.Password), Display(Name = "Contraseña inicial")] public string Password { get; set; } = "";
     [Required, Display(Name = "Rol operativo")] public string Rol { get; set; } = "";
+    [Display(Name = "Repartidor vinculado")] public int? RepartidorId { get; set; }
 }
 
 public class UsuarioEditarVM
@@ -28,4 +29,5 @@ public class UsuarioEditarVM
     [Required, EmailAddress, Display(Name = "Correo (usuario de acceso)")] public string Email { get; set; } = "";
     [DataType(DataType.Password), Display(Name = "Nueva contraseña (vacío = no cambiar)")] public string? NuevaPassword { get; set; }
     [Required, Display(Name = "Rol operativo")] public string Rol { get; set; } = "";
+    [Display(Name = "Repartidor vinculado")] public int? RepartidorId { get; set; }
 }

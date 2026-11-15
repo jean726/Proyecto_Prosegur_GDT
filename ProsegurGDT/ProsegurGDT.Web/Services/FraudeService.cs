@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
 using ProsegurGDT.Web.Models;
@@ -14,6 +14,7 @@ public interface IFraudeService
     Task<NuevoReporteFraudeVM?> NuevoAsync(int hojaRutaId, int tarjetaId);
     Task<ResultadoFraude> CrearAsync(NuevoReporteFraudeVM entrada, string verificadorId);
     Task<DetalleReporteFraudeVM?> DetalleAsync(int id);
+    Task<ResultadoFraude> DescartarSuplantacionAsync(int id, string observacion, string verificadorId);
 }
 
 // CU06 — El Verificador revisa las hojas de ruta aprobadas y genera un reporte de fraude cuando detecta
@@ -41,8 +42,25 @@ public class FraudeService : IFraudeService
             .Include(r => r.HojaRuta).ThenInclude(h => h!.AsignacionRuta).ThenInclude(a => a!.Repartidor)
             .OrderByDescending(r => r.Id).ToListAsync();
 
+        var suplantaciones = await _db.ReportesSuplantacion.AsNoTracking()
+            .Where(r => r.Estado == EstadoReporteSuplantacion.Pendiente)
+            .Include(r => r.Tarjeta).ThenInclude(t => t!.Cliente)
+            .Include(r => r.Repartidor)
+            .OrderBy(r => r.FechaHora).ToListAsync();
+
         return new FraudeIndexVM
         {
+            Suplantaciones = suplantaciones.Select(r => new SuplantacionFilaVM
+            {
+                Id = r.Id,
+                HojaRutaId = r.HojaRutaId,
+                TarjetaId = r.TarjetaId,
+                Codigo = r.Tarjeta?.Codigo ?? "—",
+                Cliente = r.Tarjeta?.Cliente?.NombreCompleto ?? "—",
+                Repartidor = r.Repartidor?.Nombre ?? "—",
+                Descripcion = r.Descripcion,
+                FechaHora = r.FechaHora
+            }).ToList(),
             Hojas = hojas.Select(h => new HojaRevisionFilaVM
             {
                 HojaRutaId = h.Id,
@@ -149,6 +167,15 @@ public class FraudeService : IFraudeService
             Estado = EstadoReporteFraude.Generado
         };
         _db.ReportesFraude.Add(reporte);
+        // B2 (CU30): el reporte de suplantación de campo queda atendido con este reporte de fraude
+        if (entrada.SuplantacionId is int sid
+            && await _db.ReportesSuplantacion.FirstOrDefaultAsync(x => x.Id == sid && x.TarjetaId == entrada.TarjetaId && x.Estado == EstadoReporteSuplantacion.Pendiente) is { } sup)
+        {
+            sup.Estado = EstadoReporteSuplantacion.Atendido;
+            sup.ReporteFraude = reporte;
+            sup.AtendidoPorId = verificadorId;
+            sup.FechaAtencion = DateTime.UtcNow;
+        }
         try { await _db.SaveChangesAsync(); }
         catch (DbUpdateException) { return new(false, "Ya existe un reporte de fraude para esta tarjeta."); }
 
@@ -183,6 +210,22 @@ public class FraudeService : IFraudeService
             FechaHora = r.FechaHora,
             Estado = r.Estado
         };
+    }
+
+    // B2 (CU30): el Verificador descarta la sospecha tras evaluarla (RN-08), dejando constancia del motivo
+    public async Task<ResultadoFraude> DescartarSuplantacionAsync(int id, string observacion, string verificadorId)
+    {
+        observacion = (observacion ?? "").Trim();
+        if (observacion.Length < 5) return new(false, "Indique por qué se descarta el reporte (mínimo 5 caracteres).");
+        if (observacion.Length > 300) observacion = observacion[..300];
+        var sup = await _db.ReportesSuplantacion.Include(x => x.Tarjeta).FirstOrDefaultAsync(x => x.Id == id);
+        if (sup is null || sup.Estado != EstadoReporteSuplantacion.Pendiente) return new(false, "El reporte de suplantación no existe o ya fue atendido.");
+        sup.Estado = EstadoReporteSuplantacion.Descartado;
+        sup.Observacion = observacion;
+        sup.AtendidoPorId = verificadorId;
+        sup.FechaAtencion = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return new(true, "Reporte de suplantación descartado.", 0, $"Suplantación {id} (tarjeta {sup.Tarjeta?.Codigo}) descartada: {observacion}");
     }
 
     private Task<HojaRuta?> CargarHojaAsync(int id) =>

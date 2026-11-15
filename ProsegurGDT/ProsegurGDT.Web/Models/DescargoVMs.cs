@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ProsegurGDT.Web.Domain;
 
 namespace ProsegurGDT.Web.Models;
@@ -43,6 +43,9 @@ public class TarjetaDescargoVM
     public string? Detalle { get; set; }
     public string? ObservacionBuscador { get; set; }
     public bool ConActa { get; set; }
+    // B2 (RN-30): resultado registrado por el repartidor desde la app móvil, a confirmar con el cargo físico
+    public ResultadoCampo? Campo { get; set; }
+    public bool SuplantacionReportada { get; set; }
     public bool Pendiente => Estado == EstadoTarjeta.AsignadaARuta;
 }
 
