@@ -38,7 +38,34 @@ builder.Services.ConfigureApplicationCookie(o =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<ITarjetaEstadoService, TarjetaEstadoService>();
-builder.Services.AddSingleton<IEmbeddingService, HashingNgramEmbeddingService>();
+// Motor de IA: IA:Motor = hibrido (por defecto) | onnx | hash. IA:PesoOnnx (0-1, por defecto 0.5) pondera el modelo en el híbrido.
+// Si el modelo ONNX no está en IA:ModeloRuta, se usa hash como respaldo.
+builder.Services.AddSingleton<IEmbeddingService>(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("MotorIA");
+    var motor = (cfg["IA:Motor"] ?? "hibrido").Trim().ToLowerInvariant();
+    if (motor != "hash")
+    {
+        var carpeta = cfg["IA:ModeloRuta"];
+        if (string.IsNullOrWhiteSpace(carpeta))
+            carpeta = Path.Combine(sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath, "modelos", "paraphrase-multilingual-MiniLM-L12-v2");
+        if (OnnxEmbeddingService.Disponible(carpeta))
+        {
+            try
+            {
+                var onnx = new OnnxEmbeddingService(carpeta);
+                if (motor == "onnx") return onnx;
+                var peso = double.TryParse(cfg["IA:PesoOnnx"], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var w) ? w : 0.5;
+                return new HybridEmbeddingService(onnx, new HashingNgramEmbeddingService(), peso);
+            }
+            catch (Exception ex) { log.LogError(ex, "No se pudo cargar el modelo ONNX de {Carpeta}; se usa el motor hash.", carpeta); }
+        }
+        else log.LogWarning("Modelo ONNX no encontrado en {Carpeta}; se usa el motor hash.", carpeta);
+    }
+    return new HashingNgramEmbeddingService();
+});
 builder.Services.AddScoped<IAddressRiskService, AddressRiskService>();
 // Una cuenta desactivada pierde la sesión en ≤ 1 minuto
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
