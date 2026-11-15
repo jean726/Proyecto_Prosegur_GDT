@@ -430,3 +430,6 @@ FodyWeavers.xsd
 # Respaldos locales (no versionar)
 ProsegurGDT.zip
 *.zip
+
+# Modelos de IA (ONNX): no se suben al repo
+modelos/
