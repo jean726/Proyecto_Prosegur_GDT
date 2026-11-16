@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Mis hojas de ruta (CU28). De momento: cabecera del repartidor y cerrar sesión (CU23); la lista llega en el paso siguiente. -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             x:Class="ProsegurGDT.Movil.Views.HojasPage"
+             x:DataType="vm:HojasViewModel"
+             Title="Mis hojas de ruta"
+             BackgroundColor="{StaticResource TFondo}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Cerrar sesión" Command="{Binding CerrarSesionCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <VerticalStackLayout Padding="20" Spacing="16">
+        <VerticalStackLayout Spacing="2">
+            <Label Text="{Binding Nombre}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+            <Label Text="{Binding Detalle}" FontSize="14" TextColor="{StaticResource TTenue}" />
+        </VerticalStackLayout>
+
+        <Border Padding="16" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
+                StrokeShape="RoundRectangle 8">
+            <Label Text="La lista de hojas de ruta llega en el siguiente paso."
+                   TextColor="{StaticResource TTenue}" FontSize="14" />
+        </Border>
+
+        <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TAmarillo}" />
+    </VerticalStackLayout>
+</ContentPage>

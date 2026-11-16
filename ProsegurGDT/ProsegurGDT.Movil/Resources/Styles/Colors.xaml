@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Paleta «Torre de control» (misma que .pg-torre en site.css). La app va siempre en oscuro (App.xaml.cs).
+     Las claves de la plantilla se conservan porque las usa Styles.xaml; los tokens T* son los propios de la app.
+     Android: ver también Platforms/Android/Resources/values/colors.xml. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Tokens de la Torre -->
+    <Color x:Key="TFondo">#111418</Color>
+    <Color x:Key="TSuperficie">#181C22</Color>
+    <Color x:Key="TSuperficie2">#1F242B</Color>
+    <Color x:Key="TBorde">#2A3038</Color>
+    <Color x:Key="TTexto">#E8EAED</Color>
+    <Color x:Key="TTenue">#9AA3AD</Color>
+    <Color x:Key="TAmarillo">#FFCC00</Color>
+    <Color x:Key="TRiesgo">#E5484D</Color>
+    <Color x:Key="TOk">#4CA36B</Color>
+
+    <!-- Claves de la plantilla MAUI, mapeadas a la Torre -->
+    <Color x:Key="Primary">#FFCC00</Color>
+    <Color x:Key="PrimaryDark">#FFCC00</Color>
+    <Color x:Key="PrimaryDarkText">#111418</Color>
+    <Color x:Key="Secondary">#1F242B</Color>
+    <Color x:Key="SecondaryDarkText">#FFCC00</Color>
+    <Color x:Key="Tertiary">#2A3038</Color>
+
+    <Color x:Key="White">#E8EAED</Color>
+    <Color x:Key="Black">#111418</Color>
+    <Color x:Key="Magenta">#FFCC00</Color>
+    <Color x:Key="MidnightBlue">#111418</Color>
+    <Color x:Key="OffBlack">#181C22</Color>
+
+    <Color x:Key="Gray100">#E8EAED</Color>
+    <Color x:Key="Gray200">#C9CED4</Color>
+    <Color x:Key="Gray300">#9AA3AD</Color>
+    <Color x:Key="Gray400">#7A838D</Color>
+    <Color x:Key="Gray500">#5A626B</Color>
+    <Color x:Key="Gray600">#2A3038</Color>
+    <Color x:Key="Gray900">#181C22</Color>
+    <Color x:Key="Gray950">#111418</Color>
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
+    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+
+    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
+    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
+    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}"/>
+    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}"/>
+    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}"/>
+    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
+    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
+    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+</ResourceDictionary>

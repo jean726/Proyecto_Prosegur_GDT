@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo HTTPS, salvo la web local de desarrollo que llega por USB con «adb reverse tcp:5282 tcp:5282». -->
+<network-security-config>
+	<base-config cleartextTrafficPermitted="false" />
+	<domain-config cleartextTrafficPermitted="true">
+		<domain includeSubdomains="false">localhost</domain>
+	</domain-config>
+</network-security-config>

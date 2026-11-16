@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Navegación: //login (CU22) y //hojas (CU28). Sin menú lateral ni pestañas. -->
+<Shell
+    x:Class="ProsegurGDT.Movil.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:ProsegurGDT.Movil.Views"
+    Title="GDT Repartidor"
+    FlyoutBehavior="Disabled"
+    Shell.BackgroundColor="{StaticResource TFondo}"
+    Shell.ForegroundColor="{StaticResource TTexto}"
+    Shell.TitleColor="{StaticResource TTexto}">
+
+    <ShellContent Route="login" ContentTemplate="{DataTemplate views:LoginPage}" />
+    <ShellContent Route="hojas" ContentTemplate="{DataTemplate views:HojasPage}" />
+
+</Shell>
