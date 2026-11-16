@@ -14,6 +14,7 @@ namespace ProsegurGDT.Web.Controllers.Api;
 
 // CU22 / CU23 por la API móvil: el Repartidor obtiene y revoca su token JWT (RF29, RF30, RN-29).
 [ApiController]
+[IgnoreAntiforgeryToken]   // la API se autentica con JWT en la cabecera, no con cookies
 [Route("api/v1/auth")]
 [Produces("application/json")]
 public class AuthApiController : ControllerBase

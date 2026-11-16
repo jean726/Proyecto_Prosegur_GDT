@@ -27,7 +27,12 @@ public class AdaptadorCsvUnibanca : IAdaptadorFichaClientes
         {
             string? linea;
             while ((linea = await sr.ReadLineAsync()) != null)
+            {
+                // Un archivo de texto no trae caracteres de control: si aparecen, es un binario renombrado a .csv
+                if (linea.Any(c => (char.IsControl(c) && c != '\t') || c == '\uFFFD'))
+                    return new(new(), new() { "El archivo no es un CSV de texto válido. Guárdelo como CSV (UTF-8) y vuelva a intentarlo." });
                 if (!string.IsNullOrWhiteSpace(linea)) lineas.Add(linea);
+            }
         }
         if (lineas.Count < 2) return new(new(), new() { "El archivo no contiene registros." });
 

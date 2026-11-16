@@ -40,7 +40,7 @@
             <div><button type="submit" class="btn btn-primary">Marcar como localizada</button></div>
         </form>
         <form asp-action="NoLocalizada" asp-route-id="@Model.IncidenciaId" method="post"
-              onsubmit="return confirm('La tarjeta quedará como extraviada con indicios de fraude. ¿Continuar?');">
+              data-confirmar="La tarjeta quedará como extraviada con indicios de fraude. ¿Continuar?">
             <button type="submit" class="btn btn-outline-danger">No se pudo localizar</button>
         </form>
     </div>

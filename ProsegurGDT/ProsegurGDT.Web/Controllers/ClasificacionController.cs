@@ -51,7 +51,8 @@ public class ClasificacionController : Controller
     public async Task<IActionResult> Evaluar(int id)
     {
         if (!await _db.Lotes.AnyAsync(l => l.Id == id)) return NotFound();
-        await _riesgo.EvaluarLoteAsync(id);
+        var nuevas = await _riesgo.EvaluarLoteAsync(id);
+        if (nuevas > 0) await _audit.RegistrarAsync("EvaluarAlertasLote", "Lote", id.ToString(), $"{nuevas} alertas de dirección generadas");
         return RedirectToAction(nameof(Clasificar), new { id });
     }
 

@@ -1,8 +1,34 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿// Scripts comunes de la plataforma. La política de contenido (CSP) no admite manejadores en línea
+// (onclick, onsubmit): el comportamiento se declara con atributos data-* y se conecta aquí.
 
-// Write your JavaScript code.
+// Confirmación antes de una acción irreversible: <form data-confirmar="…"> o <button data-confirmar="…">
+document.addEventListener('submit', function (e) {
+    var f = e.target;
+    var boton = e.submitter;
+    var mensaje = (boton && boton.getAttribute('data-confirmar')) || f.getAttribute('data-confirmar');
+    if (mensaje && !window.confirm(mensaje)) e.preventDefault();
+}, true);
 
+// Botones de las vistas de impresión: data-accion="imprimir" | "cerrar"
+document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-accion]') : null;
+    if (!b) return;
+    var accion = b.getAttribute('data-accion');
+    if (accion === 'imprimir') window.print();
+    else if (accion === 'cerrar') window.close();
+});
+
+// Imágenes opcionales (logotipo): si no cargan, se ocultan
+function pgOcultarSiFalla(img) { img.style.display = 'none'; }
+document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG' && t.hasAttribute('data-ocultar-si-falla')) pgOcultarSiFalla(t);
+}, true);
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('img[data-ocultar-si-falla]').forEach(function (img) {
+        if (img.complete && img.naturalWidth === 0) pgOcultarSiFalla(img);
+    });
+});
 
 // Fase 11: conteo ascendente en los dashboards («Torre de control»)
 document.addEventListener('DOMContentLoaded', function () {

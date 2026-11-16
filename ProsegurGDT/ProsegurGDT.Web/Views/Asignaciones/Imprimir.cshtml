@@ -21,8 +21,8 @@
 </head>
 <body>
     <div class="no-imprimir mb-3 d-flex gap-2">
-        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="btn btn-primary" data-accion="imprimir">Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" data-accion="cerrar">Cerrar</button>
     </div>
 
     <h1>Prosegur GDT — Hoja de asignación a mensajeros</h1>
@@ -52,5 +52,6 @@
     {
         <p><strong>Postergadas a la siguiente jornada:</strong> @string.Join(", ", Model.Postergadas.Select(p => $"{p.Zona} ({p.Cantidad})"))</p>
     }
+    <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>

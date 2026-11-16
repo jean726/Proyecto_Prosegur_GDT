@@ -300,6 +300,77 @@ public class LoginWebTests(FabricaWeb fabrica)
     }
 
     [Fact]
+    public async Task El_mensaje_de_error_es_el_mismo_exista_o_no_la_cuenta()
+    {
+        var clave = await CrearCuentaAsync("existe@gdt.local", Roles.Clasificador);
+
+        var existe = await Mensaje(await fabrica.NuevaSesion().IniciarAsync("existe@gdt.local", clave + "x"));
+        var noExiste = await Mensaje(await fabrica.NuevaSesion().IniciarAsync("no.existe@gdt.local", clave + "x"));
+
+        Assert.Contains("Usuario o contrase", existe);
+        Assert.Equal(noExiste, existe);
+        Assert.DoesNotContain("Le queda", existe);
+
+        static async Task<string> Mensaje(HttpResponseMessage r) =>
+            System.Text.RegularExpressions.Regex.Match(await r.Content.ReadAsStringAsync(), "validation-summary-errors[^>]*>(.*?)</div>",
+                System.Text.RegularExpressions.RegexOptions.Singleline).Groups[1].Value.Trim();
+    }
+
+    [Fact]
+    public async Task Probar_contrasenas_de_un_repartidor_en_la_web_tambien_bloquea_su_cuenta()
+    {
+        const string correo = "repartidor.bloqueo@gdt.local";
+        var clave = await CrearCuentaAsync(correo, Roles.Repartidor);
+        var sesion = fabrica.NuevaSesion();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var fallo = await (await sesion.IniciarAsync(correo, "incorrecta-" + i)).Content.ReadAsStringAsync();
+            Assert.DoesNotContain("repartidor ingresan", fallo);     // el aviso del rol solo sale con la clave correcta
+        }
+        var r = await sesion.IniciarAsync(correo, clave);
+
+        Assert.Contains("bloqueada", await r.Content.ReadAsStringAsync());
+        var bloqueada = await fabrica.ConBaseAsync(async (_, sp) =>
+        {
+            var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            return await um.IsLockedOutAsync((await um.FindByEmailAsync(correo))!);
+        });
+        Assert.True(bloqueada);
+    }
+
+    [Fact]
+    public async Task Al_undecimo_intento_del_minuto_desde_la_misma_IP_responde_429_con_la_pagina_de_login()
+    {
+        var sesion = fabrica.NuevaSesion();
+
+        for (var i = 0; i < 10; i++)
+            Assert.Equal(HttpStatusCode.OK, (await sesion.IniciarAsync($"nadie{i}@gdt.local", "malaclave-1")).StatusCode);
+        var r = await sesion.IniciarAsync("supervisor@gdt.local", FabricaWeb.ClaveDemo);     // ni con la clave correcta
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, r.StatusCode);
+        Assert.Contains("Demasiados intentos", await r.Content.ReadAsStringAsync());
+        Assert.Equal("60", r.Headers.RetryAfter!.ToString());
+        // Otra IP no queda afectada
+        Assert.Equal(HttpStatusCode.Redirect, (await fabrica.NuevaSesion().IniciarAsync("supervisor@gdt.local", FabricaWeb.ClaveDemo)).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/Identity/Account/ForgotPassword")]
+    [InlineData("/Identity/Account/ResendEmailConfirmation")]
+    [InlineData("/Identity/Account/Lockout")]
+    [InlineData("/Identity/Account/LoginWith2fa")]
+    [InlineData("/Identity/Account/Manage")]
+    [InlineData("/Identity/Account/Manage/ChangePassword")]
+    [InlineData("/Identity/Account/Manage/DeletePersonalData")]
+    [InlineData("/Identity/Account/ExternalLogin")]
+    public async Task Las_paginas_de_Identity_que_el_sistema_no_usa_responden_404(string ruta)
+    {
+        Assert.Equal(HttpStatusCode.NotFound, (await fabrica.NuevaSesion().GetAsync(ruta)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await (await fabrica.SesionDeAsync(Roles.Supervisor)).GetAsync(ruta)).StatusCode);
+    }
+
+    [Fact]
     public async Task El_registro_publico_esta_cerrado()
     {
         var r = await fabrica.NuevaSesion().GetAsync("/Identity/Account/Register");

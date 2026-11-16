@@ -35,6 +35,10 @@ public sealed class FabricaWeb : WebApplicationFactory<Program>
         Fijar("SeedAdmin__Email", AdminCorreo);
         Fijar("SeedAdmin__Password", AdminClave);
         Fijar("Seed__Demo", "true");
+        Fijar("Seed__ClaveDemo", ClaveDemo);
+        // Como detrás del proxy de Azure: la IP del cliente llega en X-Forwarded-For. Cada sesión de prueba
+        // usa una IP distinta, así los límites de intentos por IP no se mezclan entre pruebas.
+        Fijar("Intranet__ConfiarEnProxy", "true");
         Fijar("IA__Motor", "hash");                 // sin el modelo ONNX: rápido y determinista
         Fijar("IA__UmbralMedio", "0.60");
         Fijar("IA__UmbralAlto", "0.90");
@@ -62,12 +66,21 @@ public sealed class FabricaWeb : WebApplicationFactory<Program>
             throw new InvalidOperationException($"Las pruebas apuntan a la base «{nombre}», que no es de pruebas. Se detienen para no tocarla.");
     }
 
-    public SesionWeb NuevaSesion() => new(CreateClient(new WebApplicationFactoryClientOptions
+    private int _ips;
+
+    public SesionWeb NuevaSesion()
     {
-        AllowAutoRedirect = false,
-        HandleCookies = true,
-        BaseAddress = new Uri("https://localhost")
-    }));
+        var http = CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = true,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var n = Interlocked.Increment(ref _ips);
+        var ip = $"10.20.{n / 250}.{n % 250 + 1}";
+        http.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
+        return new SesionWeb(http, ip);
+    }
 
     public static string CorreoDemo(string rol) => rol == Roles.Administrador ? AdminCorreo : $"{rol.ToLowerInvariant()}@gdt.local";
     public static string ClaveDe(string rol) => rol == Roles.Administrador ? AdminClave : ClaveDemo;
@@ -109,9 +122,10 @@ public sealed class ColeccionIntegracion : ICollectionFixture<FabricaWeb>
 }
 
 /// <summary>Navegador mínimo: guarda la cookie de sesión y envía el token antiforgery de los formularios.</summary>
-public sealed partial class SesionWeb(HttpClient http)
+public sealed partial class SesionWeb(HttpClient http, string ip)
 {
     public HttpClient Http { get; } = http;
+    public string Ip { get; } = ip;
 
     [GeneratedRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^\"]+)\"")]
     private static partial Regex TokenAntiforgery();

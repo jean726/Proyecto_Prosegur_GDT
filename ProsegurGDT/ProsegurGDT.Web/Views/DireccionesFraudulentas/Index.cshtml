@@ -120,7 +120,7 @@
                                 }
                                 if (d.Estado != EstadoDireccion.Descartada)
                                 {
-                                    <form asp-action="Descartar" asp-route-id="@d.Id" method="post" class="d-inline" onsubmit="return confirm('¿Dar de baja esta dirección?');"><button class="btn btn-sm btn-outline-danger">Dar de baja</button></form>
+                                    <form asp-action="Descartar" asp-route-id="@d.Id" method="post" class="d-inline" data-confirmar="¿Dar de baja esta dirección?"><button class="btn btn-sm btn-outline-danger">Dar de baja</button></form>
                                 }
                             }
                         </td>

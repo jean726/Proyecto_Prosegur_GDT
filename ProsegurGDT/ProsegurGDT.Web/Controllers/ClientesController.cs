@@ -74,6 +74,7 @@ public class ClientesController : Controller
 
     [Authorize(Roles = Roles.Supervisor)]
     [HttpPost, ValidateAntiForgeryToken]
+    [RequestSizeLimit(3_000_000), RequestFormLimits(MultipartBodyLengthLimit = 3_000_000)]   // el archivo admite hasta 2 MB
     public async Task<IActionResult> Importar(ImportarFichaVM vm)
     {
         ModelState.Clear();

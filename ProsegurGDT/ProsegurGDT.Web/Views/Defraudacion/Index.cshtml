@@ -40,7 +40,7 @@
                         <td>@c.Origen.Texto()</td>
                         <td class="small">@c.Detalle</td>
                         <td class="text-end">
-                            <form asp-action="Registrar" method="post" onsubmit="return confirm('¿Registrar la tarjeta en el acta de fraude? Se apartará del flujo normal.');">
+                            <form asp-action="Registrar" method="post" data-confirmar="¿Registrar la tarjeta en el acta de fraude? Se apartará del flujo normal.">
                                 <input type="hidden" name="TarjetaId" value="@c.TarjetaId" />
                                 <input type="hidden" name="Origen" value="@c.Origen" />
                                 <input type="hidden" name="ReporteFraudeId" value="@c.ReporteFraudeId" />

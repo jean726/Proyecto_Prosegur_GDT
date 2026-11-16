@@ -171,6 +171,36 @@ public class TextosYCsvTests
         Assert.Contains(r.Errores, e => e.StartsWith("Línea 8:") && e.Contains("teléfono"));
     }
 
+    [Fact]
+    public async Task Un_binario_renombrado_a_csv_se_rechaza()
+    {
+        byte[] zip = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x08, 0x00, 0x0A, 0x41, 0x3B, 0x42, 0x0A];
+
+        var r = await new AdaptadorCsvUnibanca().LeerAsync(new MemoryStream(zip));
+
+        Assert.Empty(r.Filas);
+        Assert.Contains("no es un CSV de texto válido", Assert.Single(r.Errores));
+    }
+
+    [Fact]
+    public async Task Un_csv_guardado_en_otra_codificacion_se_rechaza_en_lugar_de_importar_nombres_rotos()
+    {
+        var latin1 = Encoding.Latin1.GetBytes(Cabecera + "TJ-001;José Núñez;45871236;;Av. Larco 123\n");
+
+        var r = await new AdaptadorCsvUnibanca().LeerAsync(new MemoryStream(latin1));
+
+        Assert.Empty(r.Filas);
+        Assert.Contains("UTF-8", Assert.Single(r.Errores));
+    }
+
+    [Fact]
+    public async Task Las_tabulaciones_dentro_de_un_campo_no_cuentan_como_binario()
+    {
+        var r = await Leer(Cabecera + "TJ-001;Ana\tTorres;45871236;;Av. Larco 123\n");
+        Assert.Empty(r.Errores);
+        Assert.Single(r.Filas);
+    }
+
     [Theory]
     [InlineData("ficha.csv", true)]
     [InlineData("FICHA.CSV", true)]

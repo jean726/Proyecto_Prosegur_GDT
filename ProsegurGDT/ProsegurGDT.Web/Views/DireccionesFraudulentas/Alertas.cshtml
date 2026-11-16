@@ -27,7 +27,7 @@
                         <td class="text-end text-nowrap">
                             <form asp-action="ResolverAlerta" asp-route-id="@a.Id" method="post">
                                 <button name="confirmar" value="true" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('¿Confirmar fraude? La tarjeta quedará no clasificable.');">Confirmar fraude</button>
+                                        data-confirmar="¿Confirmar fraude? La tarjeta quedará no clasificable.">Confirmar fraude</button>
                                 <button name="confirmar" value="false" class="btn btn-sm btn-outline-secondary">Descartar</button>
                             </form>
                         </td>

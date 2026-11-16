@@ -20,8 +20,8 @@
 </head>
 <body>
     <div class="no-imprimir mb-3 d-flex gap-2">
-        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="btn btn-primary" data-accion="imprimir">Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" data-accion="cerrar">Cerrar</button>
     </div>
 
     <h1>Prosegur GDT — Reporte de densidad de entregas</h1>
@@ -57,5 +57,6 @@
             </tr>
         </tfoot>
     </table>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>

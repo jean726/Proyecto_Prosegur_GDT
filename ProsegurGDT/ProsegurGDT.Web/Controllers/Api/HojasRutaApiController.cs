@@ -9,6 +9,7 @@ namespace ProsegurGDT.Web.Controllers.Api;
 
 // CU28–CU31 — Hoja de ruta del Repartidor en la app móvil (RF35–RF38, RN-06, RN-07, RN-29, RN-30).
 [ApiController]
+[IgnoreAntiforgeryToken]   // la API se autentica con JWT en la cabecera, no con cookies
 [Route("api/v1/hojas-ruta")]
 [Authorize(Roles = Roles.Repartidor)]
 [Produces("application/json")]
