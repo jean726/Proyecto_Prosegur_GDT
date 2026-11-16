@@ -29,39 +29,41 @@
     <div class="pg-tarjeta pg-bloque mb-3">
         <h2 class="h6 mb-2">Tarjetas por registrar en el acta</h2>
         <p class="text-muted small">Discrepancias no resueltas por el Buscador y reportes de fraude del Verificador. Al registrarlas se apartan del flujo normal.</p>
-        <table class="table align-middle mb-0">
-            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Detalle</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var c in Model.Candidatos)
-                {
-                    <tr>
-                        <td class="fw-semibold">@c.Codigo</td>
-                        <td>@c.Cliente</td>
-                        <td>@c.Origen.Texto()</td>
-                        <td class="small">@c.Detalle</td>
-                        <td class="text-end">
-                            <form asp-action="Registrar" method="post" data-confirmar="¿Registrar la tarjeta en el acta de fraude? Se apartará del flujo normal.">
-                                <input type="hidden" name="TarjetaId" value="@c.TarjetaId" />
-                                <input type="hidden" name="Origen" value="@c.Origen" />
-                                <input type="hidden" name="ReporteFraudeId" value="@c.ReporteFraudeId" />
-                                <button type="submit" class="btn btn-sm btn-danger text-nowrap">Registrar en acta</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                @if (Model.Candidatos.Count == 0)
-                {
-                    <tr><td colspan="5" class="text-center text-muted py-3">No hay tarjetas pendientes de registrar.</td></tr>
-                }
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th scope="col">Tarjeta</th><th scope="col">Titular</th><th scope="col">Origen</th><th scope="col">Detalle</th><th scope="col"></th></tr></thead>
+                <tbody>
+                    @foreach (var c in Model.Candidatos)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@c.Codigo</td>
+                            <td>@c.Cliente</td>
+                            <td>@c.Origen.Texto()</td>
+                            <td class="small">@c.Detalle</td>
+                            <td class="text-end">
+                                <form asp-action="Registrar" method="post" data-confirmar="¿Registrar la tarjeta en el acta de fraude? Se apartará del flujo normal.">
+                                    <input type="hidden" name="TarjetaId" value="@c.TarjetaId" />
+                                    <input type="hidden" name="Origen" value="@c.Origen" />
+                                    <input type="hidden" name="ReporteFraudeId" value="@c.ReporteFraudeId" />
+                                    <button type="submit" class="btn btn-sm btn-danger text-nowrap">Registrar en acta</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (Model.Candidatos.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-3">No hay tarjetas pendientes de registrar.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 }
 
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>Tarjeta</th><th>Titular</th><th>Origen</th><th>Descripción</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th scope="col">Tarjeta</th><th scope="col">Titular</th><th scope="col">Origen</th><th scope="col">Descripción</th><th scope="col">Estado</th><th scope="col"></th></tr></thead>
             <tbody>
                 @foreach (var a in Model.Actas)
                 {

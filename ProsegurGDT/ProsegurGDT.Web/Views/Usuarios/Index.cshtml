@@ -19,59 +19,61 @@
 }
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="pg-barra-tabla">
-        <input id="pgBuscar" type="search" class="form-control" placeholder="Buscar por nombre, usuario o rol" autocomplete="off" />
+        <input id="pgBuscar" type="search" class="form-control" placeholder="Buscar por nombre, usuario o rol" autocomplete="off" aria-label="Buscar por nombre, usuario o rol" />
     </div>
-    <table id="pgTabla" class="table table-hover align-middle">
-        <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
-        <tbody>
-            @foreach (var u in Model)
-            {
-                var clave = $"{u.NombreCompleto} {u.Email} {u.Rol} {ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)}".ToLowerInvariant();
-                <tr data-buscar="@clave">
-                    <td>@u.NombreCompleto</td>
-                    <td>@u.Email</td>
-                    <td>@ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)</td>
-                    <td>
-                        @if (!u.Activo)
-                        {
-                            <span class="badge bg-secondary">Desactivado</span>
-                        }
-                        else if (u.Bloqueado)
-                        {
-                            <span class="badge bg-warning">Bloqueado</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">Activo</span>
-                        }
-                    </td>
-                    <td class="text-end text-nowrap">
-                        <a asp-action="Editar" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Modificar</a>
-                        @if (u.Bloqueado)
-                        {
-                            <form asp-action="Desbloquear" asp-route-id="@u.Id" method="post" class="d-inline">
-                                <button class="btn btn-sm btn-outline-warning">Desbloquear</button>
-                            </form>
-                        }
-                        @if (u.Activo)
-                        {
-                            <form asp-action="Desactivar" asp-route-id="@u.Id" method="post" class="d-inline"
-                                  data-confirmar="Esta acción desactivará su acceso al sistema. ¿Continuar?">
-                                <button class="btn btn-sm btn-outline-danger">Desactivar</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline">
-                                <button class="btn btn-sm btn-outline-success">Reactivar</button>
-                            </form>
-                        }
-                    </td>
-                </tr>
-            }
-            <tr id="pgVacio" hidden><td colspan="5" class="text-center text-muted py-4">No se encontraron usuarios.</td></tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table id="pgTabla" class="table table-hover align-middle">
+            <thead><tr><th scope="col">Nombre</th><th scope="col">Usuario</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col"></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    var clave = $"{u.NombreCompleto} {u.Email} {u.Rol} {ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)}".ToLowerInvariant();
+                    <tr data-buscar="@clave">
+                        <td>@u.NombreCompleto</td>
+                        <td>@u.Email</td>
+                        <td>@ProsegurGDT.Web.Domain.Roles.Etiqueta(u.Rol)</td>
+                        <td>
+                            @if (!u.Activo)
+                            {
+                                <span class="badge bg-secondary">Desactivado</span>
+                            }
+                            else if (u.Bloqueado)
+                            {
+                                <span class="badge bg-warning">Bloqueado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Editar" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Modificar</a>
+                            @if (u.Bloqueado)
+                            {
+                                <form asp-action="Desbloquear" asp-route-id="@u.Id" method="post" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-warning">Desbloquear</button>
+                                </form>
+                            }
+                            @if (u.Activo)
+                            {
+                                <form asp-action="Desactivar" asp-route-id="@u.Id" method="post" class="d-inline"
+                                      data-confirmar="Esta acción desactivará su acceso al sistema. ¿Continuar?">
+                                    <button class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-success">Reactivar</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                <tr id="pgVacio" hidden><td colspan="5" class="text-center text-muted py-4">No se encontraron usuarios.</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 @section Scripts {
     <script>

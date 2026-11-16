@@ -48,7 +48,7 @@
     {
         <div class="table-responsive mt-2">
             <table class="table table-sm">
-                <thead><tr><th>Dirección registrada</th><th>Puntaje</th><th>Resultado</th><th>Detalle</th></tr></thead>
+                <thead><tr><th scope="col">Dirección registrada</th><th scope="col">Puntaje</th><th scope="col">Resultado</th><th scope="col">Detalle</th></tr></thead>
                 <tbody>
                     @foreach (var c in Model.Coincidencias)
                     {
@@ -89,7 +89,7 @@
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
-            <thead><tr><th>Dirección</th><th>Motivo</th><th>Origen</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th scope="col">Dirección</th><th scope="col">Motivo</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col"></th></tr></thead>
             <tbody>
                 @foreach (var d in Model.Items)
                 {

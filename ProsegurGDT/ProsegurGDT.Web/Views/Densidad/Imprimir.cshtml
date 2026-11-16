@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <style>
         body { padding: 24px; color: #111418; }
+        @@media screen and (max-width: 600px) { table { display: block; overflow-x: auto; } }
         h1 { font-size: 1.4rem; margin-bottom: 4px; }
         .meta { color: #555; margin-bottom: 16px; }
         table { width: 100%; }
@@ -33,7 +34,7 @@
 
     <table class="table table-bordered table-sm">
         <thead class="table-light">
-            <tr><th>Zona</th><th class="text-end">Tarjetas</th><th class="text-end">No clasificables</th><th>Tipo de repartidor</th><th>Alerta</th></tr>
+            <tr><th scope="col">Zona</th><th scope="col" class="text-end">Tarjetas</th><th scope="col" class="text-end">No clasificables</th><th scope="col">Tipo de repartidor</th><th scope="col">Alerta</th></tr>
         </thead>
         <tbody>
             @foreach (var z in Model.Zonas)

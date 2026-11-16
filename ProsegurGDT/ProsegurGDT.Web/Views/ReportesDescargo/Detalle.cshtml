@@ -36,7 +36,7 @@
 <div class="pg-tarjeta pg-tarjeta-tabla mb-3">
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Asignadas</th><th class="text-end">Entregadas</th><th class="text-end">Devueltas</th><th class="text-end">En custodia</th><th class="text-end">Incidencias</th><th class="text-end">Fraude</th></tr></thead>
+            <thead><tr><th scope="col">Repartidor</th><th scope="col">Sector</th><th scope="col" class="text-end">Asignadas</th><th scope="col" class="text-end">Entregadas</th><th scope="col" class="text-end">Devueltas</th><th scope="col" class="text-end">En custodia</th><th scope="col" class="text-end">Incidencias</th><th scope="col" class="text-end">Fraude</th></tr></thead>
             <tbody>
                 @foreach (var l in Model.Lineas)
                 {
@@ -62,15 +62,17 @@
     {
         <div class="pg-tarjeta pg-bloque mb-3">
             <h2 class="h6 mb-2">Tarjetas no entregadas y sus motivos</h2>
-            <table class="table mb-0">
-                <thead><tr><th>Tarjeta</th><th>Titular</th><th>Resultado</th><th>Motivo</th><th>Detalle</th></tr></thead>
-                <tbody>
-                    @foreach (var n in Model.NoEntregadas)
-                    {
-                        <tr><td class="fw-semibold">@n.Codigo</td><td>@n.Cliente</td><td>@n.Resultado</td><td>@n.Motivo</td><td>@n.Detalle</td></tr>
-                    }
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead><tr><th scope="col">Tarjeta</th><th scope="col">Titular</th><th scope="col">Resultado</th><th scope="col">Motivo</th><th scope="col">Detalle</th></tr></thead>
+                    <tbody>
+                        @foreach (var n in Model.NoEntregadas)
+                        {
+                            <tr><td class="fw-semibold">@n.Codigo</td><td>@n.Cliente</td><td>@n.Resultado</td><td>@n.Motivo</td><td>@n.Detalle</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
 

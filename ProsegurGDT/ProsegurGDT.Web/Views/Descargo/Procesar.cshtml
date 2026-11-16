@@ -46,7 +46,7 @@
             </form>
             <form asp-action="SinDocumentacion" method="post" class="d-flex gap-2 flex-grow-1">
                 <input type="hidden" name="Id" value="@Model.HojaRutaId" />
-                <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Hoja sin cargos: detalle de la incidencia a escalar al Supervisor" />
+                <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Hoja sin cargos: detalle de la incidencia a escalar al Supervisor" aria-label="Detalle de la incidencia de la hoja sin cargos" />
                 <button type="submit" class="btn btn-outline-danger text-nowrap">Sin cargos</button>
             </form>
         </div>

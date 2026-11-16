@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <style>
         body { padding: 24px; color: #111418; }
+        @@media screen and (max-width: 600px) { table { display: block; overflow-x: auto; } }
         h1 { font-size: 1.4rem; margin-bottom: 4px; }
         h2 { font-size: 1.1rem; margin-top: 20px; }
         .meta { color: #555; margin-bottom: 16px; }
@@ -37,7 +38,7 @@
         <div class="ruta">
             <h2>Ruta @r.Orden — @r.Repartidor (@r.TipoRepartidor.Texto()) — @r.Sector · @r.CantidadTarjetas tarjetas</h2>
             <table class="table table-bordered table-sm">
-                <thead class="table-light"><tr><th>Tarjeta</th><th>Cliente</th><th>Dirección</th></tr></thead>
+                <thead class="table-light"><tr><th scope="col">Tarjeta</th><th scope="col">Cliente</th><th scope="col">Dirección</th></tr></thead>
                 <tbody>
                     @foreach (var t in r.Tarjetas)
                     {

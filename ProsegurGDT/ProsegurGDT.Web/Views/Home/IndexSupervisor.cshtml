@@ -129,27 +129,29 @@
         }
         else
         {
-            <table class="pg-t-tabla">
-                <thead>
-                    <tr><th>Remito</th><th>Banco</th><th>Recibido</th><th class="num">Tarjetas</th><th>Estado</th></tr>
-                </thead>
-                <tbody>
-                    @{ var fila = 0; }
-                    @foreach (var l in Model.LotesRecientes)
-                    {
-                        var (tono, texto) = l.Estado == EstadoLote.DiscrepanciaDetectada
-                            ? ("riesgo", "Discrepancia")
-                            : l.Tarjetas == 0 ? ("pendiente", "Sin ficha") : ("custodia", "Ingresado");
-                        <tr style="--f:@(fila++)">
-                            <td class="pg-t-mono pg-t-remito" data-etiqueta="Remito">@l.Remito</td>
-                            <td data-etiqueta="Banco">@l.Banco</td>
-                            <td class="pg-t-mono pg-t-tenue" data-etiqueta="Recibido">@l.Recibido.ToString("dd/MM/yyyy")</td>
-                            <td class="num pg-t-mono @(l.Tarjetas == 0 ? "pg-t-tenue" : "")" data-etiqueta="Tarjetas">@l.Tarjetas</td>
-                            <td data-etiqueta="Estado"><span class="pg-t-estado pg-t-estado-@tono"><span class="pg-t-punto"></span>@texto</span></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="pg-t-tabla">
+                    <thead>
+                        <tr><th scope="col">Remito</th><th scope="col">Banco</th><th scope="col">Recibido</th><th scope="col" class="num">Tarjetas</th><th scope="col">Estado</th></tr>
+                    </thead>
+                    <tbody>
+                        @{ var fila = 0; }
+                        @foreach (var l in Model.LotesRecientes)
+                        {
+                            var (tono, texto) = l.Estado == EstadoLote.DiscrepanciaDetectada
+                                ? ("riesgo", "Discrepancia")
+                                : l.Tarjetas == 0 ? ("pendiente", "Sin ficha") : ("custodia", "Ingresado");
+                            <tr style="--f:@(fila++)">
+                                <td class="pg-t-mono pg-t-remito" data-etiqueta="Remito">@l.Remito</td>
+                                <td data-etiqueta="Banco">@l.Banco</td>
+                                <td class="pg-t-mono pg-t-tenue" data-etiqueta="Recibido">@l.Recibido.ToString("dd/MM/yyyy")</td>
+                                <td class="num pg-t-mono @(l.Tarjetas == 0 ? "pg-t-tenue" : "")" data-etiqueta="Tarjetas">@l.Tarjetas</td>
+                                <td data-etiqueta="Estado"><span class="pg-t-estado pg-t-estado-@tono"><span class="pg-t-punto"></span>@texto</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </section>
 </div>

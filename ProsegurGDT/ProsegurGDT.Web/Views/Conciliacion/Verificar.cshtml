@@ -30,7 +30,7 @@
     <form asp-action="Verificar" method="post" class="pg-tarjeta pg-bloque">
         <input type="hidden" asp-for="LoteId" />
         <div class="mb-3">
-            <label asp-for="CodigosFisicos" class="form-label fw-semibold">Códigos de las tarjetas contadas físicamente</label>
+            <label for="codigos" class="form-label fw-semibold">Códigos de las tarjetas contadas físicamente</label>
             <textarea asp-for="CodigosFisicos" id="codigos" class="form-control font-monospace" rows="12"
                       placeholder="Un código por línea"></textarea>
             <span asp-validation-for="CodigosFisicos" class="text-danger"></span>

@@ -24,28 +24,30 @@
 {
     <div class="pg-tarjeta pg-bloque mb-3">
         <h2 class="h6 mb-2">Hojas de asignación sin hojas de ruta</h2>
-        <table class="table align-middle mb-0">
-            <thead><tr><th>Hoja de control</th><th>Remito</th><th>Emitida</th><th class="text-end">Rutas</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var p in Model.Pendientes)
-                {
-                    <tr>
-                        <td class="fw-semibold">@(p.CodigoHojaControl ?? "—")</td>
-                        <td>@(p.Remito ?? "—")</td>
-                        <td>@HoraLima.Convertir(p.FechaHoraEmision).ToString("dd/MM/yyyy HH:mm")</td>
-                        <td class="text-end">@p.RutasSinHoja de @p.Rutas</td>
-                        <td class="text-end">
-                            @if (Model.PuedeGestionar)
-                            {
-                                <form asp-action="Generar" asp-route-id="@p.HojaAsignacionId" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-primary">Generar hojas de ruta</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th scope="col">Hoja de control</th><th scope="col">Remito</th><th scope="col">Emitida</th><th scope="col" class="text-end">Rutas</th><th scope="col"></th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Pendientes)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@(p.CodigoHojaControl ?? "—")</td>
+                            <td>@(p.Remito ?? "—")</td>
+                            <td>@HoraLima.Convertir(p.FechaHoraEmision).ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">@p.RutasSinHoja de @p.Rutas</td>
+                            <td class="text-end">
+                                @if (Model.PuedeGestionar)
+                                {
+                                    <form asp-action="Generar" asp-route-id="@p.HojaAsignacionId" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-primary">Generar hojas de ruta</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 }
 
@@ -54,12 +56,12 @@
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
-                    <th>Hoja de control</th>
-                    <th>Repartidor</th>
-                    <th>Sector</th>
-                    <th class="text-end">Tarjetas</th>
-                    <th>Estado</th>
-                    <th></th>
+                    <th scope="col">Hoja de control</th>
+                    <th scope="col">Repartidor</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col" class="text-end">Tarjetas</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
