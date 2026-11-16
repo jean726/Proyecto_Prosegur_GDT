@@ -288,7 +288,7 @@ public class AsignacionService : IAsignacionService
                     CeldaCsv(t.Codigo), CeldaCsv(t.Cliente), CeldaCsv(t.Direccion)
                 }));
         }
-        var nombre = $"hoja-asignacion-{d.CodigoHojaControl ?? d.HojaId.ToString()}.csv";
+        var nombre = $"hoja-asignacion-{d.CodigoHojaControl ?? d.HojaId.ToString(CultureInfo.InvariantCulture)}.csv";
         // BOM UTF-8 para que Excel muestre bien las tildes
         return (nombre, new UTF8Encoding(true).GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray());
     }
@@ -335,7 +335,7 @@ public class AsignacionService : IAsignacionService
         return null;
     }
 
-    private GenerarHojaVM ConstruirVm(Contexto c, GenerarHojaVM? entrada)
+    private static GenerarHojaVM ConstruirVm(Contexto c, GenerarHojaVM? entrada)
     {
         var zonas = (c.Reporte?.Zonas ?? new List<ReporteDensidadZona>())
             .Select(z =>

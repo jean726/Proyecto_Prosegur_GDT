@@ -37,7 +37,7 @@
                 <a asp-action="Nuevo" asp-route-hojaRutaId="@s.HojaRutaId" asp-route-tarjetaId="@s.TarjetaId" asp-route-suplantacionId="@s.Id" class="btn btn-sm btn-primary align-self-start">Generar reporte de fraude</a>
             </div>
             <div class="small mt-2">@s.Descripcion</div>
-            <form asp-action="DescartarSuplantacion" asp-route-id="@s.Id" method="post" class="d-flex gap-2 mt-2">
+            <form asp-action="DescartarSuplantacion" asp-route-id="@s.Id" method="post" class="d-flex flex-wrap gap-2 mt-2" data-confirmar="¿Descartar este reporte de suplantación? Quedará registrado con el motivo indicado.">
                 <input type="text" name="observacion" class="form-control form-control-sm" maxlength="300" minlength="5" required placeholder="Motivo para descartar (p. ej., receptor autorizado verificado)" aria-label="Motivo para descartar" />
                 <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Descartar</button>
             </form>
@@ -48,32 +48,34 @@
 <div class="pg-tarjeta pg-bloque mb-3">
     <h2 class="h6 mb-2">Hojas de ruta aprobadas por revisar</h2>
     <p class="text-muted small">Revise los cargos de entrega de cada hoja y genere un reporte cuando detecte anomalías o indicadores de fraude.</p>
-    <table class="table align-middle mb-0">
-        <thead><tr><th>Hoja de control</th><th>Repartidor</th><th>Sector</th><th class="text-end">Tarjetas</th><th class="text-end">Reportes</th><th></th></tr></thead>
-        <tbody>
-            @foreach (var h in Model.Hojas)
-            {
-                <tr>
-                    <td class="fw-semibold">@(h.CodigoHojaControl ?? "—")</td>
-                    <td>@h.Repartidor</td>
-                    <td>@h.Sector</td>
-                    <td class="text-end">@h.Tarjetas</td>
-                    <td class="text-end">@h.Reportes</td>
-                    <td class="text-end"><a asp-action="Revisar" asp-route-id="@h.HojaRutaId" class="btn btn-sm btn-primary">Revisar</a></td>
-                </tr>
-            }
-            @if (Model.Hojas.Count == 0)
-            {
-                <tr><td colspan="6" class="text-center text-muted py-3">No hay hojas de ruta aprobadas todavía. El Supervisor debe aprobarlas primero.</td></tr>
-            }
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th scope="col">Hoja de control</th><th scope="col">Repartidor</th><th scope="col">Sector</th><th scope="col" class="text-end">Tarjetas</th><th scope="col" class="text-end">Reportes</th><th scope="col"></th></tr></thead>
+            <tbody>
+                @foreach (var h in Model.Hojas)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(h.CodigoHojaControl ?? "—")</td>
+                        <td>@h.Repartidor</td>
+                        <td>@h.Sector</td>
+                        <td class="text-end">@h.Tarjetas</td>
+                        <td class="text-end">@h.Reportes</td>
+                        <td class="text-end"><a asp-action="Revisar" asp-route-id="@h.HojaRutaId" class="btn btn-sm btn-primary">Revisar</a></td>
+                    </tr>
+                }
+                @if (Model.Hojas.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-3">No hay hojas de ruta aprobadas todavía. El Supervisor debe aprobarlas primero.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
-            <thead><tr><th>#</th><th>Tarjeta</th><th>Cliente</th><th>Repartidor</th><th>Indicador</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+            <thead><tr><th scope="col">#</th><th scope="col">Tarjeta</th><th scope="col">Cliente</th><th scope="col">Repartidor</th><th scope="col">Indicador</th><th scope="col">Estado</th><th scope="col">Fecha</th><th scope="col"></th></tr></thead>
             <tbody>
                 @foreach (var r in Model.Reportes)
                 {

@@ -24,8 +24,9 @@ public sealed class FiltroIntranetMiddleware
     public const string RutaAviso = "/Home/FueraDeRed";
     public const string ClaveBloqueo = "Intranet.Bloqueado";
 
-    // La API móvil y los recursos estáticos públicos (estilos, scripts, imágenes y fuentes de la página de aviso).
-    private static readonly string[] RutasExentas = { "/api", "/css", "/js", "/lib", "/img", "/fonts" };
+    // La API móvil, la comprobación de salud (monitoreo) y los recursos estáticos públicos
+    // (estilos, scripts, imágenes y fuentes de la página de aviso).
+    private static readonly string[] RutasExentas = { "/api", "/health", "/css", "/js", "/lib", "/img", "/fonts" };
     private static readonly string[] ArchivosExentos = { "/favicon.ico", "/ProsegurGDT.Web.styles.css" };
 
     private readonly RequestDelegate _next;

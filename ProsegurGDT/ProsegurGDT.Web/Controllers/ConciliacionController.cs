@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +44,7 @@ public class ConciliacionController : Controller
             return View(vm);
         }
 
-        await _audit.RegistrarAsync("ConciliarTarjetas", "ConciliacionLote", r.ConciliacionId.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("ConciliarTarjetas", "ConciliacionLote", r.ConciliacionId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = "Conciliación registrada.";
         return RedirectToAction(nameof(Detalle), new { id = r.ConciliacionId });
     }

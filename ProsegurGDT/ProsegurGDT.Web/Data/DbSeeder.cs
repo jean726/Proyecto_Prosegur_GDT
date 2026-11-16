@@ -38,7 +38,7 @@ public static class DbSeeder
             }
         }
 
-        if (cargarDemo) await CrearUsuariosDemoAsync(sp);
+        if (cargarDemo) await CrearUsuariosDemoAsync(sp, config["Seed:ClaveDemo"]);
 
         if (!await db.Bancos.AnyAsync())
         {
@@ -149,9 +149,13 @@ public static class DbSeeder
     private static string Texto(this string rol) =>
         System.Text.RegularExpressions.Regex.Replace(rol, "(?<!^)([A-Z])", " $1").Replace(" De ", " de ").Replace("Boveda", "Bóveda");
 
-    private static async Task CrearUsuariosDemoAsync(IServiceProvider sp)
+    // La contraseña de las cuentas demo viene de Seed:ClaveDemo (appsettings.Development.json o variable de entorno),
+    // no del código. Sin ella no se crean cuentas demo nuevas; las que ya existen no se tocan.
+    private static async Task CrearUsuariosDemoAsync(IServiceProvider sp, string? claveDemo)
     {
         var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
+        var avisado = false;
         foreach (var rol in Roles.Todos.Where(r => r != Roles.Administrador))
         {
             var email = $"{rol.ToLowerInvariant()}@gdt.local";
@@ -166,6 +170,12 @@ public static class DbSeeder
                 }
                 continue;
             }
+            if (string.IsNullOrWhiteSpace(claveDemo))
+            {
+                if (!avisado) log.LogWarning("Seed:ClaveDemo no está configurada: no se crean las cuentas demo que faltan.");
+                avisado = true;
+                continue;
+            }
             var u = new ApplicationUser
             {
                 UserName = email,
@@ -174,8 +184,9 @@ public static class DbSeeder
                 NombreCompleto = rol.Texto(),
                 Activo = true
             };
-            var r = await um.CreateAsync(u, "<clave-demo>");
+            var r = await um.CreateAsync(u, claveDemo);
             if (r.Succeeded) await um.AddToRoleAsync(u, rol);
+            else log.LogWarning("No se pudo crear la cuenta demo {Correo}: {Errores}", email, string.Join("; ", r.Errors.Select(e => e.Description)));
         }
     }
 }

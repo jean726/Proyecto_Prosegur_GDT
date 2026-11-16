@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Prosegur GDT</title>
-    <script type="importmap"></script>
+    <link rel="icon" type="image/png" href="~/img/logo-prosegur.png" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/fuentes.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -15,14 +15,15 @@
     var ctrlActual = ViewContext.RouteData.Values["controller"]?.ToString();
 }
 <body class="@(autenticado ? "pg-con-lateral" : "pg-sin-lateral") @(ViewData["Torre"] is true ? "pg-torre" : "")">
+    <a class="pg-saltar" href="#contenido">Saltar al contenido</a>
     @if (autenticado)
     {
         <aside class="pg-lateral">
             <a class="pg-marca" asp-area="" asp-controller="Home" asp-action="Index">
-                <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" onerror="this.style.display='none'" />
+                <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" data-ocultar-si-falla />
                 <span>Prosegur GDT</span>
             </a>
-            <nav class="pg-menu">
+            <nav class="pg-menu" aria-label="Menú principal">
                 <a class="pg-item @(ctrlActual == "Home" ? "activo" : "")" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
                 <partial name="_MenuPorRol" />
             </nav>
@@ -35,14 +36,14 @@
     {
         <header class="pg-barra">
             <a class="pg-marca" asp-area="" asp-controller="Home" asp-action="Index">
-                <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" onerror="this.style.display='none'" />
+                <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" data-ocultar-si-falla />
                 <span>Prosegur GDT</span>
             </a>
             <partial name="_LoginPartial" />
         </header>
     }
 
-    <main role="main" class="pg-contenido">
+    <main role="main" class="pg-contenido" id="contenido" tabindex="-1">
         @RenderBody()
         <footer class="pg-pie">&copy; 2026 - Prosegur GDT</footer>
     </main>

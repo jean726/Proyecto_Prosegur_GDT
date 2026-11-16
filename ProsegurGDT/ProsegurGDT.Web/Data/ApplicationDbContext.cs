@@ -57,6 +57,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         b.Entity<Remito>().HasIndex(x => x.Numero).IsUnique();
         b.Entity<Tarjeta>().HasIndex(x => x.Codigo).IsUnique();
+        // C6: los paneles y las bandejas cuentan y filtran tarjetas por estado; el historial se ordena por fecha
+        b.Entity<Tarjeta>().HasIndex(x => x.Estado);
+        b.Entity<AuditLog>().HasIndex(x => x.FechaHoraUtc);
 
         b.Entity<Lote>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);
         b.Entity<Tarjeta>().Property(x => x.Estado).HasConversion<string>().HasMaxLength(40);

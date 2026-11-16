@@ -17,7 +17,7 @@
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
-        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" data-accion="imprimir">Imprimir</button>
     </div>
 </div>
 
@@ -110,7 +110,7 @@
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
-                <tr><th>#</th><th>Tarjeta</th><th>Cliente</th><th>Dirección de entrega</th><th>Cita</th><th>Verificación</th></tr>
+                <tr><th scope="col">#</th><th scope="col">Tarjeta</th><th scope="col">Cliente</th><th scope="col">Dirección de entrega</th><th scope="col">Cita</th><th scope="col">Verificación</th></tr>
             </thead>
             <tbody>
                 @{ var n = 0; }

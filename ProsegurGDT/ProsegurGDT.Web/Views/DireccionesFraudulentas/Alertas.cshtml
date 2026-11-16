@@ -11,7 +11,7 @@
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>Tarjeta</th><th>Dirección de la tarjeta</th><th>Dirección registrada</th><th>Puntaje</th><th>Detalle</th><th></th></tr></thead>
+            <thead><tr><th scope="col">Tarjeta</th><th scope="col">Dirección de la tarjeta</th><th scope="col">Dirección registrada</th><th scope="col">Puntaje</th><th scope="col">Detalle</th><th scope="col"></th></tr></thead>
             <tbody>
                 @foreach (var a in Model)
                 {
@@ -27,7 +27,7 @@
                         <td class="text-end text-nowrap">
                             <form asp-action="ResolverAlerta" asp-route-id="@a.Id" method="post">
                                 <button name="confirmar" value="true" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('¿Confirmar fraude? La tarjeta quedará no clasificable.');">Confirmar fraude</button>
+                                        data-confirmar="¿Confirmar fraude? La tarjeta quedará no clasificable.">Confirmar fraude</button>
                                 <button name="confirmar" value="false" class="btn btn-sm btn-outline-secondary">Descartar</button>
                             </form>
                         </td>

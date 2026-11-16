@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,7 @@ public class ReportesEntregasController : Controller
             TempData["Error"] = r.Mensaje;
             return RedirectToAction(nameof(Index));
         }
-        await _audit.RegistrarAsync("DisenarReporteEntregas", "ReporteEntregas", r.ReporteId.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("DisenarReporteEntregas", "ReporteEntregas", r.ReporteId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id = r.ReporteId });
     }
@@ -52,7 +53,7 @@ public class ReportesEntregasController : Controller
             return RedirectToAction(nameof(Detalle), new { id = m.Id });
         }
         var r = await _reportes.ActualizarAsync(m.Id, m.Observacion);
-        if (r.Ok) await _audit.RegistrarAsync("ActualizarReporteEntregas", "ReporteEntregas", m.Id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("ActualizarReporteEntregas", "ReporteEntregas", m.Id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id = m.Id });
     }
@@ -61,7 +62,7 @@ public class ReportesEntregasController : Controller
     public async Task<IActionResult> Remitir(int id)
     {
         var r = await _reportes.RemitirAsync(id, UserId);
-        if (r.Ok) await _audit.RegistrarAsync("RemitirReporteEntregas", "ReporteEntregas", id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("RemitirReporteEntregas", "ReporteEntregas", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id });
     }

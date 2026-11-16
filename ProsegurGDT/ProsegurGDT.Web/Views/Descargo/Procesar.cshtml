@@ -46,7 +46,7 @@
             </form>
             <form asp-action="SinDocumentacion" method="post" class="d-flex gap-2 flex-grow-1">
                 <input type="hidden" name="Id" value="@Model.HojaRutaId" />
-                <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Hoja sin cargos: detalle de la incidencia a escalar al Supervisor" />
+                <input type="text" name="Texto" class="form-control" maxlength="300" placeholder="Hoja sin cargos: detalle de la incidencia a escalar al Supervisor" aria-label="Detalle de la incidencia de la hoja sin cargos" />
                 <button type="submit" class="btn btn-outline-danger text-nowrap">Sin cargos</button>
             </form>
         </div>
@@ -174,7 +174,7 @@
     <div class="pg-tarjeta pg-bloque">
         <h2 class="h6 mb-2">Cerrar el descargo de la ruta</h2>
         <p class="text-muted small">Quedan @Model.Pendientes tarjeta(s) sin verificar. Solo puede cerrarse cuando todas tengan su resultado.</p>
-        <form asp-action="Cerrar" asp-route-id="@Model.HojaRutaId" method="post" onsubmit="return confirm('¿Cerrar el descargo de esta ruta?');">
+        <form asp-action="Cerrar" asp-route-id="@Model.HojaRutaId" method="post" data-confirmar="¿Cerrar el descargo de esta ruta?">
             <button type="submit" class="btn btn-primary" disabled="@(Model.Pendientes > 0 || Model.CargosRecibidos == 0)">Cerrar hoja de ruta</button>
         </form>
     </div>

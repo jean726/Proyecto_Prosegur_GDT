@@ -459,6 +459,8 @@ namespace ProsegurGDT.Web.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FechaHoraUtc");
+
                     b.ToTable("AuditLogs");
                 });
 
@@ -1756,6 +1758,8 @@ namespace ProsegurGDT.Web.Data.Migrations
 
                     b.HasIndex("Codigo")
                         .IsUnique();
+
+                    b.HasIndex("Estado");
 
                     b.HasIndex("LoteId");
 

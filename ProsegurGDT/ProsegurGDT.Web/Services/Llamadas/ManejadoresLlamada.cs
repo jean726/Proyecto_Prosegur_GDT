@@ -1,4 +1,5 @@
-﻿using ProsegurGDT.Web.Data;
+﻿using System.Globalization;
+using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Domain;
 
 namespace ProsegurGDT.Web.Services;
@@ -28,7 +29,8 @@ public class ManejadorCitaExitosa : IManejadorResultadoLlamada
     {
         if (c.Fecha is null) return "Ingrese la fecha de entrega.";
         if (DateOnly.FromDateTime(c.Fecha.Value) < DateOnly.FromDateTime(HoraLima.Ahora)) return "La fecha de entrega no puede ser anterior a hoy.";
-        if (!TimeOnly.TryParse(c.Hora, out _)) return "Ingrese una hora válida.";
+        // La hora llega del <input type="time"> como HH:mm, sin depender del idioma del servidor
+        if (!TimeOnly.TryParse(c.Hora, CultureInfo.InvariantCulture, out _)) return "Ingrese una hora válida.";
         if (string.IsNullOrWhiteSpace(c.Lugar)) return "Ingrese el lugar de entrega.";
         return null;
     }
@@ -36,7 +38,7 @@ public class ManejadorCitaExitosa : IManejadorResultadoLlamada
     public string Aplicar(ContextoLlamada c)
     {
         var fecha = DateOnly.FromDateTime(c.Fecha!.Value);
-        var hora = TimeOnly.Parse(c.Hora!);
+        var hora = TimeOnly.Parse(c.Hora!, CultureInfo.InvariantCulture);
         var lugar = c.Lugar!.Trim();
         _db.Citas.Add(new Cita
         {

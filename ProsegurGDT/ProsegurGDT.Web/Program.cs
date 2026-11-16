@@ -9,9 +9,13 @@ using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Services;
 using ProsegurGDT.Web.Services.Api;
+using ProsegurGDT.Web.Services.Salud;
+using ProsegurGDT.Web.Services.Seguridad;
 using Microsoft.AspNetCore.Mvc.DataAnnotations;
 
 var builder = WebApplication.CreateBuilder(args);
+// C2: no anunciar el servidor en la cabecera «Server»
+builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -52,6 +56,15 @@ builder.Services.ConfigureApplicationCookie(o =>
     };
     o.AccessDeniedPath = "/Home/AccesoDenegado";
 });
+// C2: cookies solo por HTTPS fuera de desarrollo (en local se admite el perfil http)
+var cookiesSeguras = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+builder.Services.Configure<CookiePolicyOptions>(o =>
+{
+    o.Secure = cookiesSeguras;
+    o.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+    o.MinimumSameSitePolicy = SameSiteMode.Lax;
+});
+builder.Services.AddAntiforgery(o => o.Cookie.SecurePolicy = cookiesSeguras);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
@@ -85,6 +98,7 @@ builder.Services.AddSingleton<IEmbeddingService>(sp =>
     return new HashingNgramEmbeddingService();
 });
 builder.Services.AddScoped<IAddressRiskService, AddressRiskService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 // Una cuenta desactivada pierde la sesión en ≤ 1 minuto
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
@@ -92,6 +106,8 @@ builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInter
 builder.Services.AddControllersWithViews(o =>
 {
     o.Filters.Add(new AuthorizeFilter());
+    // C2: todo POST/PUT/DELETE de la web exige token antiforgery aunque la acción no lo declare (la API usa JWT y se exime)
+    o.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
     o.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Este campo es obligatorio.");
     o.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((v, c) => $"El valor '{v}' no es válido para {c}.");
     o.ModelBindingMessageProvider.SetValueIsInvalidAccessor(v => $"El valor '{v}' no es válido.");
@@ -142,14 +158,31 @@ builder.Services.AddAuthentication(o =>
         }, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json")
     };
 });
+// CU22: máximo de intentos de inicio de sesión por minuto y dirección IP (además del bloqueo de la cuenta).
+// Limites:TokenMovilPorMinuto para la API y Limites:LoginWebPorMinuto para la web; 10 por defecto.
+var limites = builder.Configuration.GetSection(OpcionesLimites.Seccion).Get<OpcionesLimites>() ?? new OpcionesLimites();
+builder.Services.AddSingleton(limites);
+builder.Services.AddSingleton<ILimitadorLoginWeb, LimitadorLoginWeb>();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    // CU22 por la API: máximo 10 intentos por minuto y dirección IP (además del bloqueo de la cuenta)
+    o.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.Headers.RetryAfter = "60";
+        await ctx.HttpContext.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Status = 429, Title = "Demasiados intentos",
+            Detail = "Demasiados intentos de inicio de sesión. Espere un minuto e intente nuevamente."
+        }, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json", ct);
+    };
     o.AddPolicy("token-movil", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "?",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = limites.TokenMovilPorMinuto, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
+// C4 — /health: estado de la base de datos y del motor de IA (para monitoreo y para comprobar un despliegue)
+builder.Services.AddHealthChecks()
+    .AddCheck<ComprobacionBaseDatos>("base-de-datos")
+    .AddCheck<ComprobacionMotorIa>("motor-ia");
 builder.Services.AddOpenApi("v1", o => o.ShouldInclude = d => d.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
 // Singleton
 builder.Services.AddSingleton<IConfiguracionOperativa, ConfiguracionOperativa>();
@@ -198,10 +231,12 @@ if (confiarEnProxy || forwardedDelHost)
 
 var app = builder.Build();
 if (confiarEnProxy && !forwardedDelHost) app.UseForwardedHeaders();
+app.UseMiddleware<CabecerasSeguridadMiddleware>();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();
 
-app.Logger.LogWarning("IA umbrales: medio={M} alto={A}",
-    app.Configuration["IA:UmbralMedio"], app.Configuration["IA:UmbralAlto"]);
+var operativa = app.Services.GetRequiredService<IConfiguracionOperativa>();
+app.Logger.LogInformation("Umbrales de la IA: medio={Medio} alto={Alto}; intentos de contacto: {Intentos}",
+    operativa.UmbralMedio, operativa.UmbralAlto, operativa.MaxIntentosContacto);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -220,15 +255,31 @@ else
     app.UseHsts();
 }
 
+// C4 — Las respuestas de error sin cuerpo (404, 400, 405…) muestran una página propia en español.
+// La API y /health conservan sus respuestas JSON.
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/api") && !ctx.Request.Path.StartsWithSegments("/health")
+        && !ctx.Request.Path.StartsWithSegments("/openapi"),
+    rama => rama.UseStatusCodePagesWithReExecute("/Home/Estado/{0}"));
+
 app.UseHttpsRedirection();
+app.UseCookiePolicy();
 app.UseMiddleware<FiltroIntranetMiddleware>();
 
-// El registro público queda cerrado: los usuarios los crea el Administrador (CU24)
+// De las páginas de Identity solo se usan el inicio y el cierre de sesión. El registro público queda cerrado
+// (los usuarios los crea el Administrador, CU24) y el resto de la interfaz por defecto (recuperar contraseña,
+// gestión de la cuenta, borrado de datos personales, 2FA) no forma parte del sistema: responde 404.
 app.Use(async (ctx, next) =>
 {
-    if (ctx.Request.Path.StartsWithSegments("/Identity/Account/Register", StringComparison.OrdinalIgnoreCase))
+    var ruta = ctx.Request.Path;
+    if (ruta.StartsWithSegments("/Identity", StringComparison.OrdinalIgnoreCase)
+        && !ruta.Equals("/Identity/Account/Login", StringComparison.OrdinalIgnoreCase)
+        && !ruta.Equals("/Identity/Account/Logout", StringComparison.OrdinalIgnoreCase))
     {
-        ctx.Response.Redirect("/Identity/Account/Login");
+        if (ruta.StartsWithSegments("/Identity/Account/Register", StringComparison.OrdinalIgnoreCase))
+            ctx.Response.Redirect("/Identity/Account/Login");
+        else
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
         return;
     }
     await next();
@@ -238,6 +289,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+app.MapHealthChecks("/health", SaludRespuesta.Opciones).AllowAnonymous();
 
 // Documento OpenAPI de /api/v1 (solo en desarrollo): /openapi/v1.json
 if (app.Environment.IsDevelopment()) app.MapOpenApi().AllowAnonymous();
@@ -250,3 +303,5 @@ app.MapControllerRoute(
 app.MapRazorPages().WithStaticAssets();
 
 app.Run();
+// C1: las pruebas de integración (WebApplicationFactory) necesitan ver la clase Program.
+public partial class Program;

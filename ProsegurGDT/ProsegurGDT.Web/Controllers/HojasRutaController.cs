@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,7 @@ public class HojasRutaController : Controller
     public async Task<IActionResult> Generar(int id)
     {
         var r = await _hojas.GenerarAsync(id, UserId);
-        if (r.Ok) await _audit.RegistrarAsync("GenerarHojasRuta", "HojaAsignacion", id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("GenerarHojasRuta", "HojaAsignacion", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Index));
     }
@@ -81,7 +82,7 @@ public class HojasRutaController : Controller
     private async Task<IActionResult> Ejecutar(int id, Func<int, Task<ResultadoHojaRuta>> accion, string auditoria)
     {
         var r = await accion(id);
-        if (r.Detalle is not null) await _audit.RegistrarAsync(auditoria, "HojaRuta", id.ToString(), r.Detalle);
+        if (r.Detalle is not null) await _audit.RegistrarAsync(auditoria, "HojaRuta", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id });
     }

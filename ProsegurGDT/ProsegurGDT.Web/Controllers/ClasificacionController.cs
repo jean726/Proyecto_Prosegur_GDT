@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -51,7 +52,8 @@ public class ClasificacionController : Controller
     public async Task<IActionResult> Evaluar(int id)
     {
         if (!await _db.Lotes.AnyAsync(l => l.Id == id)) return NotFound();
-        await _riesgo.EvaluarLoteAsync(id);
+        var nuevas = await _riesgo.EvaluarLoteAsync(id);
+        if (nuevas > 0) await _audit.RegistrarAsync("EvaluarAlertasLote", "Lote", id.ToString(CultureInfo.InvariantCulture), $"{nuevas} alertas de dirección generadas");
         return RedirectToAction(nameof(Clasificar), new { id });
     }
 
@@ -94,7 +96,7 @@ public class ClasificacionController : Controller
 
         foreach (var t in libres) t.ZonaId = zonas[t.Id]!.Value;
         await _db.SaveChangesAsync();
-        await _audit.RegistrarAsync("ClasificarLote", "Lote", loteId.ToString(),
+        await _audit.RegistrarAsync("ClasificarLote", "Lote", loteId.ToString(CultureInfo.InvariantCulture),
             $"{libres.Count} clasificadas; {bloqueadas.Count} bloqueadas por alerta");
         TempData["Ok"] = $"Clasificación de tarjetas registrada exitosamente. {libres.Count} clasificadas; {bloqueadas.Count} pendientes de revisión del Buscador.";
         return RedirectToAction(nameof(Index));
@@ -122,7 +124,7 @@ public class ClasificacionController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var d2 = await _riesgo.AgregarAsync(dir, motivo, userId, false, $"Propuesta por Clasificador (lote {loteId})");
-        await _audit.RegistrarAsync("ProponerDireccionSospechosa", "DireccionFraudulenta", d2.Id.ToString(), dir);
+        await _audit.RegistrarAsync("ProponerDireccionSospechosa", "DireccionFraudulenta", d2.Id.ToString(CultureInfo.InvariantCulture), dir);
         TempData["Ok"] = "Dirección propuesta. Queda pendiente de validación por el Buscador.";
         return RedirectToAction(nameof(Clasificar), new { id = loteId });
     }
@@ -151,7 +153,7 @@ public class ClasificacionController : Controller
         {
             Lote = lote,
             Filas = filas,
-            Zonas = zonasDb.Select(z => new SelectListItem(z.Nombre, z.Id.ToString())).ToList()
+            Zonas = zonasDb.Select(z => new SelectListItem(z.Nombre, z.Id.ToString(CultureInfo.InvariantCulture))).ToList()
         };
     }
 }

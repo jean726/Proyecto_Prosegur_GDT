@@ -45,7 +45,7 @@
         <div class="fw-semibold mb-2">Repartidores disponibles</div>
         <div class="table-responsive">
             <table class="table table-sm mb-0">
-                <thead><tr><th>Nombre</th><th>Tipo</th><th>Zona habitual</th><th class="text-end">Capacidad</th><th class="text-end">Asignadas hoy</th></tr></thead>
+                <thead><tr><th scope="col">Nombre</th><th scope="col">Tipo</th><th scope="col">Zona habitual</th><th scope="col" class="text-end">Capacidad</th><th scope="col" class="text-end">Asignadas hoy</th></tr></thead>
                 <tbody>
                     @foreach (var r in Model.Repartidores)
                     {
@@ -70,12 +70,12 @@
                 <table class="table align-middle">
                     <thead>
                         <tr>
-                            <th>Zona</th>
-                            <th class="text-end">Reporte</th>
-                            <th class="text-end">Con cita</th>
-                            <th>Tipo requerido</th>
-                            <th style="min-width:170px">Acción</th>
-                            <th style="min-width:260px">Repartidor / Zona destino</th>
+                            <th scope="col">Zona</th>
+                            <th scope="col" class="text-end">Reporte</th>
+                            <th scope="col" class="text-end">Con cita</th>
+                            <th scope="col">Tipo requerido</th>
+                            <th scope="col" style="min-width:170px">Acción</th>
+                            <th scope="col" style="min-width:260px">Repartidor / Zona destino</th>
                         </tr>
                     </thead>
                     <tbody>

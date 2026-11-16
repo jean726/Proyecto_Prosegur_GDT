@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using ProsegurGDT.Web.Data;
+using ProsegurGDT.Web.Domain;
+using ProsegurGDT.Web.Services.Seguridad;
 
 namespace ProsegurGDT.Web.Areas.Identity.Pages.Account;
 
@@ -13,13 +15,16 @@ public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILimitadorLoginWeb _limitador;
     private readonly int _maxIntentos;
     private readonly int _minutosBloqueo;
 
-    public LoginModel(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IOptions<IdentityOptions> opciones)
+    public LoginModel(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager,
+        IOptions<IdentityOptions> opciones, ILimitadorLoginWeb limitador)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _limitador = limitador;
         _maxIntentos = opciones.Value.Lockout.MaxFailedAccessAttempts;
         _minutosBloqueo = (int)opciones.Value.Lockout.DefaultLockoutTimeSpan.TotalMinutes;
     }
@@ -51,35 +56,40 @@ public class LoginModel : PageModel
         ReturnUrl = returnUrl;
         if (!ModelState.IsValid) return Page();
 
-        // RN-29: el Repartidor opera solo desde la aplicación móvil
-        if (await _userManager.FindByNameAsync(Input.Email) is { } cuenta && await _userManager.IsInRoleAsync(cuenta, ProsegurGDT.Web.Domain.Roles.Repartidor)
-            && await _userManager.CheckPasswordAsync(cuenta, Input.Password))
+        // Límite de intentos por minuto desde una misma dirección IP (además del bloqueo de cada cuenta)
+        if (!_limitador.Permitir(HttpContext))
         {
-            ModelState.AddModelError(string.Empty, "Las cuentas de repartidor ingresan desde la aplicación móvil, no desde la plataforma web.");
+            Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            Response.Headers.RetryAfter = "60";
+            ModelState.AddModelError(string.Empty, "Demasiados intentos de inicio de sesión desde este equipo o red. Espere un minuto e intente nuevamente.");
+            return Page();
+        }
+
+        // RN-29: el Repartidor opera solo desde la aplicación móvil. La contraseña se comprueba con el mismo
+        // conteo de intentos fallidos y bloqueo que cualquier cuenta: el aviso solo aparece si es correcta.
+        if (await _userManager.FindByNameAsync(Input.Email) is { } cuenta && await _userManager.IsInRoleAsync(cuenta, Roles.Repartidor))
+        {
+            var comprobacion = await _signInManager.CheckPasswordSignInAsync(cuenta, Input.Password, lockoutOnFailure: true);
+            ModelState.AddModelError(string.Empty, comprobacion.Succeeded
+                ? "Las cuentas de repartidor ingresan desde la aplicación móvil, no desde la plataforma web."
+                : Mensaje(comprobacion));
             return Page();
         }
 
         var r = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
         if (r.Succeeded) return LocalRedirect(returnUrl);
 
-        if (r.IsLockedOut)
-            ModelState.AddModelError(string.Empty, $"Su cuenta ha sido bloqueada por {_minutosBloqueo} minutos debido a múltiples intentos fallidos. Comuníquese con el administrador del sistema.");
-        else if (r.IsNotAllowed)
-            ModelState.AddModelError(string.Empty, "Su cuenta de usuario ha sido desactivada. Comuníquese con el administrador del sistema.");
-        else
-            ModelState.AddModelError(string.Empty, await MensajeCredencialesAsync());
+        ModelState.AddModelError(string.Empty, Mensaje(r));
         return Page();
     }
 
-    private async Task<string> MensajeCredencialesAsync()
+    // El mensaje de credenciales incorrectas es el mismo exista o no la cuenta: no revela qué correos están registrados.
+    private string Mensaje(Microsoft.AspNetCore.Identity.SignInResult r)
     {
-        const string generico = "Usuario o contraseña incorrectos. Verifique sus datos e intente nuevamente.";
-        var u = await _userManager.FindByNameAsync(Input.Email);
-        if (u is null) return generico;
-        var restantes = _maxIntentos - await _userManager.GetAccessFailedCountAsync(u);
-        if (restantes <= 0) return generico;
-        return restantes == 1
-            ? "Usuario o contraseña incorrectos. Le queda 1 intento antes del bloqueo temporal."
-            : $"Usuario o contraseña incorrectos. Le quedan {restantes} intentos antes del bloqueo temporal.";
+        if (r.IsLockedOut)
+            return $"Su cuenta ha sido bloqueada por {_minutosBloqueo} minutos debido a múltiples intentos fallidos. Comuníquese con el administrador del sistema.";
+        if (r.IsNotAllowed)
+            return "Su cuenta de usuario ha sido desactivada. Comuníquese con el administrador del sistema.";
+        return $"Usuario o contraseña incorrectos. Verifique sus datos e intente nuevamente. Tras {_maxIntentos} intentos fallidos la cuenta se bloquea {_minutosBloqueo} minutos.";
     }
 }

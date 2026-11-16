@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Globalization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Domain;
 using ProsegurGDT.Web.Models;
@@ -87,14 +88,14 @@ public static class DbSeederLoteDemo
             var rp = await planillas.GuardarAsync(vm, clasificador.Id);
             if (!rp.Ok) { logger.LogWarning("Lote demo: no se pudo armar la planilla: {Errores}", string.Join(" ", rp.Errores)); return; }
             var planilla = await db.Planillas.FirstAsync(p => p.LoteId == lote.Id);
-            await AuditarAsync(db, clasificador, "GenerarPlanillaArmado", "Planilla", planilla.Id.ToString(), $"Lote {lote.CodigoHojaControl} (demo)");
+            await AuditarAsync(db, clasificador, "GenerarPlanillaArmado", "Planilla", planilla.Id.ToString(CultureInfo.InvariantCulture), $"Lote {lote.CodigoHojaControl} (demo)");
         }
 
         if (!await db.ReportesDensidad.AnyAsync(r => r.LoteId == lote.Id))
         {
             var rd = await densidad.GenerarAsync(lote.Id, clasificador.Id);
             if (!rd.Ok) { logger.LogWarning("Lote demo: no se pudo generar el reporte de densidad: {Error}", rd.Error); return; }
-            await AuditarAsync(db, clasificador, "GenerarReporteDensidad", "ReporteDensidad", rd.ReporteId.ToString(), rd.Detalle);
+            await AuditarAsync(db, clasificador, "GenerarReporteDensidad", "ReporteDensidad", rd.ReporteId.ToString(CultureInfo.InvariantCulture), rd.Detalle);
         }
 
         // Analista de Rutas: hoja de asignación con un repartidor por zona
@@ -116,7 +117,7 @@ public static class DbSeederLoteDemo
             var ra = await asignaciones.GenerarAsync(vm, analista.Id);
             if (!ra.Ok) { logger.LogWarning("Lote demo: no se pudo generar la hoja de asignación: {Errores}", string.Join(" ", ra.Errores)); return; }
             hoja = await db.HojasAsignacion.FirstAsync(h => h.LoteId == lote.Id);
-            await AuditarAsync(db, analista, "GenerarHojaAsignacion", "HojaAsignacion", hoja.Id.ToString(), ra.Detalle);
+            await AuditarAsync(db, analista, "GenerarHojaAsignacion", "HojaAsignacion", hoja.Id.ToString(CultureInfo.InvariantCulture), ra.Detalle);
         }
 
         // Supervisor: hojas de ruta pendientes de aprobación
@@ -124,7 +125,7 @@ public static class DbSeederLoteDemo
         {
             var rh = await hojasRuta.GenerarAsync(hoja.Id, supervisor.Id);
             if (!rh.Ok) logger.LogWarning("Lote demo: no se pudieron generar las hojas de ruta: {Error}", rh.Mensaje);
-            else await AuditarAsync(db, supervisor, "GenerarHojasRuta", "HojaAsignacion", hoja.Id.ToString(), rh.Detalle);
+            else await AuditarAsync(db, supervisor, "GenerarHojasRuta", "HojaAsignacion", hoja.Id.ToString(CultureInfo.InvariantCulture), rh.Detalle);
         }
     }
 
@@ -233,9 +234,9 @@ public static class DbSeederLoteDemo
         await db.SaveChangesAsync();
 
         // Mismo rastro que deja el flujo real (LotesController / ClientesController)
-        await AuditarAsync(db, supervisor, "RegistrarLote", "Lote", lote.Id.ToString(),
+        await AuditarAsync(db, supervisor, "RegistrarLote", "Lote", lote.Id.ToString(CultureInfo.InvariantCulture),
             $"Remito {NumeroRemito}: declaradas {total}, contadas {total}, ingresado en custodia (demo)");
-        await AuditarAsync(db, supervisor, "GenerarFichaClientes", "Lote", lote.Id.ToString(), $"{total} tarjetas (demo)");
+        await AuditarAsync(db, supervisor, "GenerarFichaClientes", "Lote", lote.Id.ToString(CultureInfo.InvariantCulture), $"{total} tarjetas (demo)");
         return lote;
     }
 

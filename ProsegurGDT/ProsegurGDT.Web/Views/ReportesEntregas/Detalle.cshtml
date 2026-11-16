@@ -11,7 +11,7 @@
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
-        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" data-accion="imprimir">Imprimir</button>
     </div>
 </div>
 
@@ -58,7 +58,7 @@
 <div class="pg-tarjeta pg-tarjeta-tabla mb-3">
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>Repartidor</th><th>Sector</th><th class="text-end">Asignadas</th><th class="text-end">Entregadas</th><th class="text-end">Devueltas</th><th class="text-end">Incidencias</th><th class="text-end">Sin resultado</th></tr></thead>
+            <thead><tr><th scope="col">Repartidor</th><th scope="col">Sector</th><th scope="col" class="text-end">Asignadas</th><th scope="col" class="text-end">Entregadas</th><th scope="col" class="text-end">Devueltas</th><th scope="col" class="text-end">Incidencias</th><th scope="col" class="text-end">Sin resultado</th></tr></thead>
             <tbody>
                 @foreach (var l in Model.Lineas)
                 {
@@ -82,7 +82,7 @@
     <div class="pg-tarjeta pg-bloque no-imprimir">
         <h2 class="h6 mb-2">Remitir al área de Descargo (CU08)</h2>
         <p class="text-muted small">Al cierre de la jornada, remita el reporte consolidado. Se congelan los totales con los datos actuales y el Descargador lo recibe para iniciar el Descargo.</p>
-        <form asp-action="Remitir" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('¿Remitir el reporte de entregas al área de Descargo? Ya no podrá modificarse.');">
+        <form asp-action="Remitir" asp-route-id="@Model.Id" method="post" data-confirmar="¿Remitir el reporte de entregas al área de Descargo? Ya no podrá modificarse.">
             <button type="submit" class="btn btn-primary">Remitir reporte de entregas</button>
         </form>
     </div>

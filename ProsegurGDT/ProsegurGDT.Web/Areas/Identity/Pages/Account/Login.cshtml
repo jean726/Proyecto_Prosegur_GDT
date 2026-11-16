@@ -15,7 +15,7 @@
 <body class="pg-login">
     <section class="pg-login-izq">
         <div class="pg-login-marca">
-            <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" onerror="this.style.display='none'" />
+            <img class="pg-logo" src="~/img/logo-prosegur.png" alt="" data-ocultar-si-falla />
             <span>Prosegur GDT</span>
         </div>
         <div class="pg-login-texto">
@@ -46,6 +46,7 @@
         </form>
     </section>
 
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         document.querySelector('.pg-login-form').addEventListener('submit', function () {
             var b = this.querySelector('button[type=submit]');

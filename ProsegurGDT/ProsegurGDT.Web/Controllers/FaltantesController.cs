@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +36,7 @@ public class FaltantesController : Controller
         var r = await _faltantes.LocalizarAsync(id, ubicacion, userId);
         if (!r.Ok) { TempData["Error"] = r.Error; return RedirectToAction(nameof(Localizar), new { id }); }
 
-        await _audit.RegistrarAsync("LocalizarTarjetaFaltante", "IncidenciaConciliacion", id.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("LocalizarTarjetaFaltante", "IncidenciaConciliacion", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = "Tarjeta localizada y devuelta a custodia. El Clasificador puede volver a verificar el lote.";
         return RedirectToAction(nameof(Index));
     }
@@ -47,7 +48,7 @@ public class FaltantesController : Controller
         var r = await _faltantes.NoLocalizarAsync(id, userId);
         if (!r.Ok) { TempData["Error"] = r.Error; return RedirectToAction(nameof(Localizar), new { id }); }
 
-        await _audit.RegistrarAsync("TarjetaFaltanteNoLocalizada", "IncidenciaConciliacion", id.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("TarjetaFaltanteNoLocalizada", "IncidenciaConciliacion", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = "Tarjeta marcada como no localizada (extraviada con indicios de fraude).";
         return RedirectToAction(nameof(Index));
     }
