@@ -11,4 +11,8 @@ public static class ConfiguracionApi
 #endif
 
     public static readonly TimeSpan Espera = TimeSpan.FromSeconds(30);
+
+    // C8 — Reintento de las lecturas ante un fallo de red: hasta 3 intentos, con 1 s y 2 s de pausa.
+    public const int IntentosDeLectura = 3;
+    public static readonly TimeSpan PausaEntreIntentos = TimeSpan.FromSeconds(1);
 }

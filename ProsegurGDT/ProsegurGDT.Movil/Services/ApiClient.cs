@@ -74,19 +74,32 @@ public class ApiClient
         if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
             throw new ApiException(null, SinConexion);
 
-        using var req = new HttpRequestMessage(metodo, ruta);
-        if (cuerpo is not null) req.Content = JsonContent.Create(cuerpo, cuerpo.GetType(), options: Json);
-        if (autenticada && _sesion.Token is not null)
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sesion.Token);
-
-        HttpResponseMessage resp;
-        try
+        // Las lecturas (GET) se reintentan solas ante un corte breve de señal: no cambian nada en el servidor.
+        // Los registros (POST/PUT) no se repiten automáticamente para no duplicar una operación que sí llegó.
+        var intentos = metodo == HttpMethod.Get ? ConfiguracionApi.IntentosDeLectura : 1;
+        HttpResponseMessage? resp = null;
+        for (var intento = 1; resp is null; intento++)
         {
-            resp = await _http.SendAsync(req);
-        }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
-        {
-            throw new ApiException(null, SinConexion);
+            using var req = new HttpRequestMessage(metodo, ruta);
+            if (cuerpo is not null) req.Content = JsonContent.Create(cuerpo, cuerpo.GetType(), options: Json);
+            if (autenticada && _sesion.Token is not null)
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sesion.Token);
+            try
+            {
+                resp = await _http.SendAsync(req);
+                // 502/503/504: el servidor está arrancando (plan gratuito de Azure) o saturado un instante
+                if (intento < intentos && (int)resp.StatusCode is 502 or 503 or 504)
+                {
+                    resp.Dispose();
+                    resp = null;
+                    await Task.Delay(ConfiguracionApi.PausaEntreIntentos * intento);
+                }
+            }
+            catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+            {
+                if (intento >= intentos) throw new ApiException(null, SinConexion);
+                await Task.Delay(ConfiguracionApi.PausaEntreIntentos * intento);
+            }
         }
 
         using (resp)
