@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -20,18 +21,22 @@ public class UsuariosController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var users = await _um.Users.OrderBy(u => u.NombreCompleto).ToListAsync();
-        var filas = new List<UsuarioFilaVM>();
-        foreach (var u in users)
-            filas.Add(new UsuarioFilaVM
-            {
-                Id = u.Id,
-                NombreCompleto = u.NombreCompleto,
-                Email = u.Email ?? "",
-                Rol = string.Join(", ", await _um.GetRolesAsync(u)),
-                Activo = u.Activo,
-                Bloqueado = await _um.IsLockedOutAsync(u)
-            });
+        var users = await _um.Users.AsNoTracking().OrderBy(u => u.NombreCompleto).ToListAsync();
+        // Roles de todos los usuarios en una sola consulta (antes eran dos consultas por cada usuario)
+        var roles = (await (from ur in _db.UserRoles
+                            join r in _db.Roles on ur.RoleId equals r.Id
+                            select new { ur.UserId, r.Name }).AsNoTracking().ToListAsync())
+            .ToLookup(x => x.UserId, x => x.Name);
+        var ahora = DateTimeOffset.UtcNow;
+        var filas = users.Select(u => new UsuarioFilaVM
+        {
+            Id = u.Id,
+            NombreCompleto = u.NombreCompleto,
+            Email = u.Email ?? "",
+            Rol = string.Join(", ", roles[u.Id].Order()),
+            Activo = u.Activo,
+            Bloqueado = u.LockoutEnabled && u.LockoutEnd > ahora
+        }).ToList();
         return View(filas);
     }
 
@@ -221,7 +226,7 @@ public class UsuariosController : Controller
         ViewBag.Repartidores = await _db.Repartidores.AsNoTracking()
             .Where(r => r.Activo && (r.UsuarioId == null || r.UsuarioId == usuarioId))
             .OrderBy(r => r.Nombre)
-            .Select(r => new SelectListItem(r.Nombre, r.Id.ToString()))
+            .Select(r => new SelectListItem(r.Nombre, r.Id.ToString(CultureInfo.InvariantCulture)))
             .ToListAsync();
 
     private async Task<string?> ValidarRepartidorAsync(string rol, int? repartidorId, string? usuarioId)

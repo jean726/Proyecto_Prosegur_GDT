@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,7 @@ public class ReportesDescargoController : Controller
             return RedirectToAction(nameof(Index));
         }
         await _audit.RegistrarAsync(tipo == TipoReporteDescargo.Entregas ? "GenerarReporteEntregasDescargo" : "GenerarReporteDescargo",
-            "ReporteDescargo", r.ReporteId.ToString(), r.Detalle);
+            "ReporteDescargo", r.ReporteId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id = r.ReporteId });
     }
@@ -48,7 +49,7 @@ public class ReportesDescargoController : Controller
     public async Task<IActionResult> Derivar(int id)
     {
         var r = await _reportes.DerivarAlBancoAsync(id, UserId);
-        if (r.Ok) await _audit.RegistrarAsync("DerivarReporteDescargoAlBanco", "ReporteDescargo", id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("DerivarReporteDescargoAlBanco", "ReporteDescargo", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Detalle), new { id });
     }

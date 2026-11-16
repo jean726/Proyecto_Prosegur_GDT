@@ -23,6 +23,10 @@
 {
     <div class="alert alert-danger">@err</div>
 }
+@if (ViewBag.Truncado is true)
+{
+    <div class="alert alert-info">Se muestran las @total tarjetas más recientes. Use la búsqueda para acotar la lista.</div>
+}
 <div class="pg-tarjeta pg-tarjeta-tabla">
     <div class="pg-barra-tabla">
         <div class="d-flex flex-wrap gap-2 align-items-center">

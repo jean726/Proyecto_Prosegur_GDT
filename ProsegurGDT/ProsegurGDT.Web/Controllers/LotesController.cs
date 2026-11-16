@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -111,7 +112,7 @@ public class LotesController : Controller
         _db.Lotes.Add(lote);
         await _db.SaveChangesAsync();
 
-        await _audit.RegistrarAsync("RegistrarLote", "Lote", lote.Id.ToString(),
+        await _audit.RegistrarAsync("RegistrarLote", "Lote", lote.Id.ToString(CultureInfo.InvariantCulture),
             $"Remito {remito.Numero}: declaradas {remito.CantidadDeclarada}, contadas {vm.CantidadContada}, {(coincide ? "ingresado en custodia" : "discrepancia")}");
 
         if (coincide)

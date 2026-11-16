@@ -98,6 +98,7 @@ builder.Services.AddSingleton<IEmbeddingService>(sp =>
     return new HashingNgramEmbeddingService();
 });
 builder.Services.AddScoped<IAddressRiskService, AddressRiskService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 // Una cuenta desactivada pierde la sesión en ≤ 1 minuto
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 

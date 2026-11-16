@@ -1,10 +1,13 @@
 ﻿@model IEnumerable<ProsegurGDT.Web.Domain.AuditLog>
 @using ProsegurGDT.Web.Domain
-@{ ViewData["Title"] = "Auditoría"; ViewData["Torre"] = true; string? q = ViewBag.Q; }
+@{
+    ViewData["Title"] = "Auditoría"; ViewData["Torre"] = true; string? q = ViewBag.Q;
+    int total = ViewBag.Total, pagina = ViewBag.Pagina, paginas = ViewBag.Paginas;
+}
 <div class="pg-encabezado">
     <div>
         <h1>Historial de auditoría</h1>
-        <p class="pg-subtitulo">@Model.Count() @(Model.Count() == 1 ? "registro" : "registros")@(string.IsNullOrWhiteSpace(q) ? "" : " para «" + q + "»")</p>
+        <p class="pg-subtitulo">@total @(total == 1 ? "registro" : "registros")@(string.IsNullOrWhiteSpace(q) ? "" : " para «" + q + "»")@(paginas > 1 ? $" · página {pagina} de {paginas}" : "")</p>
     </div>
 </div>
 <div class="pg-tarjeta pg-tarjeta-tabla">
@@ -37,4 +40,18 @@
             </tbody>
         </table>
     </div>
+    @if (paginas > 1)
+    {
+        <nav class="pg-barra-tabla d-flex gap-2 justify-content-end align-items-center" aria-label="Páginas del historial">
+            @if (pagina > 1)
+            {
+                <a asp-action="Index" asp-route-q="@q" asp-route-pagina="@(pagina - 1)" class="btn btn-sm btn-outline-secondary">← Más recientes</a>
+            }
+            <span class="pg-subtitulo">Página @pagina de @paginas</span>
+            @if (pagina < paginas)
+            {
+                <a asp-action="Index" asp-route-q="@q" asp-route-pagina="@(pagina + 1)" class="btn btn-sm btn-outline-secondary">Más antiguos →</a>
+            }
+        </nav>
+    }
 </div>

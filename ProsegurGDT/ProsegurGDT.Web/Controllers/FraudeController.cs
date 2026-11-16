@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsegurGDT.Web.Domain;
@@ -53,7 +54,7 @@ public class FraudeController : Controller
     public async Task<IActionResult> DescartarSuplantacion(int id, string observacion)
     {
         var r = await _fraude.DescartarSuplantacionAsync(id, observacion, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        if (r.Ok) await _audit.RegistrarAsync("DescartarSuplantacion", "ReporteSuplantacion", id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("DescartarSuplantacion", "ReporteSuplantacion", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Index));
     }
@@ -66,7 +67,7 @@ public class FraudeController : Controller
             var r = await _fraude.CrearAsync(entrada, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             if (r.Ok)
             {
-                await _audit.RegistrarAsync("GenerarReporteFraude", "ReporteFraude", r.ReporteId.ToString(), r.Detalle);
+                await _audit.RegistrarAsync("GenerarReporteFraude", "ReporteFraude", r.ReporteId.ToString(CultureInfo.InvariantCulture), r.Detalle);
                 TempData["Ok"] = r.Mensaje;
                 return RedirectToAction(nameof(Detalle), new { id = r.ReporteId });
             }

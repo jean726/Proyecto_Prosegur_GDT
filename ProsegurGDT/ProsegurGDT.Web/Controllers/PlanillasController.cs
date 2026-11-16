@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,7 +55,7 @@ public class PlanillasController : Controller
         }
 
         await _audit.RegistrarAsync(resultado.Creada ? "GenerarPlanillaArmado" : "ModificarPlanillaArmado",
-            "PlanillaArmado", resultado.PlanillaId.ToString(), resultado.Detalle);
+            "PlanillaArmado", resultado.PlanillaId.ToString(CultureInfo.InvariantCulture), resultado.Detalle);
         TempData["Ok"] = resultado.Creada
             ? "Planilla de armado de ruta guardada exitosamente."
             : "Planilla de armado de ruta actualizada exitosamente.";

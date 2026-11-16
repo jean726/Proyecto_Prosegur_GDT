@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,7 @@ public class DefraudacionController : Controller
     public async Task<IActionResult> Registrar(RegistrarActaVM m)
     {
         var r = await _fraude.RegistrarAsync(m, UserId);
-        if (r.Ok) await _audit.RegistrarAsync("RegistrarActaFraude", "Tarjeta", m.TarjetaId.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("RegistrarActaFraude", "Tarjeta", m.TarjetaId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Index));
     }
@@ -45,7 +46,7 @@ public class DefraudacionController : Controller
             return RedirectToAction(nameof(Index));
         }
         var r = await _fraude.IngresarABovedaAsync(m.Id, m.Ubicacion, UserId);
-        if (r.Ok) await _audit.RegistrarAsync("IngresarFraudeABoveda", "ActaFraude", m.Id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("IngresarFraudeABoveda", "ActaFraude", m.Id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Index));
     }

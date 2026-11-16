@@ -22,6 +22,7 @@ public interface IConciliacionService
 public class ConciliacionService : IConciliacionService
 {
     private const int MaxCodigos = 5000;
+    private static readonly char[] SeparadoresDeCodigos = { '\r', '\n', ';', ',', '\t', ' ' };
     private readonly ApplicationDbContext _db;
 
     public ConciliacionService(ApplicationDbContext db) { _db = db; }
@@ -84,7 +85,7 @@ public class ConciliacionService : IConciliacionService
         if (bloqueo is not null) return Fallo(bloqueo);
 
         var leidos = (codigosFisicos ?? string.Empty)
-            .Split(new[] { '\r', '\n', ';', ',', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Split(SeparadoresDeCodigos, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(c => c.ToUpperInvariant())
             .ToList();
         if (leidos.Count == 0) return Fallo("Ingrese los códigos de las tarjetas contadas físicamente.");

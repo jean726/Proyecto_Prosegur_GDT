@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,11 +23,13 @@ public class ClientesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var tarjetas = await _db.Tarjetas
+        const int maximo = 500;
+        var tarjetas = await _db.Tarjetas.AsNoTracking()
             .Include(t => t.Cliente)
             .OrderByDescending(t => t.Id)
-            .Take(200)
+            .Take(maximo)
             .ToListAsync();
+        ViewBag.Truncado = tarjetas.Count == maximo && await _db.Tarjetas.CountAsync() > maximo;
         return View(tarjetas);
     }
 
@@ -58,7 +61,7 @@ public class ClientesController : Controller
         c.Direccion = vm.Direccion.Trim();
         c.DireccionNormalizada = NormalizadorDirecciones.Normalizar(c.Direccion);
         await _db.SaveChangesAsync();
-        await _audit.RegistrarAsync("ModificarFichaCliente", "Cliente", c.Id.ToString(), c.DocumentoIdentidad);
+        await _audit.RegistrarAsync("ModificarFichaCliente", "Cliente", c.Id.ToString(CultureInfo.InvariantCulture), c.DocumentoIdentidad);
         TempData["Ok"] = "Ficha del cliente actualizada.";
         return RedirectToAction(nameof(Index));
     }
@@ -91,7 +94,7 @@ public class ClientesController : Controller
 
         if (!r.Ok) { vm.Errores = r.Errores; return View(vm); }
 
-        await _audit.RegistrarAsync("GenerarFichaClientes", "Lote", vm.LoteId.ToString(), $"{r.Cantidad} tarjetas");
+        await _audit.RegistrarAsync("GenerarFichaClientes", "Lote", vm.LoteId.ToString(CultureInfo.InvariantCulture), $"{r.Cantidad} tarjetas");
         TempData["Ok"] = $"Ficha de clientes generada: {r.Cantidad} tarjetas registradas para el lote {r.CodigoHoja}.";
         return RedirectToAction(nameof(Index));
     }
@@ -101,6 +104,6 @@ public class ClientesController : Controller
         var lotes = await _db.Lotes.Include(l => l.Remito)
             .Where(l => l.Estado == EstadoLote.IngresadoEnCustodia && !_db.Tarjetas.Any(t => t.LoteId == l.Id))
             .OrderByDescending(l => l.Id).ToListAsync();
-        vm.Lotes = lotes.Select(l => new SelectListItem($"{l.CodigoHojaControl} — {l.Remito?.Numero} — {l.CantidadContada} tarjetas", l.Id.ToString())).ToList();
+        vm.Lotes = lotes.Select(l => new SelectListItem($"{l.CodigoHojaControl} — {l.Remito?.Numero} — {l.CantidadContada} tarjetas", l.Id.ToString(CultureInfo.InvariantCulture))).ToList();
     }
 }

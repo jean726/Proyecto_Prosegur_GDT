@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +29,7 @@ public class VerificacionDescargoController : Controller
             return RedirectToAction(nameof(Index));
         }
         var r = await _descargo.ResolverVerificacionAsync(m.Id, m.Resuelta, m.Observacion, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        if (r.Ok) await _audit.RegistrarAsync("VerificarDescargo", "DescargoTarjeta", m.Id.ToString(), r.Detalle);
+        if (r.Ok) await _audit.RegistrarAsync("VerificarDescargo", "DescargoTarjeta", m.Id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Index));
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,7 +39,7 @@ public class DensidadController : Controller
             return RedirectToAction(nameof(Ver), new { id = loteId });
         }
 
-        await _audit.RegistrarAsync("GenerarReporteDensidad", "ReporteDensidad", r.ReporteId.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("GenerarReporteDensidad", "ReporteDensidad", r.ReporteId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = "Reporte de densidad generado exitosamente. Queda disponible para el Analista de Rutas.";
         return RedirectToAction(nameof(Ver), new { id = loteId });
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsegurGDT.Web.Domain;
@@ -40,7 +41,7 @@ public class HojasRutaApiController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Confirmar(int id) =>
-        await ResponderAsync("ConfirmarHojaRutaMovil", "HojaRuta", id.ToString(),
+        await ResponderAsync("ConfirmarHojaRutaMovil", "HojaRuta", id.ToString(CultureInfo.InvariantCulture),
             await _movil.ConfirmarRecepcionAsync(User.RepartidorId(), User.UsuarioId(), id));
 
     /// <summary>CU29 — Registra o corrige el resultado de la visita (pre-registro hasta el descargo, RN-30).</summary>
@@ -51,7 +52,7 @@ public class HojasRutaApiController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Resultado(int id, int tarjetaId, SolicitudResultado s) =>
-        await ResponderAsync("RegistrarResultadoCampo", "Tarjeta", tarjetaId.ToString(),
+        await ResponderAsync("RegistrarResultadoCampo", "Tarjeta", tarjetaId.ToString(CultureInfo.InvariantCulture),
             await _movil.RegistrarResultadoAsync(User.RepartidorId(), id, tarjetaId, s));
 
     /// <summary>CU30 — Reporta una sospecha de suplantación de identidad al Verificador.</summary>
@@ -60,7 +61,7 @@ public class HojasRutaApiController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Suplantacion(int id, int tarjetaId, SolicitudSuplantacion s) =>
-        await ResponderAsync("ReportarSuplantacion", "Tarjeta", tarjetaId.ToString(),
+        await ResponderAsync("ReportarSuplantacion", "Tarjeta", tarjetaId.ToString(CultureInfo.InvariantCulture),
             await _movil.ReportarSuplantacionAsync(User.RepartidorId(), id, tarjetaId, s));
 
     // Éxito → { mensaje, datos } y auditoría; error → ProblemDetails con el mensaje en español

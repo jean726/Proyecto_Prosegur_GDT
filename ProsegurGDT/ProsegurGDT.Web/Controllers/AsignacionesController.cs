@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,7 @@ public class AsignacionesController : Controller
             return View(vm);
         }
 
-        await _audit.RegistrarAsync("GenerarHojaAsignacion", "HojaAsignacion", r.HojaId.ToString(), r.Detalle);
+        await _audit.RegistrarAsync("GenerarHojaAsignacion", "HojaAsignacion", r.HojaId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData["Ok"] = "Hoja de asignación generada exitosamente.";
         return RedirectToAction(nameof(Detalle), new { id = r.HojaId });
     }
@@ -63,7 +64,7 @@ public class AsignacionesController : Controller
     {
         var vm = await _asignaciones.DetalleAsync(id);
         if (vm is null) return NotFound();
-        await _audit.RegistrarAsync("ImprimirHojaAsignacion", "HojaAsignacion", id.ToString(), $"Lote {vm.CodigoHojaControl}");
+        await _audit.RegistrarAsync("ImprimirHojaAsignacion", "HojaAsignacion", id.ToString(CultureInfo.InvariantCulture), $"Lote {vm.CodigoHojaControl}");
         return View(vm);
     }
 
@@ -72,7 +73,7 @@ public class AsignacionesController : Controller
     {
         var archivo = await _asignaciones.CsvAsync(id);
         if (archivo is null) return NotFound();
-        await _audit.RegistrarAsync("DescargarHojaAsignacion", "HojaAsignacion", id.ToString(), archivo.Value.Nombre);
+        await _audit.RegistrarAsync("DescargarHojaAsignacion", "HojaAsignacion", id.ToString(CultureInfo.InvariantCulture), archivo.Value.Nombre);
         return File(archivo.Value.Contenido, "text/csv", archivo.Value.Nombre);
     }
 }

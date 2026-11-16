@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- C5: analizadores de .NET en el nivel recomendado; las excepciones están en .editorconfig -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
     <UserSecretsId>aspnet-ProsegurGDT.Web-dce3e5e9-801f-447f-8aba-236c03156f24</UserSecretsId>
   </PropertyGroup>
 

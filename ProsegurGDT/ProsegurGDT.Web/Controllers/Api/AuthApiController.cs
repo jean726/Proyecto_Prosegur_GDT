@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +61,7 @@ public class AuthApiController : ControllerBase
         {
             new Claim(ClaimTypes.NameIdentifier, u.Id), new Claim(ClaimTypes.Name, u.UserName ?? u.Id)
         }, "jwt"));
-        await _audit.RegistrarAsync("IniciarSesionMovil", "Repartidor", rep.Id.ToString(), $"{rep.Nombre}; token válido hasta {t.ExpiraUtc:u}");
+        await _audit.RegistrarAsync("IniciarSesionMovil", "Repartidor", rep.Id.ToString(CultureInfo.InvariantCulture), $"{rep.Nombre}; token válido hasta {t.ExpiraUtc:u}");
         return Ok(new TokenDto(t.Token, t.ExpiraUtc, new RepartidorDto(rep.Id, rep.Nombre, rep.Tipo, rep.ZonaHabitual?.Nombre)));
     }
 
@@ -72,7 +73,7 @@ public class AuthApiController : ControllerBase
         var u = await _um.FindByIdAsync(User.UsuarioId());
         if (u is null) return Unauthorized();
         await _um.UpdateSecurityStampAsync(u);
-        await _audit.RegistrarAsync("CerrarSesionMovil", "Repartidor", User.RepartidorId().ToString());
+        await _audit.RegistrarAsync("CerrarSesionMovil", "Repartidor", User.RepartidorId().ToString(CultureInfo.InvariantCulture));
         return Ok(new MensajeDto("Sesión cerrada. Vuelva a iniciar sesión para continuar."));
     }
 

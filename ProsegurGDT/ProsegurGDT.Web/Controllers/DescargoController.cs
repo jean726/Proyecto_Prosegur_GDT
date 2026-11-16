@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -72,14 +73,14 @@ public class DescargoController : Controller
     public async Task<IActionResult> Organizar(int id)
     {
         var r = await _descargo.MarcarOrganizadaAsync(id);
-        if (r.Detalle is not null) await _audit.RegistrarAsync("OrganizarDocumentacionMensajero", "HojaRuta", id.ToString(), r.Detalle);
+        if (r.Detalle is not null) await _audit.RegistrarAsync("OrganizarDocumentacionMensajero", "HojaRuta", id.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? "Ok" : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Legajo), new { id });
     }
 
     private async Task<IActionResult> Responder(int hojaRutaId, ResultadoDescargoOp r, string auditoria)
     {
-        if (r.Detalle is not null) await _audit.RegistrarAsync(auditoria, "HojaRuta", hojaRutaId.ToString(), r.Detalle);
+        if (r.Detalle is not null) await _audit.RegistrarAsync(auditoria, "HojaRuta", hojaRutaId.ToString(CultureInfo.InvariantCulture), r.Detalle);
         TempData[r.Ok ? (r.Aviso ? "Aviso" : "Ok") : "Error"] = r.Mensaje;
         return RedirectToAction(nameof(Procesar), new { id = hojaRutaId });
     }

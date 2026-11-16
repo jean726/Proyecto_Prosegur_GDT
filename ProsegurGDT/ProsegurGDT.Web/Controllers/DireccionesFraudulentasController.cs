@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -62,7 +63,7 @@ public class DireccionesFraudulentasController : Controller
             return View(vm);
         }
         var d = await _riesgo.AgregarAsync(vm.Direccion, vm.Motivo, UserId, true, "Registro manual del Buscador");
-        await _audit.RegistrarAsync("RegistrarDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(), d.DireccionOriginal);
+        await _audit.RegistrarAsync("RegistrarDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(CultureInfo.InvariantCulture), d.DireccionOriginal);
         TempData["Ok"] = "Dirección registrada y validada.";
         return RedirectToAction(nameof(Index));
     }
@@ -78,7 +79,7 @@ public class DireccionesFraudulentasController : Controller
             return RedirectToAction(nameof(Index));
         }
         await _riesgo.ValidarAsync(d, UserId);
-        await _audit.RegistrarAsync("ValidarDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(), d.DireccionOriginal);
+        await _audit.RegistrarAsync("ValidarDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(CultureInfo.InvariantCulture), d.DireccionOriginal);
         TempData["Ok"] = "Dirección validada e incorporada al registro.";
         return RedirectToAction(nameof(Index));
     }
@@ -91,7 +92,7 @@ public class DireccionesFraudulentasController : Controller
         if (d is null || d.Estado == EstadoDireccion.Descartada) return RedirectToAction(nameof(Index));
         d.Estado = EstadoDireccion.Descartada;
         await _db.SaveChangesAsync();
-        await _audit.RegistrarAsync("DarDeBajaDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(), d.DireccionOriginal);
+        await _audit.RegistrarAsync("DarDeBajaDireccionFraudulenta", "DireccionFraudulenta", d.Id.ToString(CultureInfo.InvariantCulture), d.DireccionOriginal);
         TempData["Ok"] = "Dirección dada de baja del registro.";
         return RedirectToAction(nameof(Index));
     }
@@ -140,7 +141,7 @@ public class DireccionesFraudulentasController : Controller
         {
             a.Decision = DecisionAlerta.Descartada;
             await _db.SaveChangesAsync();
-            await _audit.RegistrarAsync("DescartarAlertaDireccion", "Tarjeta", a.TarjetaId.ToString(), $"alerta {a.Id}");
+            await _audit.RegistrarAsync("DescartarAlertaDireccion", "Tarjeta", a.TarjetaId.ToString(CultureInfo.InvariantCulture), $"alerta {a.Id}");
             TempData["Ok"] = "Alerta descartada. La tarjeta queda libre para clasificarse.";
             return RedirectToAction(nameof(Alertas));
         }
@@ -172,7 +173,7 @@ public class DireccionesFraudulentasController : Controller
         }
 
         await _db.SaveChangesAsync();
-        await _audit.RegistrarAsync("ConfirmarAlertaDireccion", "Tarjeta", t.Id.ToString(),
+        await _audit.RegistrarAsync("ConfirmarAlertaDireccion", "Tarjeta", t.Id.ToString(CultureInfo.InvariantCulture),
             $"alerta {a.Id}; tarjeta {t.Codigo} no clasificable; notificar a Descargo; dirección aprendida: {(aprendida ? "sí" : "no")}");
         TempData["Ok"] = $"Fraude confirmado. La tarjeta {t.Codigo} queda como no clasificable.";
         return RedirectToAction(nameof(Alertas));

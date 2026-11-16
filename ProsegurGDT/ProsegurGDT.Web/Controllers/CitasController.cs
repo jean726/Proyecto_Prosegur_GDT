@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -85,7 +86,7 @@ public class CitasController : Controller
         var mensaje = manejador.Aplicar(ctx);
 
         await _db.SaveChangesAsync();
-        await _audit.RegistrarAsync("RegistrarLlamada", "Tarjeta", t.Id.ToString(), resultado.Texto());
+        await _audit.RegistrarAsync("RegistrarLlamada", "Tarjeta", t.Id.ToString(CultureInfo.InvariantCulture), resultado.Texto());
         TempData["Ok"] = mensaje;
         return RedirectToAction(nameof(Index));
     }

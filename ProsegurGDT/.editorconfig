@@ -1,0 +1,19 @@
+# C5 — Reglas de análisis de la solución (AnalysisLevel = latest-recommended en ProsegurGDT.Web).
+root = true
+
+[*.cs]
+charset = utf-8
+indent_style = space
+indent_size = 4
+
+# El registro de la aplicación es de bajo volumen: no compensa generar delegados LoggerMessage.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1873.severity = none
+
+# Los nombres de parámetro son cortos y en español; no se fuerzan a coincidir con los de la interfaz.
+dotnet_diagnostic.CA1725.severity = none
+
+# Código generado por Entity Framework: no se analiza (nombres con guion bajo, matrices constantes).
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none

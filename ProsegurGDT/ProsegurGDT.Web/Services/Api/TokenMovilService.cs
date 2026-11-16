@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -53,7 +54,7 @@ public static class ClaimsMovil
     public const string Sello = "gdt_sello";
     public const string Repartidor = "gdt_rep";
 
-    public static int RepartidorId(this ClaimsPrincipal u) => int.Parse(u.FindFirstValue(Repartidor)!);
+    public static int RepartidorId(this ClaimsPrincipal u) => int.Parse(u.FindFirstValue(Repartidor)!, System.Globalization.CultureInfo.InvariantCulture);
     public static string UsuarioId(this ClaimsPrincipal u) => u.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }
 
@@ -78,7 +79,7 @@ public sealed class TokenMovilService : ITokenMovilService
             new(JwtRegisteredClaimNames.UniqueName, u.UserName ?? u.Email ?? u.Id),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
             new("role", Roles.Repartidor),
-            new(ClaimsMovil.Repartidor, r.Id.ToString()),
+            new(ClaimsMovil.Repartidor, r.Id.ToString(CultureInfo.InvariantCulture)),
             new(ClaimsMovil.Sello, sello)
         };
         var jwt = new JwtSecurityToken(_op.Emisor, _op.Audiencia, claims, DateTime.UtcNow, expira,
