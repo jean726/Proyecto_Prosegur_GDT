@@ -17,6 +17,8 @@ public partial class VisitaPage : ContentPage, IQueryAttributable
 	{
 		if (query.TryGetValue("hoja", out var h) && int.TryParse(h?.ToString(), out var hoja)) _vm.HojaId = hoja;
 		if (query.TryGetValue("tarjeta", out var t) && int.TryParse(t?.ToString(), out var tarjeta)) _vm.TarjetaId = tarjeta;
+		// Al volver del reporte de suplantación («..?exito=…»): toast con el mensaje del servidor.
+		if (query.TryGetValue("exito", out var e) && e?.ToString() is { Length: > 0 } exito) _vm.Exito = exito;
 	}
 
 	// Se recarga al volver del reporte de suplantación.

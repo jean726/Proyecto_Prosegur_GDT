@@ -18,4 +18,12 @@ public partial class HojasPage : ContentPage
 		base.OnAppearing();
 		await _vm.CargarAsync();
 	}
+
+	// Atrás con el diálogo abierto: lo cierra.
+	protected override bool OnBackButtonPressed()
+	{
+		if (!_vm.MostrarCerrarSesion) return base.OnBackButtonPressed();
+		_vm.MostrarCerrarSesion = false;
+		return true;
+	}
 }

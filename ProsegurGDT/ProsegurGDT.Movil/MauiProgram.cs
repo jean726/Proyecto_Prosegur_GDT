@@ -14,9 +14,23 @@ public static class MauiProgram
 			.UseMauiApp<App>()
 			.ConfigureFonts(fonts =>
 			{
-				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+				// IBM Plex (licencia OFL, Licencias/IBM-Plex-OFL.txt): el peso va en la familia.
+				fonts.AddFont("IBMPlexSans-Regular.ttf", "Plex");
+				fonts.AddFont("IBMPlexSans-Medium.ttf", "PlexMedio");
+				fonts.AddFont("IBMPlexSans-SemiBold.ttf", "PlexSemi");
+				fonts.AddFont("IBMPlexSans-Bold.ttf", "PlexNegrita");
+				fonts.AddFont("IBMPlexMono-Regular.ttf", "Mono");
+				fonts.AddFont("IBMPlexMono-Medium.ttf", "MonoMedio");
+				fonts.AddFont("IBMPlexMono-SemiBold.ttf", "MonoSemi");
 			});
+
+#if ANDROID
+		// Los campos van dentro de una caja (Border) del diseño: sin la línea inferior nativa de Android.
+		Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("SinLinea", (h, _) =>
+			h.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent));
+		Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("SinLinea", (h, _) =>
+			h.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent));
+#endif
 
 		// Sesión y cliente de la API: una instancia para toda la app.
 		builder.Services.AddSingleton<SesionService>();

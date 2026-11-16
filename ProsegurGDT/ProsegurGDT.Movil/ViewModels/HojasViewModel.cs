@@ -17,6 +17,8 @@ public class HojasViewModel : BaseViewModel
         _sesion = sesion;
         CargarCommand = new Command(async () => await CargarAsync());
         AbrirCommand = new Command<HojaItem>(async h => await AbrirAsync(h));
+        PedirCerrarSesionCommand = new Command(() => MostrarCerrarSesion = true);
+        CancelarCerrarSesionCommand = new Command(() => MostrarCerrarSesion = false);
         CerrarSesionCommand = new Command(async () => await CerrarSesionAsync(), () => Libre);
     }
 
@@ -40,8 +42,30 @@ public class HojasViewModel : BaseViewModel
     private bool _vacio;
     public bool Vacio { get => _vacio; set => Set(ref _vacio, value); }
 
+    // Esqueleto (2b) solo en la primera carga, sin datos todavía.
+    private bool _cargandoInicial = true;
+    public bool CargandoInicial { get => _cargandoInicial; set => Set(ref _cargandoInicial, value); }
+
+    // Sin conexión (T2): franja con «Reintentar» y la lista anterior atenuada; el resto de errores, aviso rojo.
+    private bool _sinConexion;
+    public bool SinConexion
+    {
+        get => _sinConexion;
+        set { if (Set(ref _sinConexion, value)) { OnPropertyChanged(nameof(ErrorServidor)); OnPropertyChanged(nameof(OpacidadLista)); } }
+    }
+    public bool ErrorServidor => HayError && !SinConexion;
+    public double OpacidadLista => SinConexion ? 0.5 : 1;
+
+    public string Titulo => $"Mis hojas de ruta · {Hojas.Count}";
+
+    // CU23 — diálogo propio (7a) en lugar del diálogo del sistema.
+    private bool _mostrarCerrarSesion;
+    public bool MostrarCerrarSesion { get => _mostrarCerrarSesion; set => Set(ref _mostrarCerrarSesion, value); }
+
     public ICommand CargarCommand { get; }
     public ICommand AbrirCommand { get; }
+    public ICommand PedirCerrarSesionCommand { get; }
+    public ICommand CancelarCerrarSesionCommand { get; }
     public ICommand CerrarSesionCommand { get; }
 
     public async Task CargarAsync()
@@ -56,17 +80,22 @@ public class HojasViewModel : BaseViewModel
             Hojas.Clear();
             foreach (var h in lista.OrderBy(h => h.Jornada)) Hojas.Add(new HojaItem(h));
             Error = null;
+            SinConexion = false;
             Vacio = Hojas.Count == 0;
         }
         catch (ApiException e)
         {
             Error = e.Message;
+            SinConexion = e.SinConexion;
             Vacio = false;
         }
         finally
         {
             Ocupado = false;
             Actualizando = false;
+            CargandoInicial = false;
+            OnPropertyChanged(nameof(Titulo));
+            OnPropertyChanged(nameof(ErrorServidor));
         }
     }
 
@@ -77,10 +106,7 @@ public class HojasViewModel : BaseViewModel
     // Si no hay red, se borra igual del dispositivo y se avisa: el token caduca solo al final de la jornada.
     private async Task CerrarSesionAsync()
     {
-        var ok = await Shell.Current.DisplayAlertAsync("¿Cerrar sesión?",
-            "Tendrás que volver a ingresar tus credenciales.", "Cerrar sesión", "Cancelar");
-        if (!ok) return;
-
+        MostrarCerrarSesion = false;
         Ocupado = true;
         string aviso;
         try
@@ -103,6 +129,7 @@ public class HojasViewModel : BaseViewModel
 
         _sesion.Limpiar();
         Hojas.Clear();
+        CargandoInicial = true;
         await Shell.Current.GoToAsync($"//login?aviso={Uri.EscapeDataString(aviso)}");
     }
 }

@@ -24,4 +24,12 @@ public partial class HojaPage : ContentPage, IQueryAttributable
 		base.OnAppearing();
 		await _vm.CargarAsync();
 	}
+
+	// Atrás con la hoja inferior abierta: la cierra.
+	protected override bool OnBackButtonPressed()
+	{
+		if (!_vm.HayHojaInferior) return base.OnBackButtonPressed();
+		_vm.CerrarHojaInferior();
+		return true;
+	}
 }

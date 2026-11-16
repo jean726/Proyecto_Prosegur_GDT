@@ -1,69 +1,106 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- CU22 — Iniciar sesión. Estilo provisional con los tokens de la Torre; el definitivo sale de Claude Design. -->
+<!-- CU22 — Iniciar sesión (diseño 1a–1d). El error es el texto del servidor tal cual: candado si es 403
+     (cuenta bloqueada), triángulo en el resto. El aviso neutro llega del cierre de sesión. -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             xmlns:c="clr-namespace:ProsegurGDT.Movil.Controles"
              x:Class="ProsegurGDT.Movil.Views.LoginPage"
-             x:DataType="vm:LoginViewModel"
-             BackgroundColor="{StaticResource TFondo}"
-             Shell.NavBarIsVisible="False">
+             x:DataType="vm:LoginViewModel">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24,72,24,24" Spacing="16">
+    <Grid RowDefinitions="*,Auto" Padding="24,0,24,24">
 
-            <VerticalStackLayout Spacing="4" Margin="0,0,0,24">
-                <Label Text="ProsegurGDT" FontSize="30" FontAttributes="Bold"
-                       TextColor="{StaticResource TAmarillo}"
-                       SemanticProperties.HeadingLevel="Level1" />
-                <Label Text="App del repartidor" FontSize="16" TextColor="{StaticResource TTenue}" />
+        <ScrollView>
+            <VerticalStackLayout Padding="0,56,0,24" Spacing="32">
+
+                <!-- Marca -->
+                <VerticalStackLayout Spacing="16">
+                    <Border WidthRequest="56" HeightRequest="56" HorizontalOptions="Start"
+                            BackgroundColor="{StaticResource TAmarillo}" StrokeShape="RoundRectangle 12">
+                        <c:Icono Datos="{x:Static c:Iconos.Tarjeta}" Color="{StaticResource TFondo}" Tamano="32" Grosor="2"
+                                 HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="4">
+                        <Label FontFamily="PlexNegrita" FontSize="30" SemanticProperties.HeadingLevel="Level1">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="Prosegur" FontFamily="PlexNegrita" FontSize="30" />
+                                    <Span Text="GDT" FontFamily="PlexNegrita" FontSize="30" TextColor="{StaticResource TAmarillo}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                        <Label Text="App del repartidor" FontSize="16" TextColor="{StaticResource TTenue}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="18">
+
+                    <!-- Error del servidor (1c credenciales, 1d cuenta bloqueada) -->
+                    <Border Style="{StaticResource AvisoRiesgo}" StrokeShape="RoundRectangle 8" IsVisible="{Binding HayError}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <c:Icono Datos="{Binding IconoError}" Color="{StaticResource TRiesgoTexto}" Tamano="20" VerticalOptions="Start" />
+                            <Label Grid.Column="1" Text="{Binding Error}" FontFamily="PlexMedio" FontSize="15"
+                                   TextColor="{StaticResource TRiesgoTitulo}" LineHeight="1.2" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Aviso neutro (sesión cerrada) -->
+                    <Border Style="{StaticResource AvisoNeutro}" StrokeShape="RoundRectangle 8" IsVisible="{Binding HayAviso}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <c:Icono Datos="{x:Static c:Iconos.Info}" Color="{StaticResource TTenue}" Tamano="20" VerticalOptions="Start" />
+                            <Label Grid.Column="1" Text="{Binding Aviso}" FontSize="15" />
+                        </Grid>
+                    </Border>
+
+                    <VerticalStackLayout Spacing="18" Opacity="{Binding OpacidadCampos}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Correo" Style="{StaticResource EtiquetaCampo}" />
+                            <Border Style="{StaticResource Campo}">
+                                <Entry Text="{Binding Correo}" Keyboard="Email" Placeholder="usuario@gdt.local"
+                                       IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
+                                       ReturnType="Next" IsEnabled="{Binding Libre}">
+                                    <Entry.Behaviors><c:ResaltarAlEnfocar /></Entry.Behaviors>
+                                </Entry>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Contraseña" Style="{StaticResource EtiquetaCampo}" />
+                            <Border Style="{StaticResource Campo}" Padding="14,0,2,0">
+                                <Grid ColumnDefinitions="*,48">
+                                    <Entry Text="{Binding Contrasena}" IsPassword="{Binding ContrasenaOculta}"
+                                           FontFamily="{Binding FuenteContrasena}"
+                                           ReturnType="Go" ReturnCommand="{Binding IngresarCommand}" IsEnabled="{Binding Libre}">
+                                        <Entry.Behaviors><c:ResaltarAlEnfocar /></Entry.Behaviors>
+                                    </Entry>
+                                    <Grid Grid.Column="1" Style="{StaticResource BotonIcono}"
+                                          SemanticProperties.Description="Mostrar u ocultar la contraseña">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding AlternarContrasenaCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <c:Icono Datos="{Binding IconoOjo}" Color="{Binding ColorOjo}" Tamano="22"
+                                                 HorizontalOptions="Center" VerticalOptions="Center" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
             </VerticalStackLayout>
+        </ScrollView>
 
-            <Border IsVisible="{Binding HayAviso}" Padding="14,12"
-                    BackgroundColor="{StaticResource TSuperficie2}" Stroke="{StaticResource TBorde}"
-                    StrokeShape="RoundRectangle 8">
-                <Label Text="{Binding Aviso}" TextColor="{StaticResource TTexto}" FontSize="14" />
-            </Border>
-
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Correo" TextColor="{StaticResource TTenue}" FontSize="14" />
-                <Border BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
-                        StrokeShape="RoundRectangle 8" Padding="12,0">
-                    <Entry Text="{Binding Correo}" Keyboard="Email" Placeholder="usuario@gdt.local"
-                           IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
-                           ReturnType="Next" MinimumHeightRequest="48"
-                           TextColor="{StaticResource TTexto}" PlaceholderColor="{StaticResource Gray500}"
-                           IsEnabled="{Binding Libre}" />
-                </Border>
-            </VerticalStackLayout>
-
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Contraseña" TextColor="{StaticResource TTenue}" FontSize="14" />
-                <Border BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
-                        StrokeShape="RoundRectangle 8" Padding="12,0">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Entry Text="{Binding Contrasena}" IsPassword="{Binding ContrasenaOculta}"
-                               ReturnType="Go" ReturnCommand="{Binding IngresarCommand}" MinimumHeightRequest="48"
-                               TextColor="{StaticResource TTexto}" IsEnabled="{Binding Libre}" />
-                        <Button Grid.Column="1" Text="{Binding TextoAlternar}"
-                                Command="{Binding AlternarContrasenaCommand}"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TTenue}"
-                                FontSize="14" Padding="8,0" />
-                    </Grid>
-                </Border>
-            </VerticalStackLayout>
-
-            <Label Text="{Binding Error}" IsVisible="{Binding HayError}"
-                   TextColor="{StaticResource TRiesgo}" FontSize="14" />
-
-            <Grid>
-                <Button Text="Ingresar" Command="{Binding IngresarCommand}"
-                        BackgroundColor="{StaticResource TAmarillo}" TextColor="{StaticResource TFondo}"
-                        FontAttributes="Bold" FontSize="16" HeightRequest="52" CornerRadius="8" />
-                <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}"
-                                   Color="{StaticResource TFondo}" HeightRequest="24" WidthRequest="24"
-                                   HorizontalOptions="End" Margin="0,0,16,0" />
-            </Grid>
-
-        </VerticalStackLayout>
-    </ScrollView>
+        <!-- «Ingresar»: sigue amarillo mientras carga (1b), con el indicador dentro -->
+        <Border Grid.Row="1" HeightRequest="52" BackgroundColor="{StaticResource TAmarillo}" StrokeShape="RoundRectangle 8"
+                SemanticProperties.Description="Ingresar">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding IngresarCommand}" />
+            </Border.GestureRecognizers>
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TFondo}"
+                                   WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+                <Label Text="{Binding TextoBoton}" FontFamily="PlexSemi" FontSize="16" TextColor="{StaticResource TFondo}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Border>
+    </Grid>
 </ContentPage>

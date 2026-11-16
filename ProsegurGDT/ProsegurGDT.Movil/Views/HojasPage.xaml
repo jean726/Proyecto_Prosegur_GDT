@@ -1,71 +1,200 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- CU28 — Mis hojas de ruta. Estilo provisional con los tokens de la Torre; el definitivo sale de Claude Design. -->
+<!-- CU28 — Mis hojas de ruta (diseño 2a–2c, T2) y CU23 — cerrar sesión (diseño 7a). -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
              xmlns:m="clr-namespace:ProsegurGDT.Movil.Models"
+             xmlns:c="clr-namespace:ProsegurGDT.Movil.Controles"
              x:Class="ProsegurGDT.Movil.Views.HojasPage"
              x:DataType="vm:HojasViewModel"
-             x:Name="Pagina"
-             Title="Mis hojas de ruta"
-             BackgroundColor="{StaticResource TFondo}">
+             x:Name="Pagina">
 
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Cerrar sesión" Command="{Binding CerrarSesionCommand}" />
-    </ContentPage.ToolbarItems>
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-    <Grid RowDefinitions="Auto,Auto,*" Padding="20,16,20,0" RowSpacing="12">
-
-        <VerticalStackLayout Spacing="2">
-            <Label Text="{Binding Nombre}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
-            <Label Text="{Binding Detalle}" FontSize="14" TextColor="{StaticResource TTenue}" />
-        </VerticalStackLayout>
-
-        <Border Grid.Row="1" IsVisible="{Binding HayError}" Padding="14,12"
-                BackgroundColor="{StaticResource TSuperficie2}" Stroke="{StaticResource TRiesgo}"
-                StrokeShape="RoundRectangle 8">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" VerticalOptions="Center" />
-                <Button Grid.Column="1" Text="Reintentar" Command="{Binding CargarCommand}"
-                        BackgroundColor="Transparent" TextColor="{StaticResource TAmarillo}" FontSize="14" />
+            <!-- Cabecera: repartidor y cerrar sesión -->
+            <Grid ColumnDefinitions="*,48" Padding="20,12,8,12" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                    <Label Text="{Binding Nombre}" FontFamily="PlexSemi" FontSize="18" />
+                    <Label Text="{Binding Detalle}" Style="{StaticResource Tenue}" />
+                </VerticalStackLayout>
+                <Grid Grid.Column="1" Style="{StaticResource BotonIcono}" SemanticProperties.Description="Cerrar sesión">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding PedirCerrarSesionCommand}" />
+                    </Grid.GestureRecognizers>
+                    <c:Icono Datos="{x:Static c:Iconos.Salir}" Color="{StaticResource TTenue}" Tamano="22"
+                             HorizontalOptions="Center" VerticalOptions="Center" />
+                </Grid>
             </Grid>
-        </Border>
+            <BoxView Grid.Row="1" Style="{StaticResource Divisor}" />
 
-        <RefreshView Grid.Row="2" IsRefreshing="{Binding Actualizando}" Command="{Binding CargarCommand}"
-                     RefreshColor="{StaticResource TAmarillo}">
-            <CollectionView ItemsSource="{Binding Hojas}" SelectionMode="None">
-                <CollectionView.EmptyView>
-                    <VerticalStackLayout Padding="8,48" Spacing="8" IsVisible="{Binding Vacio}">
-                        <Label Text="Sin hojas de ruta" FontSize="18" FontAttributes="Bold"
-                               TextColor="{StaticResource TTexto}" HorizontalTextAlignment="Center" />
-                        <Label Text="No tienes hojas de ruta aprobadas por ahora. Cuando el Supervisor apruebe tu hoja aparecerá aquí. Desliza hacia abajo para actualizar."
-                               FontSize="14" TextColor="{StaticResource TTenue}" HorizontalTextAlignment="Center" />
-                    </VerticalStackLayout>
-                </CollectionView.EmptyView>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="m:HojaItem">
-                        <Border Margin="0,0,0,12" Padding="16" BackgroundColor="{StaticResource TSuperficie}"
-                                Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding BindingContext.AbrirCommand, Source={x:Reference Pagina}, x:DataType=ContentPage}"
-                                                      CommandParameter="{Binding .}" />
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="8">
+            <!-- T2: sin conexión -->
+            <Grid Grid.Row="2" IsVisible="{Binding SinConexion}" BackgroundColor="{StaticResource TSuperficie2}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="16,4,4,4">
+                    <c:Icono Datos="{x:Static c:Iconos.SinSenal}" Color="{StaticResource TTexto}" Tamano="20" VerticalOptions="Center" />
+                    <Label Grid.Column="1" Text="{Binding Error}" FontFamily="PlexMedio" FontSize="14" VerticalOptions="Center" />
+                    <Button Grid.Column="2" Text="Reintentar" Style="{StaticResource BotonTexto}" Command="{Binding CargarCommand}" />
+                </Grid>
+                <BoxView Style="{StaticResource Divisor}" Color="{StaticResource TBordeFuerte}" VerticalOptions="End" />
+            </Grid>
+
+            <Grid Grid.Row="3">
+                <RefreshView IsRefreshing="{Binding Actualizando}" Command="{Binding CargarCommand}">
+                    <CollectionView ItemsSource="{Binding Hojas}" SelectionMode="None" Opacity="{Binding OpacidadLista}">
+
+                        <CollectionView.Header>
+                            <VerticalStackLayout Padding="16,16,16,0" Spacing="12">
+                                <!-- Error del servidor (T1) -->
+                                <Border Style="{StaticResource AvisoRiesgo}" IsVisible="{Binding ErrorServidor}">
+                                    <VerticalStackLayout Spacing="12">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                            <c:Icono Datos="{x:Static c:Iconos.Alerta}" Color="{StaticResource TRiesgoTexto}" Tamano="20" VerticalOptions="Start" />
+                                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                                <Label Text="No se pudieron cargar tus hojas de ruta" FontFamily="PlexSemi"
+                                                       TextColor="{StaticResource TRiesgoTitulo}" />
+                                                <Label Text="{Binding Error}" FontSize="14" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                        <Border Style="{StaticResource BotonContorno}" HeightRequest="48" Stroke="{StaticResource TRiesgoTexto}">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding CargarCommand}" />
+                                            </Border.GestureRecognizers>
+                                            <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                                                <c:Icono Datos="{x:Static c:Iconos.Actualizar}" Color="{StaticResource TRiesgoTitulo}" Tamano="18" Grosor="2" VerticalOptions="Center" />
+                                                <Label Text="Reintentar" FontFamily="PlexSemi" TextColor="{StaticResource TRiesgoTitulo}" VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </VerticalStackLayout>
+                                </Border>
+
+                                <Label Text="{Binding Titulo}" Style="{StaticResource Seccion}" Padding="4,4,4,0">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Vacio}" Value="True">
+                                            <Setter Property="IsVisible" Value="False" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding CargandoInicial}" Value="True">
+                                            <Setter Property="IsVisible" Value="False" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </VerticalStackLayout>
+                        </CollectionView.Header>
+
+                        <!-- 2c: estado vacío -->
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout Padding="28,96,28,80" Spacing="18" IsVisible="{Binding Vacio}">
+                                <Border WidthRequest="56" HeightRequest="56" HorizontalOptions="Start" StrokeShape="RoundRectangle 28"
+                                        BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}">
+                                    <c:Icono Datos="{x:Static c:Iconos.Documento}" Color="{StaticResource TTenue}" Tamano="26" Grosor="1.6"
+                                             HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="No tienes hojas de ruta aprobadas por ahora." FontFamily="PlexSemi" FontSize="20" />
+                                <Label Text="Cuando el Supervisor apruebe tu hoja aparecerá aquí." FontSize="16"
+                                       TextColor="{StaticResource TTenue}" LineHeight="1.3" />
+                                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                                    <c:Icono Datos="{x:Static c:Iconos.FlechaAbajo}" Color="{StaticResource TTenue}" Tamano="16" VerticalOptions="Center" />
+                                    <Label Text="Desliza hacia abajo para actualizar" Style="{StaticResource Tenue}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+
+                        <!-- 2a: tarjeta de hoja -->
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="m:HojaItem">
+                                <Border Margin="16,0,16,12" Padding="16" Style="{StaticResource Tarjeta}" Stroke="{Binding BordeTarjeta}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding BindingContext.AbrirCommand, Source={x:Reference Pagina}, x:DataType=ContentPage}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <VerticalStackLayout Spacing="14">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{Binding Jornada}" Style="{StaticResource Mono}" TextColor="{StaticResource TTenue}"
+                                                   VerticalOptions="Center" />
+                                            <Border Grid.Column="1" Style="{StaticResource ChipHoja}" BackgroundColor="{Binding FondoEstado}">
+                                                <Label Text="{Binding Estado}" FontFamily="PlexSemi" FontSize="13"
+                                                       TextColor="{Binding TextoEstado}" VerticalOptions="Center" />
+                                            </Border>
+                                        </Grid>
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding Zona}" FontFamily="PlexSemi" FontSize="21" />
+                                            <Label Text="{Binding Sector}" IsVisible="{Binding HaySector}" TextColor="{StaticResource TTenue}" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Text="Con resultado" Style="{StaticResource Tenue}" />
+                                                <Label Grid.Column="1" Text="{Binding Avance}" Style="{StaticResource Mono}" />
+                                            </Grid>
+                                            <c:BarraAvance Progreso="{Binding Progreso}" />
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </RefreshView>
+
+                    <!-- 2b: esqueleto de carga -->
+                    <VerticalStackLayout IsVisible="{Binding CargandoInicial}" BackgroundColor="{StaticResource TFondo}"
+                                         Padding="16,20,16,16" Spacing="12">
+                        <BoxView Style="{StaticResource Esqueleto}" WidthRequest="150" HeightRequest="12" Margin="4,0" />
+                        <Border Style="{StaticResource Tarjeta}" Padding="16">
+                            <VerticalStackLayout Spacing="14">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <Label Text="{Binding Jornada}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
-                                    <Label Grid.Column="1" Text="{Binding Estado}" FontSize="13" FontAttributes="Bold"
-                                           TextColor="{Binding ColorEstado}" VerticalOptions="Center" />
+                                    <BoxView Style="{StaticResource Esqueleto}" WidthRequest="90" HeightRequest="14" />
+                                    <BoxView Grid.Column="1" Style="{StaticResource Esqueleto}" WidthRequest="92" HeightRequest="26" CornerRadius="13" />
                                 </Grid>
-                                <Label Text="{Binding Zona}" FontSize="14" TextColor="{StaticResource TTenue}" />
-                                <ProgressBar Progress="{Binding Progreso}" ProgressColor="{StaticResource TAmarillo}"
-                                             BackgroundColor="{StaticResource TBorde}" />
-                                <Label Text="{Binding Avance}" FontSize="13" TextColor="{StaticResource TTenue}" />
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="160" HeightRequest="22" />
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="80" HeightRequest="14" />
+                                <BoxView Style="{StaticResource Esqueleto}" HorizontalOptions="Fill" HeightRequest="6" CornerRadius="3" />
                             </VerticalStackLayout>
                         </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </RefreshView>
+                        <Border Style="{StaticResource Tarjeta}" Padding="16">
+                            <VerticalStackLayout Spacing="14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <BoxView Style="{StaticResource Esqueleto}" WidthRequest="90" HeightRequest="14" />
+                                    <BoxView Grid.Column="1" Style="{StaticResource Esqueleto}" WidthRequest="92" HeightRequest="26" CornerRadius="13" />
+                                </Grid>
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="130" HeightRequest="22" />
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="80" HeightRequest="14" />
+                                <BoxView Style="{StaticResource Esqueleto}" HorizontalOptions="Fill" HeightRequest="6" CornerRadius="3" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tarjeta}" Padding="16" Opacity="0.5">
+                            <VerticalStackLayout Spacing="14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <BoxView Style="{StaticResource Esqueleto}" WidthRequest="90" HeightRequest="14" />
+                                    <BoxView Grid.Column="1" Style="{StaticResource Esqueleto}" WidthRequest="92" HeightRequest="26" CornerRadius="13" />
+                                </Grid>
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="150" HeightRequest="22" />
+                                <BoxView Style="{StaticResource Esqueleto}" WidthRequest="80" HeightRequest="14" />
+                                <BoxView Style="{StaticResource Esqueleto}" HorizontalOptions="Fill" HeightRequest="6" CornerRadius="3" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+            </Grid>
+        </Grid>
 
+        <!-- 7a: ¿Cerrar sesión? -->
+        <Grid IsVisible="{Binding MostrarCerrarSesion}" BackgroundColor="{StaticResource TVelo}">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelarCerrarSesionCommand}" />
+            </Grid.GestureRecognizers>
+            <Border Style="{StaticResource Dialogo}">
+                <Border.GestureRecognizers>
+                    <!-- Absorbe el toque para que no cierre el diálogo -->
+                    <TapGestureRecognizer />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="22">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="¿Cerrar sesión?" FontFamily="PlexSemi" FontSize="21" />
+                        <Label Text="Tendrás que volver a ingresar tus credenciales." TextColor="{StaticResource TTenue}" LineHeight="1.3" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="10">
+                        <Button Text="Cerrar sesión" Command="{Binding CerrarSesionCommand}" />
+                        <Button Text="Cancelar" Style="{StaticResource BotonSecundario}" Command="{Binding CancelarCerrarSesionCommand}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
     </Grid>
 </ContentPage>

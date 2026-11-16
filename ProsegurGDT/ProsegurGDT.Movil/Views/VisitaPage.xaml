@@ -1,159 +1,339 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Ficha de la visita y CU29 — registrar resultado. Estilo provisional (Torre); el definitivo sale de Claude Design. -->
+<!-- Ficha de la visita y CU29 — registrar resultado (diseño 5a–5d, 6b, T1). La ficha y el formulario van en un
+     solo desplazamiento; «Guardar resultado» queda fijo abajo mientras el formulario está abierto. -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             xmlns:m="clr-namespace:ProsegurGDT.Movil.Models"
+             xmlns:c="clr-namespace:ProsegurGDT.Movil.Controles"
              x:Class="ProsegurGDT.Movil.Views.VisitaPage"
              x:DataType="vm:VisitaViewModel"
-             Title="{Binding Titulo}"
-             BackgroundColor="{StaticResource TFondo}">
+             x:Name="Pagina">
 
-    <ContentPage.Resources>
-        <Style x:Key="Etiqueta" TargetType="Label">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="TextColor" Value="{StaticResource TTenue}" />
-        </Style>
-        <Style x:Key="Campo" TargetType="Border">
-            <Setter Property="BackgroundColor" Value="{StaticResource TSuperficie}" />
-            <Setter Property="Stroke" Value="{StaticResource TBorde}" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 8" />
-            <Setter Property="Padding" Value="12,0" />
-        </Style>
-    </ContentPage.Resources>
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="20,16,20,32" Spacing="14">
-
-            <!-- Ficha del titular para verificar identidad (RN-07) -->
-            <Border Padding="16" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
-                    StrokeShape="RoundRectangle 10">
-                <VerticalStackLayout Spacing="10">
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Titular" Style="{StaticResource Etiqueta}" />
-                        <Label Text="{Binding Titular}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Documento del titular" Style="{StaticResource Etiqueta}" />
-                        <Label Text="{Binding Documento}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TAmarillo}"
-                               FontFamily="monospace" />
-                    </VerticalStackLayout>
-                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HayTelefono}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Text="Teléfono" Style="{StaticResource Etiqueta}" />
-                            <Label Text="{Binding Telefono}" FontSize="16" TextColor="{StaticResource TTexto}" />
-                        </VerticalStackLayout>
-                        <Button Grid.Column="1" Text="Llamar" Command="{Binding LlamarCommand}"
-                                BackgroundColor="{StaticResource TSuperficie2}" TextColor="{StaticResource TAmarillo}"
-                                BorderColor="{StaticResource TBorde}" BorderWidth="1" CornerRadius="8" HeightRequest="44" />
-                    </Grid>
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Dirección" Style="{StaticResource Etiqueta}" />
-                        <Label Text="{Binding Direccion}" FontSize="15" TextColor="{StaticResource TTexto}" />
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Cita" Style="{StaticResource Etiqueta}" />
-                        <Label Text="{Binding Cita}" FontSize="15" TextColor="{StaticResource TTexto}" />
-                        <Label Text="{Binding Observaciones}" IsVisible="{Binding HayObservaciones}"
-                               FontSize="13" TextColor="{StaticResource TTenue}" />
-                    </VerticalStackLayout>
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Mensajes -->
-            <Border IsVisible="{Binding HayExito}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
-                    Stroke="{StaticResource TOk}" StrokeShape="RoundRectangle 8">
-                <Label Text="{Binding Exito}" TextColor="{StaticResource TTexto}" FontSize="14" />
-            </Border>
-            <Border IsVisible="{Binding HayError}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
-                    Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
-                <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" />
-            </Border>
-            <Border IsVisible="{Binding HayBloqueo}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
-                    Stroke="{StaticResource TAmarillo}" StrokeShape="RoundRectangle 8">
-                <Label Text="{Binding Bloqueo}" TextColor="{StaticResource TTexto}" FontSize="14" />
-            </Border>
-            <Border IsVisible="{Binding HaySuplantacion}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
-                    Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
-                <Label Text="{Binding Suplantacion}" TextColor="{StaticResource TRiesgo}" FontSize="14" FontAttributes="Bold" />
-            </Border>
-
-            <!-- Resultado ya registrado -->
-            <Border IsVisible="{Binding HayResultado}" Padding="16" BackgroundColor="{StaticResource TSuperficie}"
-                    Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Resultado registrado" Style="{StaticResource Etiqueta}" />
-                    <Label Text="{Binding ResultadoActual}" FontSize="15" TextColor="{StaticResource TTexto}" />
-                    <Button Text="Corregir" Command="{Binding CorregirCommand}" IsVisible="{Binding PuedeCorregir}"
-                            BackgroundColor="{StaticResource TSuperficie2}" TextColor="{StaticResource TTexto}"
-                            BorderColor="{StaticResource TBorde}" BorderWidth="1" CornerRadius="8" HeightRequest="44" />
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- CU29: formulario -->
-            <VerticalStackLayout IsVisible="{Binding MostrarFormulario}" Spacing="12">
-                <Label Text="Resultado de la visita" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
-
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                    <Button Text="Entregada" Command="{Binding EntregadaCommand}" HeightRequest="48" CornerRadius="8"
-                            BackgroundColor="{Binding ColorEntregada}" TextColor="{Binding TextoEntregada}" FontAttributes="Bold" />
-                    <Button Grid.Column="1" Text="No entregada" Command="{Binding NoEntregadaCommand}" HeightRequest="48" CornerRadius="8"
-                            BackgroundColor="{Binding ColorNoEntregada}" TextColor="{Binding TextoNoEntregada}" FontAttributes="Bold" />
+            <!-- Barra: volver, «Visita 03» y código de la tarjeta -->
+            <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="4" Padding="4,4,16,4" HeightRequest="56">
+                <Grid Style="{StaticResource BotonIcono}" SemanticProperties.Description="Volver">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding VolverCommand}" />
+                    </Grid.GestureRecognizers>
+                    <c:Icono Datos="{x:Static c:Iconos.Atras}" Color="{StaticResource TTexto}" Tamano="22" Grosor="2"
+                             HorizontalOptions="Center" VerticalOptions="Center" />
                 </Grid>
+                <Label Grid.Column="1" Style="{StaticResource TituloBarra}">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="Visita " FontFamily="PlexSemi" FontSize="17" />
+                            <Span Text="{Binding Orden}" FontFamily="MonoSemi" FontSize="17" TextColor="{StaticResource TAmarillo}" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+                <Label Grid.Column="2" Text="{Binding Codigo}" Style="{StaticResource Mono}" TextColor="{StaticResource TTenue}" VerticalOptions="Center" />
+            </Grid>
+            <BoxView Grid.Row="1" Style="{StaticResource Divisor}" />
 
-                <!-- Entregada: identidad del receptor -->
-                <VerticalStackLayout IsVisible="{Binding EsEntregada}" Spacing="10">
-                    <VerticalStackLayout Spacing="6">
-                        <Label Text="Nombre del receptor" Style="{StaticResource Etiqueta}" />
-                        <Border Style="{StaticResource Campo}">
-                            <Entry Text="{Binding ReceptorNombre}" MaxLength="150" MinimumHeightRequest="48"
-                                   TextColor="{StaticResource TTexto}" Keyboard="Text" />
+            <ScrollView Grid.Row="2">
+                <VerticalStackLayout Padding="16" Spacing="16">
+
+                    <!-- T2: sin conexión -->
+                    <Border Style="{StaticResource AvisoNeutro}" Padding="16,4,4,4" IsVisible="{Binding SinConexion}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <c:Icono Datos="{x:Static c:Iconos.SinSenal}" Color="{StaticResource TTexto}" Tamano="20" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding Error}" FontFamily="PlexMedio" FontSize="14" VerticalOptions="Center" />
+                            <Button Grid.Column="2" Text="Reintentar" Style="{StaticResource BotonTexto}" Command="{Binding ReintentarCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- T1: error del servidor, texto tal cual -->
+                    <Border Style="{StaticResource AvisoRiesgo}" IsVisible="{Binding ErrorServidor}">
+                        <VerticalStackLayout Spacing="12">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <c:Icono Datos="{x:Static c:Iconos.Alerta}" Color="{StaticResource TRiesgoTexto}" Tamano="20" VerticalOptions="Start" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                    <Label Text="{Binding TituloError}" FontFamily="PlexSemi" TextColor="{StaticResource TRiesgoTitulo}" />
+                                    <Label Text="{Binding Error}" FontSize="14" />
+                                </VerticalStackLayout>
+                            </Grid>
+                            <Border Style="{StaticResource BotonContorno}" HeightRequest="48" Stroke="{StaticResource TRiesgoTexto}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ReintentarCommand}" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                                    <c:Icono Datos="{x:Static c:Iconos.Actualizar}" Color="{StaticResource TRiesgoTitulo}" Tamano="18" Grosor="2" VerticalOptions="Center" />
+                                    <Label Text="Reintentar" FontFamily="PlexSemi" TextColor="{StaticResource TRiesgoTitulo}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- 6b: suplantación reportada -->
+                    <Border IsVisible="{Binding HaySuplantacion}" HeightRequest="32" Padding="12,0" HorizontalOptions="Start"
+                            BackgroundColor="{StaticResource TRiesgoFondo}" Stroke="{StaticResource TRiesgoBorde}" StrokeShape="RoundRectangle 16">
+                        <HorizontalStackLayout Spacing="8">
+                            <c:Icono Datos="{x:Static c:Iconos.Escudo}" Color="{StaticResource TRiesgoTexto}" Tamano="16" VerticalOptions="Center" />
+                            <Label Text="{Binding Suplantacion}" FontFamily="PlexSemi" FontSize="14" TextColor="{StaticResource TRiesgoTexto}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- Bloqueo (sin confirmar, descargo iniciado o tarjeta procesada) -->
+                    <Border Style="{StaticResource AvisoNeutro}" IsVisible="{Binding HayBloqueo}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <c:Icono Datos="{x:Static c:Iconos.Candado}" Color="{StaticResource TTenue}" Tamano="20" VerticalOptions="Start" />
+                            <Label Grid.Column="1" Text="{Binding Bloqueo}" FontFamily="PlexMedio" LineHeight="1.2" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 5a: ficha del titular para verificar identidad (RN-07) -->
+                    <Border Style="{StaticResource Tarjeta}" IsVisible="{Binding HayVisita}">
+                        <VerticalStackLayout>
+                            <VerticalStackLayout Padding="16" Spacing="12">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="Titular" Style="{StaticResource Etiqueta}" />
+                                    <Label Text="{Binding Titular}" FontFamily="PlexSemi" FontSize="20" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="DNI" Style="{StaticResource Etiqueta}" />
+                                    <Label Text="{Binding Documento}" FontFamily="MonoSemi" FontSize="30" CharacterSpacing="1" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                            <BoxView Style="{StaticResource Divisor}" />
+
+                            <VerticalStackLayout IsVisible="{Binding HayTelefono}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Padding="16,8,8,8">
+                                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                        <Label Text="Teléfono" Style="{StaticResource Etiqueta}" />
+                                        <Label Text="{Binding Telefono}" FontFamily="MonoMedio" FontSize="17" />
+                                    </VerticalStackLayout>
+                                    <Border Grid.Column="1" HeightRequest="48" Padding="16,0" Stroke="{StaticResource TAmarillo}"
+                                            StrokeShape="RoundRectangle 8" SemanticProperties.Description="Llamar al titular">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding LlamarCommand}" />
+                                        </Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="8">
+                                            <c:Icono Datos="{x:Static c:Iconos.Telefono}" Color="{StaticResource TAmarillo}" Tamano="18" VerticalOptions="Center" />
+                                            <Label Text="Llamar" FontFamily="PlexSemi" TextColor="{StaticResource TAmarillo}" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                </Grid>
+                                <BoxView Style="{StaticResource Divisor}" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Padding="16,12" Spacing="2">
+                                <Label Text="Dirección" Style="{StaticResource Etiqueta}" />
+                                <Label Text="{Binding Direccion}" FontSize="16" LineHeight="1.2" />
+                            </VerticalStackLayout>
+                            <BoxView Style="{StaticResource Divisor}" />
+
+                            <VerticalStackLayout Padding="16,12" Spacing="4">
+                                <Label Text="Cita" Style="{StaticResource Etiqueta}" />
+                                <Label Text="{Binding CitaFechaHora}" IsVisible="{Binding HayCita}" FontFamily="MonoMedio" FontSize="16" TextColor="{StaticResource TAmarillo}" />
+                                <Label Text="{Binding CitaLugar}" IsVisible="{Binding HayCita}" />
+                                <Label Text="{Binding Observaciones}" IsVisible="{Binding HayObservaciones}" Style="{StaticResource Tenue}" />
+                                <Label Text="Sin cita registrada" IsVisible="{Binding SinCita}" TextColor="{StaticResource TTenue2}" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- 5d / 6b: resultado registrado -->
+                    <Border Style="{StaticResource Tarjeta}" Stroke="{Binding BordeResultado}" IsVisible="{Binding MostrarResultado}">
+                        <VerticalStackLayout>
+                            <Grid ColumnDefinitions="Auto,*" Padding="16,14" ColumnSpacing="12">
+                                <Border Style="{StaticResource Chip}" HeightRequest="28" Padding="10,0" StrokeShape="RoundRectangle 14"
+                                        BackgroundColor="{Binding ChipResultado.Fondo}" Stroke="{Binding ChipResultado.Borde}">
+                                    <HorizontalStackLayout Spacing="6">
+                                        <c:Icono Datos="{x:Static c:Iconos.Check}" Color="{Binding ChipResultado.Texto}" Tamano="14" Grosor="2.4"
+                                                 IsVisible="{Binding ResultadoEntregado}" VerticalOptions="Center" />
+                                        <Label Text="{Binding TextoResultadoActual}" Style="{StaticResource ChipTexto}" FontSize="14"
+                                               TextColor="{Binding ChipResultado.Texto}" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                                <Label Grid.Column="1" Text="{Binding Registrado}" Style="{StaticResource Tenue}"
+                                       HorizontalOptions="End" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                            </Grid>
+                            <BoxView Style="{StaticResource Divisor}" />
+
+                            <VerticalStackLayout IsVisible="{Binding ResultadoEntregado}">
+                                <VerticalStackLayout Padding="16,12" Spacing="2">
+                                    <Label Text="Receptor" Style="{StaticResource Etiqueta}" />
+                                    <Label Text="{Binding Receptor}" FontFamily="PlexMedio" FontSize="16" />
+                                </VerticalStackLayout>
+                                <BoxView Style="{StaticResource Divisor}" />
+                                <VerticalStackLayout Padding="16,12" Spacing="2">
+                                    <Label Text="Documento del receptor" Style="{StaticResource Etiqueta}" />
+                                    <Label Text="{Binding DocumentoReceptor}" FontFamily="MonoMedio" FontSize="17" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout IsVisible="{Binding ResultadoNoEntregado}" Padding="16,12" Spacing="2">
+                                <Label Text="Motivo" Style="{StaticResource Etiqueta}" />
+                                <Label Text="{Binding MotivoActual}" FontFamily="PlexMedio" FontSize="16" />
+                                <Label Text="{Binding DetalleActual}" IsVisible="{Binding HayDetalleActual}" Style="{StaticResource Tenue}" Margin="0,4,0,0" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Button Text="Corregir" Style="{StaticResource BotonSecundario}" Command="{Binding CorregirCommand}" IsVisible="{Binding PuedeCorregir}" />
+
+                    <!-- CU29: formulario (5a–5c) -->
+                    <VerticalStackLayout IsVisible="{Binding MostrarFormulario}" Spacing="14">
+                        <Label Text="Registrar resultado" Style="{StaticResource Seccion}" />
+
+                        <!-- Selector segmentado -->
+                        <Border Padding="4" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                                <Border HeightRequest="44" StrokeShape="RoundRectangle 7" BackgroundColor="{Binding FondoEntregada}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding EntregadaCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label Text="Entregada" FontFamily="PlexSemi" TextColor="{Binding TextoEntregada}"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Border Grid.Column="1" HeightRequest="44" StrokeShape="RoundRectangle 7" BackgroundColor="{Binding FondoNoEntregada}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding NoEntregadaCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label Text="No entregada" FontFamily="PlexSemi" TextColor="{Binding TextoNoEntregada}"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
                         </Border>
+
+                        <!-- Entregada: identidad del receptor (5b) -->
+                        <VerticalStackLayout IsVisible="{Binding EsEntregada}" Spacing="16">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Nombre del receptor" Style="{StaticResource EtiquetaCampo}" />
+                                <Border Style="{StaticResource Campo}">
+                                    <Entry Text="{Binding ReceptorNombre}" MaxLength="150" Keyboard="Text">
+                                        <Entry.Behaviors><c:ResaltarAlEnfocar /></Entry.Behaviors>
+                                    </Entry>
+                                </Border>
+                                <HorizontalStackLayout Spacing="6" IsVisible="{Binding HayErrorNombre}">
+                                    <c:Icono Datos="{x:Static c:Iconos.ErrorCirculo}" Color="{StaticResource TRiesgoTexto}" Tamano="14" Grosor="2" VerticalOptions="Center" />
+                                    <Label Text="{Binding ErrorNombre}" Style="{StaticResource ErrorCampo}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Documento del receptor" Style="{StaticResource EtiquetaCampo}" />
+                                <Border Style="{StaticResource Campo}">
+                                    <Entry Text="{Binding ReceptorDocumento}" MaxLength="20" FontFamily="MonoMedio" FontSize="18" CharacterSpacing="1"
+                                           IsSpellCheckEnabled="False" IsTextPredictionEnabled="False">
+                                        <Entry.Behaviors><c:ResaltarAlEnfocar /></Entry.Behaviors>
+                                    </Entry>
+                                </Border>
+                                <HorizontalStackLayout Spacing="6" IsVisible="{Binding HayErrorDocumento}">
+                                    <c:Icono Datos="{x:Static c:Iconos.ErrorCirculo}" Color="{StaticResource TRiesgoTexto}" Tamano="14" Grosor="2" VerticalOptions="Center" />
+                                    <Label Text="{Binding ErrorDocumento}" Style="{StaticResource ErrorCampo}" />
+                                </HorizontalStackLayout>
+                                <Border IsVisible="{Binding DocumentoDistinto}" Padding="12" BackgroundColor="{StaticResource TSuperficie2}" StrokeShape="RoundRectangle 8">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                        <c:Icono Datos="{x:Static c:Iconos.Info}" Color="{StaticResource TAmarillo}" Tamano="18" VerticalOptions="Start" />
+                                        <Label Grid.Column="1" FontSize="14" LineHeight="1.2"
+                                               Text="No coincide con el documento del titular. Se aceptará, pero el Descargador lo revisará." />
+                                    </Grid>
+                                </Border>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- No entregada: motivo (radio) y detalle (5c) -->
+                        <VerticalStackLayout IsVisible="{Binding EsNoEntregada}" Spacing="8">
+                            <Label Text="Motivo" Style="{StaticResource EtiquetaCampo}" />
+                            <Border BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Opciones}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="m:OpcionMotivo">
+                                            <VerticalStackLayout>
+                                                <VerticalStackLayout.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding BindingContext.MotivoCommand, Source={x:Reference Pagina}, x:DataType=ContentPage}"
+                                                                          CommandParameter="{Binding .}" />
+                                                </VerticalStackLayout.GestureRecognizers>
+                                                <Grid ColumnDefinitions="20,*" ColumnSpacing="14" Padding="14,0" HeightRequest="48">
+                                                    <Border WidthRequest="20" HeightRequest="20" StrokeShape="RoundRectangle 10" StrokeThickness="2"
+                                                            Stroke="{Binding ColorAro}" VerticalOptions="Center">
+                                                        <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" Color="{StaticResource TAmarillo}"
+                                                                 IsVisible="{Binding Seleccionada}" HorizontalOptions="Center" VerticalOptions="Center" />
+                                                    </Border>
+                                                    <Label Grid.Column="1" Text="{Binding Texto}" FontFamily="{Binding Fuente}" FontSize="16" VerticalOptions="Center" />
+                                                </Grid>
+                                                <BoxView Style="{StaticResource Divisor}">
+                                                    <BoxView.Triggers>
+                                                        <DataTrigger TargetType="BoxView" Binding="{Binding EsUltima}" Value="True">
+                                                            <Setter Property="IsVisible" Value="False" />
+                                                        </DataTrigger>
+                                                    </BoxView.Triggers>
+                                                </BoxView>
+                                            </VerticalStackLayout>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </Border>
+                            <HorizontalStackLayout Spacing="6" IsVisible="{Binding HayErrorMotivo}">
+                                <c:Icono Datos="{x:Static c:Iconos.ErrorCirculo}" Color="{StaticResource TRiesgoTexto}" Tamano="14" Grosor="2" VerticalOptions="Center" />
+                                <Label Text="{Binding ErrorMotivo}" Style="{StaticResource ErrorCampo}" />
+                            </HorizontalStackLayout>
+
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                                <Label Style="{StaticResource EtiquetaCampo}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="Detalle" FontFamily="PlexMedio" FontSize="14" TextColor="{StaticResource TTenue}" />
+                                            <Span Text="{Binding NotaDetalle}" FontFamily="PlexMedio" FontSize="14" TextColor="{StaticResource TTexto}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Grid.Column="1" Text="{Binding ContadorDetalle}" FontFamily="MonoMedio" FontSize="13" TextColor="{StaticResource TTenue}" />
+                            </Grid>
+                            <Border Style="{StaticResource Campo}" Padding="14,4">
+                                <Editor Text="{Binding Detalle}" MaxLength="300" HeightRequest="80">
+                                    <Editor.Behaviors><c:ResaltarAlEnfocar /></Editor.Behaviors>
+                                </Editor>
+                            </Border>
+                            <HorizontalStackLayout Spacing="6" IsVisible="{Binding HayErrorDetalle}">
+                                <c:Icono Datos="{x:Static c:Iconos.ErrorCirculo}" Color="{StaticResource TRiesgoTexto}" Tamano="14" Grosor="2" VerticalOptions="Center" />
+                                <Label Text="{Binding ErrorDetalle}" Style="{StaticResource ErrorCampo}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <Button Text="Cancelar corrección" Style="{StaticResource BotonTexto}" TextColor="{StaticResource TTenue}"
+                                Command="{Binding CancelarCommand}" IsVisible="{Binding Corrigiendo}" HorizontalOptions="Center" />
                     </VerticalStackLayout>
-                    <VerticalStackLayout Spacing="6">
-                        <Label Text="Documento del receptor" Style="{StaticResource Etiqueta}" />
-                        <Border Style="{StaticResource Campo}">
-                            <Entry Text="{Binding ReceptorDocumento}" MaxLength="20" MinimumHeightRequest="48"
-                                   TextColor="{StaticResource TTexto}" FontFamily="monospace" />
-                        </Border>
-                    </VerticalStackLayout>
-                    <Label IsVisible="{Binding DocumentoDistinto}" FontSize="13" TextColor="{StaticResource TAmarillo}"
-                           Text="El documento no coincide con el del titular. Se aceptará, pero el Descargador lo revisará." />
+
+                    <!-- CU30 -->
+                    <Border Style="{StaticResource BotonContorno}" Stroke="{StaticResource TRiesgoBorde}" IsVisible="{Binding PuedeReportar}"
+                            SemanticProperties.Description="Reportar suplantación de identidad">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ReportarCommand}" />
+                        </Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <c:Icono Datos="{x:Static c:Iconos.EscudoAlerta}" Color="{StaticResource TRiesgoTexto}" Tamano="18" VerticalOptions="Center" />
+                            <Label Text="Reportar suplantación de identidad" FontFamily="PlexSemi" TextColor="{StaticResource TRiesgoTexto}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- Espacio para que el toast no tape el último botón -->
+                    <BoxView HeightRequest="56" Color="Transparent" IsVisible="{Binding HayExito}" />
                 </VerticalStackLayout>
+            </ScrollView>
 
-                <!-- No entregada: motivo obligatorio -->
-                <VerticalStackLayout IsVisible="{Binding EsNoEntregada}" Spacing="10">
-                    <VerticalStackLayout Spacing="6">
-                        <Label Text="Motivo de no entrega" Style="{StaticResource Etiqueta}" />
-                        <Border Style="{StaticResource Campo}">
-                            <Picker ItemsSource="{Binding Motivos}" SelectedIndex="{Binding MotivoIndice}"
-                                    Title="Seleccione el motivo" TextColor="{StaticResource TTexto}"
-                                    TitleColor="{StaticResource Gray500}" MinimumHeightRequest="48" />
-                        </Border>
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Spacing="6">
-                        <Label Text="{Binding EtiquetaDetalle}" Style="{StaticResource Etiqueta}" />
-                        <Border Style="{StaticResource Campo}">
-                            <Editor Text="{Binding Detalle}" MaxLength="300" AutoSize="TextChanges" MinimumHeightRequest="80"
-                                    TextColor="{StaticResource TTexto}" />
-                        </Border>
-                    </VerticalStackLayout>
-                </VerticalStackLayout>
-
-                <Button Text="Guardar resultado" Command="{Binding GuardarCommand}" IsEnabled="{Binding Libre}"
-                        BackgroundColor="{StaticResource TAmarillo}" TextColor="{StaticResource TFondo}"
-                        FontAttributes="Bold" HeightRequest="52" CornerRadius="8" />
-                <Button Text="Cancelar corrección" Command="{Binding CancelarCommand}" IsVisible="{Binding Corrigiendo}"
-                        BackgroundColor="Transparent" TextColor="{StaticResource TTenue}" />
+            <!-- Guardar resultado, fijo abajo -->
+            <VerticalStackLayout Grid.Row="3" IsVisible="{Binding MostrarFormulario}">
+                <BoxView Style="{StaticResource Divisor}" />
+                <Grid Padding="16,12,16,12">
+                    <Button Text="Guardar resultado" Command="{Binding GuardarCommand}" IsEnabled="{Binding Libre}" />
+                    <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TTenue}"
+                                       WidthRequest="20" HeightRequest="20" HorizontalOptions="End" Margin="0,0,16,0" />
+                </Grid>
             </VerticalStackLayout>
+        </Grid>
 
-            <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TAmarillo}" />
-
-            <!-- CU30 -->
-            <Button Text="Reportar suplantación de identidad" Command="{Binding ReportarCommand}"
-                    IsVisible="{Binding PuedeReportar}" Margin="0,12,0,0"
-                    BackgroundColor="Transparent" TextColor="{StaticResource TRiesgo}"
-                    BorderColor="{StaticResource TRiesgo}" BorderWidth="1" CornerRadius="8" HeightRequest="48" />
-
-        </VerticalStackLayout>
-    </ScrollView>
+        <!-- 5d: toast de éxito con el mensaje del servidor -->
+        <Border IsVisible="{Binding HayExito}" VerticalOptions="End" Margin="16,0,16,16" MinimumHeightRequest="52" Padding="16,12"
+                BackgroundColor="{StaticResource TSuperficie2}" Stroke="{StaticResource TOkBorde}" StrokeShape="RoundRectangle 10">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <c:Icono Datos="{x:Static c:Iconos.Check}" Color="{StaticResource TOk}" Tamano="20" Grosor="2.4" VerticalOptions="Center" />
+                <Label Grid.Column="1" Text="{Binding Exito}" FontFamily="PlexSemi" VerticalOptions="Center" />
+            </Grid>
+        </Border>
+    </Grid>
 </ContentPage>

@@ -25,16 +25,19 @@ public static class Textos
         _ => "Descartado"
     };
 
-    // «sáb. 15 nov.» → «Sáb 15 nov»
-    public static string Jornada(DateOnly d)
-    {
-        var s = d.ToString("ddd d MMM", Es).Replace(".", "");
-        return char.ToUpper(s[0], Es) + s[1..];
-    }
+    // Fechas como en el diseño: «15/11/2026» y «15/11/2026 · 08:12» (hora local del dispositivo, Lima).
+    public static string Fecha(DateOnly d) => d.ToString("dd/MM/yyyy", Es);
 
-    // Hora local del dispositivo (Lima) a partir de una fecha UTC de la API.
-    public static string FechaHora(DateTime utc) =>
-        DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("dd/MM HH:mm", Es);
+    public static DateTime Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+
+    public static string FechaHora(DateTime utc) => Local(utc).ToString("dd/MM/yyyy · HH:mm", Es);
 
     public static string Hora(TimeOnly h) => h.ToString("HH:mm", Es);
+
+    // «Registrado a las 10:42» si fue hoy; si no, «Registrado el 14/11/2026 · 10:42».
+    public static string Registrado(DateTime utc)
+    {
+        var l = Local(utc);
+        return l.Date == DateTime.Now.Date ? $"Registrado a las {l:HH:mm}" : $"Registrado el {FechaHora(utc)}";
+    }
 }
