@@ -250,3 +250,5 @@ app.MapControllerRoute(
 app.MapRazorPages().WithStaticAssets();
 
 app.Run();
+// C1: las pruebas de integración (WebApplicationFactory) necesitan ver la clase Program.
+public partial class Program;

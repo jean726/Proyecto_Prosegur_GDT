@@ -13,6 +13,7 @@ public static class EnumExt
         ["Aprobacion"] = "aprobación", ["Correccion"] = "corrección", ["Documentacion"] = "documentación",
         ["Direccion"] = "dirección", ["Verificacion"] = "verificación", ["Boveda"] = "bóveda",
         ["Clasificacion"] = "clasificación", ["Conciliacion"] = "conciliación",
+        ["Asignacion"] = "asignación", ["Numero"] = "número", ["Buzon"] = "buzón",
     };
 
     public static string Texto(this Enum valor)
