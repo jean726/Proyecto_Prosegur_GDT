@@ -30,6 +30,10 @@ public static class MauiProgram
 		builder.Services.AddTransient<HojasPage>();
 		builder.Services.AddTransient<HojaViewModel>();
 		builder.Services.AddTransient<HojaPage>();
+		builder.Services.AddTransient<VisitaViewModel>();
+		builder.Services.AddTransient<VisitaPage>();
+		builder.Services.AddTransient<SuplantacionViewModel>();
+		builder.Services.AddTransient<SuplantacionPage>();
 
 #if DEBUG
 		builder.Logging.AddDebug();

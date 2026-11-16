@@ -49,6 +49,11 @@ public class HojaViewModel(ApiClient api) : BaseViewModel
     private Command? _cargar, _confirmar;
     public ICommand CargarCommand => _cargar ??= new Command(async () => await CargarAsync());
     public ICommand ConfirmarCommand => _confirmar ??= new Command(async () => await ConfirmarAsync());
+    private Command<VisitaItem>? _abrirVisita;
+    public ICommand AbrirVisitaCommand => _abrirVisita ??= new Command<VisitaItem>(async v =>
+    {
+        if (v is not null) await Shell.Current.GoToAsync($"visita?hoja={Id}&tarjeta={v.Dto.TarjetaId}");
+    });
 
     public async Task CargarAsync()
     {

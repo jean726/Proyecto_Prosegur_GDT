@@ -11,6 +11,8 @@ public partial class AppShell : Shell
 	{
 		InitializeComponent();
 		Routing.RegisterRoute("hoja", typeof(Views.HojaPage));
+		Routing.RegisterRoute("visita", typeof(Views.VisitaPage));
+		Routing.RegisterRoute("suplantacion", typeof(Views.SuplantacionPage));
 		_sesion = sesion;
 		// 401 en cualquier petición autenticada → vuelta al inicio de sesión con el mensaje del servidor.
 		api.SesionExpirada += (_, mensaje) => MainThread.BeginInvokeOnMainThread(async () =>

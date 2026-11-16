@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- CU30 — Reportar suplantación de identidad. Estilo provisional (Torre); el definitivo sale de Claude Design. -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             x:Class="ProsegurGDT.Movil.Views.SuplantacionPage"
+             x:DataType="vm:SuplantacionViewModel"
+             Title="Reportar suplantación"
+             BackgroundColor="{StaticResource TFondo}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,32" Spacing="14">
+
+            <Border Padding="16" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TRiesgo}"
+                    StrokeShape="RoundRectangle 10">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Sospecha de suplantación de identidad" FontSize="16" FontAttributes="Bold"
+                           TextColor="{StaticResource TRiesgo}" />
+                    <Label Text="El Verificador evaluará el caso. No entregues la tarjeta mientras tanto."
+                           FontSize="14" TextColor="{StaticResource TTexto}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Describe lo ocurrido" FontSize="13" TextColor="{StaticResource TTenue}" />
+                <Border BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
+                        StrokeShape="RoundRectangle 8" Padding="12,4">
+                    <Editor Text="{Binding Descripcion}" MaxLength="500" AutoSize="TextChanges" MinimumHeightRequest="140"
+                            Placeholder="Por ejemplo: la persona que atendió presentó un DNI con otra foto…"
+                            PlaceholderColor="{StaticResource Gray500}" TextColor="{StaticResource TTexto}"
+                            IsEnabled="{Binding Libre}" />
+                </Border>
+                <Label Text="{Binding Contador}" FontSize="12" TextColor="{StaticResource TTenue}" HorizontalOptions="End" />
+            </VerticalStackLayout>
+
+            <Border IsVisible="{Binding HayError}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                    Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
+                <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" />
+            </Border>
+
+            <Button Text="Enviar reporte" Command="{Binding EnviarCommand}" IsEnabled="{Binding Libre}"
+                    BackgroundColor="{StaticResource TRiesgo}" TextColor="{StaticResource TTexto}"
+                    FontAttributes="Bold" HeightRequest="52" CornerRadius="8" />
+            <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TAmarillo}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

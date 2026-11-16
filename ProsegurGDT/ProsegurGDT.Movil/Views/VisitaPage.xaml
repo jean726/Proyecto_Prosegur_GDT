@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Ficha de la visita y CU29 — registrar resultado. Estilo provisional (Torre); el definitivo sale de Claude Design. -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             x:Class="ProsegurGDT.Movil.Views.VisitaPage"
+             x:DataType="vm:VisitaViewModel"
+             Title="{Binding Titulo}"
+             BackgroundColor="{StaticResource TFondo}">
+
+    <ContentPage.Resources>
+        <Style x:Key="Etiqueta" TargetType="Label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextColor" Value="{StaticResource TTenue}" />
+        </Style>
+        <Style x:Key="Campo" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource TSuperficie}" />
+            <Setter Property="Stroke" Value="{StaticResource TBorde}" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,32" Spacing="14">
+
+            <!-- Ficha del titular para verificar identidad (RN-07) -->
+            <Border Padding="16" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
+                    StrokeShape="RoundRectangle 10">
+                <VerticalStackLayout Spacing="10">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Titular" Style="{StaticResource Etiqueta}" />
+                        <Label Text="{Binding Titular}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Documento del titular" Style="{StaticResource Etiqueta}" />
+                        <Label Text="{Binding Documento}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TAmarillo}"
+                               FontFamily="monospace" />
+                    </VerticalStackLayout>
+                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HayTelefono}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Teléfono" Style="{StaticResource Etiqueta}" />
+                            <Label Text="{Binding Telefono}" FontSize="16" TextColor="{StaticResource TTexto}" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="Llamar" Command="{Binding LlamarCommand}"
+                                BackgroundColor="{StaticResource TSuperficie2}" TextColor="{StaticResource TAmarillo}"
+                                BorderColor="{StaticResource TBorde}" BorderWidth="1" CornerRadius="8" HeightRequest="44" />
+                    </Grid>
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Dirección" Style="{StaticResource Etiqueta}" />
+                        <Label Text="{Binding Direccion}" FontSize="15" TextColor="{StaticResource TTexto}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Cita" Style="{StaticResource Etiqueta}" />
+                        <Label Text="{Binding Cita}" FontSize="15" TextColor="{StaticResource TTexto}" />
+                        <Label Text="{Binding Observaciones}" IsVisible="{Binding HayObservaciones}"
+                               FontSize="13" TextColor="{StaticResource TTenue}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Mensajes -->
+            <Border IsVisible="{Binding HayExito}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                    Stroke="{StaticResource TOk}" StrokeShape="RoundRectangle 8">
+                <Label Text="{Binding Exito}" TextColor="{StaticResource TTexto}" FontSize="14" />
+            </Border>
+            <Border IsVisible="{Binding HayError}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                    Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
+                <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" />
+            </Border>
+            <Border IsVisible="{Binding HayBloqueo}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                    Stroke="{StaticResource TAmarillo}" StrokeShape="RoundRectangle 8">
+                <Label Text="{Binding Bloqueo}" TextColor="{StaticResource TTexto}" FontSize="14" />
+            </Border>
+            <Border IsVisible="{Binding HaySuplantacion}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                    Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
+                <Label Text="{Binding Suplantacion}" TextColor="{StaticResource TRiesgo}" FontSize="14" FontAttributes="Bold" />
+            </Border>
+
+            <!-- Resultado ya registrado -->
+            <Border IsVisible="{Binding HayResultado}" Padding="16" BackgroundColor="{StaticResource TSuperficie}"
+                    Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Resultado registrado" Style="{StaticResource Etiqueta}" />
+                    <Label Text="{Binding ResultadoActual}" FontSize="15" TextColor="{StaticResource TTexto}" />
+                    <Button Text="Corregir" Command="{Binding CorregirCommand}" IsVisible="{Binding PuedeCorregir}"
+                            BackgroundColor="{StaticResource TSuperficie2}" TextColor="{StaticResource TTexto}"
+                            BorderColor="{StaticResource TBorde}" BorderWidth="1" CornerRadius="8" HeightRequest="44" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- CU29: formulario -->
+            <VerticalStackLayout IsVisible="{Binding MostrarFormulario}" Spacing="12">
+                <Label Text="Resultado de la visita" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Button Text="Entregada" Command="{Binding EntregadaCommand}" HeightRequest="48" CornerRadius="8"
+                            BackgroundColor="{Binding ColorEntregada}" TextColor="{Binding TextoEntregada}" FontAttributes="Bold" />
+                    <Button Grid.Column="1" Text="No entregada" Command="{Binding NoEntregadaCommand}" HeightRequest="48" CornerRadius="8"
+                            BackgroundColor="{Binding ColorNoEntregada}" TextColor="{Binding TextoNoEntregada}" FontAttributes="Bold" />
+                </Grid>
+
+                <!-- Entregada: identidad del receptor -->
+                <VerticalStackLayout IsVisible="{Binding EsEntregada}" Spacing="10">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Nombre del receptor" Style="{StaticResource Etiqueta}" />
+                        <Border Style="{StaticResource Campo}">
+                            <Entry Text="{Binding ReceptorNombre}" MaxLength="150" MinimumHeightRequest="48"
+                                   TextColor="{StaticResource TTexto}" Keyboard="Text" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Documento del receptor" Style="{StaticResource Etiqueta}" />
+                        <Border Style="{StaticResource Campo}">
+                            <Entry Text="{Binding ReceptorDocumento}" MaxLength="20" MinimumHeightRequest="48"
+                                   TextColor="{StaticResource TTexto}" FontFamily="monospace" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <Label IsVisible="{Binding DocumentoDistinto}" FontSize="13" TextColor="{StaticResource TAmarillo}"
+                           Text="El documento no coincide con el del titular. Se aceptará, pero el Descargador lo revisará." />
+                </VerticalStackLayout>
+
+                <!-- No entregada: motivo obligatorio -->
+                <VerticalStackLayout IsVisible="{Binding EsNoEntregada}" Spacing="10">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Motivo de no entrega" Style="{StaticResource Etiqueta}" />
+                        <Border Style="{StaticResource Campo}">
+                            <Picker ItemsSource="{Binding Motivos}" SelectedIndex="{Binding MotivoIndice}"
+                                    Title="Seleccione el motivo" TextColor="{StaticResource TTexto}"
+                                    TitleColor="{StaticResource Gray500}" MinimumHeightRequest="48" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{Binding EtiquetaDetalle}" Style="{StaticResource Etiqueta}" />
+                        <Border Style="{StaticResource Campo}">
+                            <Editor Text="{Binding Detalle}" MaxLength="300" AutoSize="TextChanges" MinimumHeightRequest="80"
+                                    TextColor="{StaticResource TTexto}" />
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <Button Text="Guardar resultado" Command="{Binding GuardarCommand}" IsEnabled="{Binding Libre}"
+                        BackgroundColor="{StaticResource TAmarillo}" TextColor="{StaticResource TFondo}"
+                        FontAttributes="Bold" HeightRequest="52" CornerRadius="8" />
+                <Button Text="Cancelar corrección" Command="{Binding CancelarCommand}" IsVisible="{Binding Corrigiendo}"
+                        BackgroundColor="Transparent" TextColor="{StaticResource TTenue}" />
+            </VerticalStackLayout>
+
+            <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TAmarillo}" />
+
+            <!-- CU30 -->
+            <Button Text="Reportar suplantación de identidad" Command="{Binding ReportarCommand}"
+                    IsVisible="{Binding PuedeReportar}" Margin="0,12,0,0"
+                    BackgroundColor="Transparent" TextColor="{StaticResource TRiesgo}"
+                    BorderColor="{StaticResource TRiesgo}" BorderWidth="1" CornerRadius="8" HeightRequest="48" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -6,6 +6,7 @@
              xmlns:m="clr-namespace:ProsegurGDT.Movil.Models"
              x:Class="ProsegurGDT.Movil.Views.HojaPage"
              x:DataType="vm:HojaViewModel"
+             x:Name="Pagina"
              Title="Hoja de ruta"
              BackgroundColor="{StaticResource TFondo}">
 
@@ -66,6 +67,10 @@
                 <DataTemplate x:DataType="m:VisitaItem">
                     <Border Margin="20,0,20,10" Padding="14" BackgroundColor="{StaticResource TSuperficie}"
                             Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding BindingContext.AbrirVisitaCommand, Source={x:Reference Pagina}, x:DataType=ContentPage}"
+                                                  CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
                             <Label Text="{Binding Orden}" FontSize="24" FontAttributes="Bold"
                                    TextColor="{StaticResource TAmarillo}" VerticalOptions="Start" />
