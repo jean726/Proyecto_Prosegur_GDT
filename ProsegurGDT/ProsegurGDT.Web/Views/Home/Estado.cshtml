@@ -1,0 +1,24 @@
+@model ProsegurGDT.Web.Models.EstadoViewModel
+@{
+    ViewData["Title"] = Model.Titulo; ViewData["Torre"] = true;
+}
+<div class="pg-encabezado">
+    <div>
+        <h1>@Model.Titulo</h1>
+        <p class="pg-subtitulo">@Model.Mensaje</p>
+    </div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Volver al inicio</a>
+</div>
+<div class="pg-tarjeta">
+    <p class="mb-0">
+        Código <span class="pg-t-mono">@Model.Codigo</span>
+        @if (!string.IsNullOrEmpty(Model.Seguimiento))
+        {
+            <text> · Seguimiento <span class="pg-t-mono">@Model.Seguimiento</span></text>
+        }
+    </p>
+    @if (!string.IsNullOrEmpty(Model.Seguimiento))
+    {
+        <p class="mb-0 mt-2">Si el problema continúa, comunique este código de seguimiento al Administrador del sistema.</p>
+    }
+</div>

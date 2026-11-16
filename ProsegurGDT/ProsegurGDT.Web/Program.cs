@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using ProsegurGDT.Web.Data;
 using ProsegurGDT.Web.Services;
 using ProsegurGDT.Web.Services.Api;
+using ProsegurGDT.Web.Services.Salud;
 using ProsegurGDT.Web.Services.Seguridad;
 using Microsoft.AspNetCore.Mvc.DataAnnotations;
 
@@ -177,6 +178,10 @@ builder.Services.AddRateLimiter(o =>
         ctx.Connection.RemoteIpAddress?.ToString() ?? "?",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limites.TokenMovilPorMinuto, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
+// C4 — /health: estado de la base de datos y del motor de IA (para monitoreo y para comprobar un despliegue)
+builder.Services.AddHealthChecks()
+    .AddCheck<ComprobacionBaseDatos>("base-de-datos")
+    .AddCheck<ComprobacionMotorIa>("motor-ia");
 builder.Services.AddOpenApi("v1", o => o.ShouldInclude = d => d.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
 // Singleton
 builder.Services.AddSingleton<IConfiguracionOperativa, ConfiguracionOperativa>();
@@ -228,8 +233,9 @@ if (confiarEnProxy && !forwardedDelHost) app.UseForwardedHeaders();
 app.UseMiddleware<CabecerasSeguridadMiddleware>();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();
 
-app.Logger.LogWarning("IA umbrales: medio={M} alto={A}",
-    app.Configuration["IA:UmbralMedio"], app.Configuration["IA:UmbralAlto"]);
+var operativa = app.Services.GetRequiredService<IConfiguracionOperativa>();
+app.Logger.LogInformation("Umbrales de la IA: medio={Medio} alto={Alto}; intentos de contacto: {Intentos}",
+    operativa.UmbralMedio, operativa.UmbralAlto, operativa.MaxIntentosContacto);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -247,6 +253,13 @@ else
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+// C4 — Las respuestas de error sin cuerpo (404, 400, 405…) muestran una página propia en español.
+// La API y /health conservan sus respuestas JSON.
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/api") && !ctx.Request.Path.StartsWithSegments("/health")
+        && !ctx.Request.Path.StartsWithSegments("/openapi"),
+    rama => rama.UseStatusCodePagesWithReExecute("/Home/Estado/{0}"));
 
 app.UseHttpsRedirection();
 app.UseCookiePolicy();
@@ -275,6 +288,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+app.MapHealthChecks("/health", SaludRespuesta.Opciones).AllowAnonymous();
 
 // Documento OpenAPI de /api/v1 (solo en desarrollo): /openapi/v1.json
 if (app.Environment.IsDevelopment()) app.MapOpenApi().AllowAnonymous();

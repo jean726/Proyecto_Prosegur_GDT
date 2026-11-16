@@ -308,17 +308,37 @@ namespace ProsegurGDT.Web.Controllers
             };
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [AllowAnonymous]
+        // C4 — Error no controlado (UseExceptionHandler): misma página de estado, con código de seguimiento.
+        // Se vuelve a ejecutar con el método original (puede ser POST), por eso no exige antiforgery.
+        [AllowAnonymous, IgnoreAntiforgeryToken]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error() => VistaEstado(StatusCodes.Status500InternalServerError);
 
-        public IActionResult Error()
+        // C4 — Páginas propias para las respuestas sin cuerpo (404, 400, 405…): UseStatusCodePagesWithReExecute
+        [AllowAnonymous, IgnoreAntiforgeryToken]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Estado(int id) => VistaEstado(id is >= 400 and <= 599 ? id : StatusCodes.Status404NotFound);
+
+        private ViewResult VistaEstado(int codigo)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var (titulo, mensaje) = codigo switch
+            {
+                400 => ("Solicitud no válida", "El formulario expiró o la solicitud no es válida. Vuelva a la página anterior, actualícela e intente de nuevo."),
+                401 => ("Sesión requerida", "Inicie sesión para continuar."),
+                403 => ("Acceso denegado", "Su rol no tiene permiso para esta funcionalidad."),
+                404 => ("Página no encontrada", "La dirección que abrió no existe o el registro ya no está disponible."),
+                405 => ("Operación no permitida", "Esta dirección no admite la operación solicitada."),
+                413 => ("Archivo demasiado grande", "El archivo supera el tamaño permitido. Reduzca su tamaño e intente de nuevo."),
+                429 => ("Demasiadas solicitudes", "Se superó el número de intentos permitidos. Espere un minuto e intente nuevamente."),
+                >= 500 => ("No se pudo completar la operación", "Ocurrió un problema inesperado al atender la solicitud. Intente nuevamente en unos minutos."),
+                _ => ("No se pudo completar la operación", "La solicitud no pudo atenderse.")
+            };
+            Response.StatusCode = codigo;
+            return View("Estado", new EstadoViewModel
+            {
+                Codigo = codigo, Titulo = titulo, Mensaje = mensaje,
+                Seguimiento = codigo >= 500 ? Activity.Current?.Id ?? HttpContext.TraceIdentifier : null
+            });
         }
 
         [AllowAnonymous]
