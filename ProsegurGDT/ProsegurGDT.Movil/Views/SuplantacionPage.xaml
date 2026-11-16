@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- CU30 — Reportar suplantación de identidad (diseño 6a). -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             xmlns:c="clr-namespace:ProsegurGDT.Movil.Controles"
+             x:Class="ProsegurGDT.Movil.Views.SuplantacionPage"
+             x:DataType="vm:SuplantacionViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Barra: cerrar y título -->
+        <Grid ColumnDefinitions="48,*" ColumnSpacing="4" Padding="4,4,16,4" HeightRequest="56">
+            <Grid Style="{StaticResource BotonIcono}" SemanticProperties.Description="Cerrar">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CerrarCommand}" />
+                </Grid.GestureRecognizers>
+                <c:Icono Datos="{x:Static c:Iconos.Cerrar}" Color="{StaticResource TTexto}" Tamano="22" Grosor="2"
+                         HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
+            <Label Grid.Column="1" Text="Reportar suplantación" Style="{StaticResource TituloBarra}" />
+        </Grid>
+        <BoxView Grid.Row="1" Style="{StaticResource Divisor}" />
+
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="16" Spacing="16">
+
+                <!-- Visita -->
+                <Border IsVisible="{Binding HayVisita}" Padding="16,12" BackgroundColor="{StaticResource TSuperficie}"
+                        Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding Referencia}" FontFamily="MonoMedio" FontSize="13" TextColor="{StaticResource TTenue}" />
+                            <Label Text="{Binding Titular}" FontFamily="PlexSemi" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding Documento}" FontFamily="MonoSemi" FontSize="17" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource AvisoRiesgo}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <c:Icono Datos="{x:Static c:Iconos.EscudoAlerta}" Color="{StaticResource TRiesgoTexto}" Tamano="20" VerticalOptions="Start" />
+                        <Label Grid.Column="1" LineHeight="1.25"
+                               Text="Usa este reporte si alguien intentó recibir la tarjeta haciéndose pasar por el titular. El Verificador evaluará el caso." />
+                    </Grid>
+                </Border>
+
+                <!-- Sin conexión / error del servidor -->
+                <Border Style="{StaticResource AvisoNeutro}" IsVisible="{Binding SinConexion}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <c:Icono Datos="{x:Static c:Iconos.SinSenal}" Color="{StaticResource TTexto}" Tamano="20" VerticalOptions="Start" />
+                        <Label Grid.Column="1" Text="{Binding Error}" FontFamily="PlexMedio" FontSize="14" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource AvisoRiesgo}" IsVisible="{Binding ErrorServidor}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <c:Icono Datos="{x:Static c:Iconos.Alerta}" Color="{StaticResource TRiesgoTexto}" Tamano="20" VerticalOptions="Start" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="No se pudo enviar el reporte" FontFamily="PlexSemi" TextColor="{StaticResource TRiesgoTitulo}" />
+                            <Label Text="{Binding Error}" FontSize="14" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Describe lo ocurrido" Style="{StaticResource EtiquetaCampo}" />
+                    <Border Style="{StaticResource Campo}" Padding="14,8">
+                        <Editor Text="{Binding Descripcion}" MaxLength="500" HeightRequest="160" IsEnabled="{Binding Libre}"
+                                Placeholder="Por ejemplo: la persona que atendió mostró un DNI con otra foto…">
+                            <Editor.Behaviors><c:ResaltarAlEnfocar /></Editor.Behaviors>
+                        </Editor>
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Entre 10 y 500 caracteres" FontSize="13" TextColor="{StaticResource TTenue}" />
+                        <Label Grid.Column="1" Text="{Binding Contador}" FontFamily="MonoMedio" FontSize="13" />
+                    </Grid>
+                    <HorizontalStackLayout Spacing="6" IsVisible="{Binding HayErrorDescripcion}">
+                        <c:Icono Datos="{x:Static c:Iconos.ErrorCirculo}" Color="{StaticResource TRiesgoTexto}" Tamano="14" Grosor="2" VerticalOptions="Center" />
+                        <Label Text="{Binding ErrorDescripcion}" Style="{StaticResource ErrorCampo}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Enviar reporte, fijo abajo -->
+        <VerticalStackLayout Grid.Row="3">
+            <BoxView Style="{StaticResource Divisor}" />
+            <Grid Padding="16,12,16,12">
+                <Button Text="Enviar reporte" Style="{StaticResource BotonRiesgo}" Command="{Binding EnviarCommand}" IsEnabled="{Binding Libre}" />
+                <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TTenue}"
+                                   WidthRequest="20" HeightRequest="20" HorizontalOptions="End" Margin="0,0,16,0" />
+            </Grid>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

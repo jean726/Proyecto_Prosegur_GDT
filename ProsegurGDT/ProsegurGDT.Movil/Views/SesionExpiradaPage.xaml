@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Sesión expirada (diseño T3): aviso modal sobre la pantalla actual tras un 401; lleva al inicio de sesión. -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:c="clr-namespace:ProsegurGDT.Movil.Controles"
+             x:Class="ProsegurGDT.Movil.Views.SesionExpiradaPage"
+             BackgroundColor="{StaticResource TVelo}"
+             Shell.PresentationMode="ModalNotAnimated">
+
+    <Border Style="{StaticResource Dialogo}">
+        <VerticalStackLayout Spacing="22">
+            <Border WidthRequest="48" HeightRequest="48" HorizontalOptions="Start" StrokeShape="RoundRectangle 24"
+                    Stroke="{StaticResource TBordeFuerte}">
+                <c:Icono Datos="{x:Static c:Iconos.Reloj}" Color="{StaticResource TAmarillo}" Tamano="24"
+                         HorizontalOptions="Center" VerticalOptions="Center" />
+            </Border>
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Tu sesión expiró" FontFamily="PlexSemi" FontSize="21" />
+                <Label Text="Por seguridad, vuelve a ingresar tus credenciales para continuar."
+                       TextColor="{StaticResource TTenue}" LineHeight="1.3" />
+            </VerticalStackLayout>
+            <Button Text="Ir a iniciar sesión" Clicked="IrAlInicio" />
+        </VerticalStackLayout>
+    </Border>
+</ContentPage>

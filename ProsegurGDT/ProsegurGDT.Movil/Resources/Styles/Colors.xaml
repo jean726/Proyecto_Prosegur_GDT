@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Paleta «Torre de control» del diseño de la app (Claude Design, 2026-11-15). La app va siempre en oscuro.
+     Rojo solo para riesgo real (suplantación y errores); verde apagado solo para «Entregada».
+     Android: ver también Platforms/Android/Resources/values/colors.xml. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Base -->
+    <Color x:Key="TFondo">#111418</Color>
+    <Color x:Key="TSuperficie">#181C22</Color>
+    <Color x:Key="TSuperficie2">#1F242B</Color>
+    <Color x:Key="TBorde">#2A3038</Color>
+    <Color x:Key="TBordeFuerte">#3A424C</Color>
+    <Color x:Key="TApagado">#4A525C</Color>
+    <Color x:Key="TTexto">#E8EAED</Color>
+    <Color x:Key="TTenue">#9AA3AD</Color>
+    <Color x:Key="TTenue2">#6B737D</Color>
+    <Color x:Key="TAmarillo">#FFCC00</Color>
+    <!-- Velo de los diálogos y hojas inferiores (negro al 66 %) -->
+    <Color x:Key="TVelo">#A8000000</Color>
+
+    <!-- Riesgo (suplantación, errores) -->
+    <Color x:Key="TRiesgo">#D9443C</Color>
+    <Color x:Key="TRiesgoFondo">#2A1416</Color>
+    <Color x:Key="TRiesgoBorde">#6B2428</Color>
+    <Color x:Key="TRiesgoTexto">#FF8A80</Color>
+    <Color x:Key="TRiesgoTitulo">#FFB4AD</Color>
+
+    <!-- Entregada -->
+    <Color x:Key="TOkFondo">#1A2A20</Color>
+    <Color x:Key="TOkBorde">#2C4A36</Color>
+    <Color x:Key="TOk">#8CC79C</Color>
+
+    <Color x:Key="TBlanco">#FFFFFF</Color>
+</ResourceDictionary>

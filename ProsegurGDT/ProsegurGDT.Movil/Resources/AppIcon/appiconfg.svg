@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Primer plano del icono: tarjeta lineal (glifo propio de la app, sin logos de terceros). -->
+<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#111418" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="128" y="158" width="200" height="140" rx="18" />
+        <path d="M128 198 H328" />
+        <path d="M158 258 H210" />
+    </g>
+</svg>
