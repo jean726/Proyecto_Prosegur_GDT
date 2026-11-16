@@ -12,9 +12,10 @@ public partial class HojasPage : ContentPage
 		BindingContext = _vm = vm;
 	}
 
-	protected override void OnAppearing()
+	// Se recarga cada vez que se vuelve a la lista (p. ej. tras confirmar una hoja o registrar resultados).
+	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
-		_vm.Refrescar();
+		await _vm.CargarAsync();
 	}
 }

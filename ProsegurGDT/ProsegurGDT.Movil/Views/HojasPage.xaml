@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Mis hojas de ruta (CU28). De momento: cabecera del repartidor y cerrar sesión (CU23); la lista llega en el paso siguiente. -->
+<!-- CU28 — Mis hojas de ruta. Estilo provisional con los tokens de la Torre; el definitivo sale de Claude Design. -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             xmlns:m="clr-namespace:ProsegurGDT.Movil.Models"
              x:Class="ProsegurGDT.Movil.Views.HojasPage"
              x:DataType="vm:HojasViewModel"
+             x:Name="Pagina"
              Title="Mis hojas de ruta"
              BackgroundColor="{StaticResource TFondo}">
 
@@ -12,18 +14,58 @@
         <ToolbarItem Text="Cerrar sesión" Command="{Binding CerrarSesionCommand}" />
     </ContentPage.ToolbarItems>
 
-    <VerticalStackLayout Padding="20" Spacing="16">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="20,16,20,0" RowSpacing="12">
+
         <VerticalStackLayout Spacing="2">
             <Label Text="{Binding Nombre}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
             <Label Text="{Binding Detalle}" FontSize="14" TextColor="{StaticResource TTenue}" />
         </VerticalStackLayout>
 
-        <Border Padding="16" BackgroundColor="{StaticResource TSuperficie}" Stroke="{StaticResource TBorde}"
+        <Border Grid.Row="1" IsVisible="{Binding HayError}" Padding="14,12"
+                BackgroundColor="{StaticResource TSuperficie2}" Stroke="{StaticResource TRiesgo}"
                 StrokeShape="RoundRectangle 8">
-            <Label Text="La lista de hojas de ruta llega en el siguiente paso."
-                   TextColor="{StaticResource TTenue}" FontSize="14" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Reintentar" Command="{Binding CargarCommand}"
+                        BackgroundColor="Transparent" TextColor="{StaticResource TAmarillo}" FontSize="14" />
+            </Grid>
         </Border>
 
-        <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" Color="{StaticResource TAmarillo}" />
-    </VerticalStackLayout>
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding Actualizando}" Command="{Binding CargarCommand}"
+                     RefreshColor="{StaticResource TAmarillo}">
+            <CollectionView ItemsSource="{Binding Hojas}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="8,48" Spacing="8" IsVisible="{Binding Vacio}">
+                        <Label Text="Sin hojas de ruta" FontSize="18" FontAttributes="Bold"
+                               TextColor="{StaticResource TTexto}" HorizontalTextAlignment="Center" />
+                        <Label Text="No tienes hojas de ruta aprobadas por ahora. Cuando el Supervisor apruebe tu hoja aparecerá aquí. Desliza hacia abajo para actualizar."
+                               FontSize="14" TextColor="{StaticResource TTenue}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:HojaItem">
+                        <Border Margin="0,0,0,12" Padding="16" BackgroundColor="{StaticResource TSuperficie}"
+                                Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding BindingContext.AbrirCommand, Source={x:Reference Pagina}, x:DataType=ContentPage}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding Jornada}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+                                    <Label Grid.Column="1" Text="{Binding Estado}" FontSize="13" FontAttributes="Bold"
+                                           TextColor="{Binding ColorEstado}" VerticalOptions="Center" />
+                                </Grid>
+                                <Label Text="{Binding Zona}" FontSize="14" TextColor="{StaticResource TTenue}" />
+                                <ProgressBar Progress="{Binding Progreso}" ProgressColor="{StaticResource TAmarillo}"
+                                             BackgroundColor="{StaticResource TBorde}" />
+                                <Label Text="{Binding Avance}" FontSize="13" TextColor="{StaticResource TTenue}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
 </ContentPage>

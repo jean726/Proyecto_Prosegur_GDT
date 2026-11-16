@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- CU28 — Detalle de la hoja (visitas en orden) y CU31 — confirmar recepción. Estilo provisional (Torre). -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ProsegurGDT.Movil.ViewModels"
+             xmlns:m="clr-namespace:ProsegurGDT.Movil.Models"
+             x:Class="ProsegurGDT.Movil.Views.HojaPage"
+             x:DataType="vm:HojaViewModel"
+             Title="Hoja de ruta"
+             BackgroundColor="{StaticResource TFondo}">
+
+    <RefreshView IsRefreshing="{Binding Actualizando}" Command="{Binding CargarCommand}"
+                 RefreshColor="{StaticResource TAmarillo}">
+        <CollectionView ItemsSource="{Binding Visitas}" SelectionMode="None">
+
+            <CollectionView.Header>
+                <VerticalStackLayout Padding="20,16,20,4" Spacing="12">
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding Jornada}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+                        <Label Text="{Binding Zona}" FontSize="14" TextColor="{StaticResource TTenue}" />
+                        <ProgressBar Progress="{Binding Progreso}" ProgressColor="{StaticResource TAmarillo}"
+                                     BackgroundColor="{StaticResource TBorde}" Margin="0,8,0,0" />
+                        <Label Text="{Binding Avance}" FontSize="13" TextColor="{StaticResource TTenue}" />
+                    </VerticalStackLayout>
+
+                    <!-- Mensajes -->
+                    <Border IsVisible="{Binding HayError}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                            Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 8">
+                        <Label Text="{Binding Error}" TextColor="{StaticResource TTexto}" FontSize="14" />
+                    </Border>
+                    <Border IsVisible="{Binding HayExito}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                            Stroke="{StaticResource TOk}" StrokeShape="RoundRectangle 8">
+                        <Label Text="{Binding Exito}" TextColor="{StaticResource TTexto}" FontSize="14" />
+                    </Border>
+
+                    <!-- CU31: aviso destacado mientras la recepción no esté confirmada (RN-06) -->
+                    <Border IsVisible="{Binding PorConfirmar}" Padding="16" BackgroundColor="{StaticResource TSuperficie}"
+                            Stroke="{StaticResource TAmarillo}" StrokeShape="RoundRectangle 10">
+                        <VerticalStackLayout Spacing="12">
+                            <Label Text="Confirma la recepción de la hoja antes de iniciar la ruta."
+                                   FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+                            <Label Text="Hasta entonces no podrás registrar resultados ni reportar suplantaciones."
+                                   FontSize="13" TextColor="{StaticResource TTenue}" />
+                            <Button Text="Confirmar recepción" Command="{Binding ConfirmarCommand}"
+                                    BackgroundColor="{StaticResource TAmarillo}" TextColor="{StaticResource TFondo}"
+                                    FontAttributes="Bold" HeightRequest="48" CornerRadius="8"
+                                    IsEnabled="{Binding Libre}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Label IsVisible="{Binding Confirmada}" Text="{Binding TextoConfirmada}"
+                           FontSize="13" TextColor="{StaticResource TTenue}" />
+
+                    <Border IsVisible="{Binding DescargoIniciado}" Padding="14,12" BackgroundColor="{StaticResource TSuperficie2}"
+                            Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 8">
+                        <Label Text="Descargo iniciado: ya no se pueden modificar resultados."
+                               TextColor="{StaticResource TTexto}" FontSize="14" />
+                    </Border>
+
+                    <Label Text="Visitas" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TTenue}" Margin="0,8,0,0" />
+                </VerticalStackLayout>
+            </CollectionView.Header>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="m:VisitaItem">
+                    <Border Margin="20,0,20,10" Padding="14" BackgroundColor="{StaticResource TSuperficie}"
+                            Stroke="{StaticResource TBorde}" StrokeShape="RoundRectangle 10">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                            <Label Text="{Binding Orden}" FontSize="24" FontAttributes="Bold"
+                                   TextColor="{StaticResource TAmarillo}" VerticalOptions="Start" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="{Binding Titular}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TTexto}" />
+                                <Label Text="{Binding Direccion}" FontSize="14" TextColor="{StaticResource TTenue}" />
+                                <Label Text="{Binding Cita}" FontSize="13" TextColor="{StaticResource TTenue}" />
+                                <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                    <Border Padding="8,3" Stroke="{Binding ColorResultado}" StrokeShape="RoundRectangle 6">
+                                        <Label Text="{Binding Resultado}" FontSize="12" TextColor="{Binding ColorResultado}" />
+                                    </Border>
+                                    <Border IsVisible="{Binding HaySuplantacion}" Padding="8,3"
+                                            Stroke="{StaticResource TRiesgo}" StrokeShape="RoundRectangle 6">
+                                        <Label Text="{Binding Suplantacion}" FontSize="12" TextColor="{StaticResource TRiesgo}" />
+                                    </Border>
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+    </RefreshView>
+</ContentPage>
