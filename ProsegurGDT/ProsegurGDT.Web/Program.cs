@@ -2,6 +2,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -175,7 +176,28 @@ builder.Services.AddScoped<IDescargoService, DescargoService>();
 builder.Services.AddScoped<IDefraudacionService, DefraudacionService>();
 builder.Services.AddScoped<IReportesDescargoService, ReportesDescargoService>();
 
+// B4 — Intranet: la web solo responde desde las redes de la empresa; /api queda fuera (JWT).
+// Detrás del proxy de Azure la IP real llega en X-Forwarded-For: se toma solo el último salto (el que añade Azure),
+// así una cabecera inventada por el cliente no salta el filtro. También la usa el limitador del login móvil.
+builder.Services.Configure<OpcionesIntranet>(builder.Configuration.GetSection(OpcionesIntranet.Seccion));
+var confiarEnProxy = builder.Configuration.GetValue<bool?>("Intranet:ConfiarEnProxy")
+    ?? !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+// Si el host ya procesa las cabeceras (ASPNETCORE_FORWARDEDHEADERS_ENABLED), no se repite: una segunda pasada
+// consumiría el valor puesto por el cliente.
+var forwardedDelHost = builder.Configuration.GetValue<bool>("FORWARDEDHEADERS_ENABLED");
+if (confiarEnProxy || forwardedDelHost)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.ForwardLimit = 1;
+        o.KnownIPNetworks.Clear();
+        o.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+if (confiarEnProxy && !forwardedDelHost) app.UseForwardedHeaders();
 _ = app.Services.GetRequiredService<IConfiguracionOperativa>();
 
 app.Logger.LogWarning("IA umbrales: medio={M} alto={A}",
@@ -199,6 +221,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<FiltroIntranetMiddleware>();
 
 // El registro público queda cerrado: los usuarios los crea el Administrador (CU24)
 app.Use(async (ctx, next) =>

@@ -323,5 +323,15 @@ namespace ProsegurGDT.Web.Controllers
 
         [AllowAnonymous]
         public IActionResult AccesoDenegado() => View();
+
+        // B4 — Intranet: página que ve quien entra a la web desde fuera de las redes permitidas
+        [AllowAnonymous]
+        public IActionResult FueraDeRed()
+        {
+            if (HttpContext.Items[FiltroIntranetMiddleware.ClaveBloqueo] is not true)
+                return RedirectToAction(nameof(Index));
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View();
+        }
     }
 }
