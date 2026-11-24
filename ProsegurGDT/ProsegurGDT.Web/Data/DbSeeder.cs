@@ -42,16 +42,18 @@ public static class DbSeeder
 
         if (!await db.Bancos.AnyAsync())
         {
-            db.Bancos.Add(new Banco { Nombre = "UNIBANCA" });
+            db.Bancos.AddRange(new Banco { Nombre = "Interbank" }, new Banco { Nombre = "BCP" });
             await db.SaveChangesAsync();
         }
 
         if (cargarDemo && !await db.Remitos.AnyAsync())
         {
-            var banco = await db.Bancos.FirstAsync();
+            var bancos = await db.Bancos.OrderBy(b => b.Id).ToListAsync();
+            var interbank = bancos.FirstOrDefault(b => b.Nombre == "Interbank") ?? bancos[0];
+            var bcp = bancos.FirstOrDefault(b => b.Nombre == "BCP") ?? bancos[0];
             db.Remitos.AddRange(
-                new Remito { Numero = "REM-0001", BancoId = banco.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) },
-                new Remito { Numero = "REM-0002", BancoId = banco.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) });
+                new Remito { Numero = "REM-0001", BancoId = interbank.Id, CantidadDeclarada = 50, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) },
+                new Remito { Numero = "REM-0002", BancoId = bcp.Id, CantidadDeclarada = 30, FechaEmision = DateOnly.FromDateTime(HoraLima.Ahora) });
             await db.SaveChangesAsync();
         }
 
@@ -133,7 +135,7 @@ public static class DbSeeder
             if (adminDemo is not null)
             {
                 var riesgo = sp.GetRequiredService<IAddressRiskService>();
-                const string motivo = "Domicilio ficticio reportado en jornada anterior (dato de demostración)";
+                const string motivo = "Domicilio ficticio reportado en una jornada anterior";
                 await riesgo.AgregarAsync("Avda. Larco 105, Mirafores", motivo, adminDemo.Id, true, "Demo");           // variante con error de tipeo
                 await riesgo.AgregarAsync("Av. Benavides 108, Miraflores", motivo, adminDemo.Id, true, "Demo");        // coincide exacta
                 await riesgo.AgregarAsync("Jirón Unión 111, Miraflores", motivo, adminDemo.Id, true, "Demo");          // palabras omitidas
@@ -141,7 +143,8 @@ public static class DbSeeder
             }
         }
 
-        if (cargarDemo)
+        // Seed:LoteDemo=false en la presentación: no se crea el lote REM-DEMO-01 (por defecto sí, para el desarrollo y las pruebas)
+        if (cargarDemo && config.GetValue("Seed:LoteDemo", true))
             await DbSeederLoteDemo.SembrarAsync(sp, sp.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder"));
     }
 

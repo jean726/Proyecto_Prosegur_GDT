@@ -57,6 +57,18 @@ public class ArranqueTests(FabricaWeb fabrica)
     }
 
     [Fact]
+    public async Task Los_remitos_libres_son_de_Interbank_y_BCP()
+    {
+        await fabrica.ConBaseAsync(async (db, _) =>
+        {
+            var remitos = await db.Remitos.Include(r => r.Banco).Where(r => r.Numero == "REM-0001" || r.Numero == "REM-0002").ToListAsync();
+            Assert.Equal("Interbank", remitos.Single(r => r.Numero == "REM-0001").Banco!.Nombre);
+            Assert.Equal("BCP", remitos.Single(r => r.Numero == "REM-0002").Banco!.Nombre);
+            return 0;
+        });
+    }
+
+    [Fact]
     public async Task El_repartidor_demo_esta_vinculado_a_Carlos_Mendoza()
     {
         var nombre = await fabrica.ConBaseAsync(async (db, sp) =>
