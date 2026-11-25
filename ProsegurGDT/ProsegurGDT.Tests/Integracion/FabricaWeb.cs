@@ -19,7 +19,7 @@ public sealed class FabricaWeb : WebApplicationFactory<Program>
     public const string PrefijoBase = "gdt-pruebas-";
     public const string AdminCorreo = "admin.pruebas@gdt.local";
     public const string AdminClave = "Adm1n#Pruebas-2026";
-    public const string ClaveDemo = "<clave-demo>";
+    public const string ClaveDemo = "Pruebas#2026Gdt";
 
     public string NombreBase { get; } = PrefijoBase + Guid.NewGuid().ToString("N")[..12];
 

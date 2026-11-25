@@ -35,7 +35,7 @@ dotnet user-secrets set "SeedAdmin:Password" "<una contraseña>"
 dotnet run --launch-profile https
 ```
 
-Al arrancar aplica las migraciones y, en el entorno de desarrollo, carga datos de demostración: una cuenta por rol (`supervisor@gdt.local`, `clasificador@gdt.local`…) con la contraseña indicada en `appsettings.Development.json` (`Seed:ClaveDemo`) y un lote ya procesado hasta las hojas de ruta (se omite con `Seed:LoteDemo=false`). Cada repartidor tiene además una cuenta para la app móvil: `repartidor@gdt.local` (Carlos Mendoza) y `nombre.apellido@gdt.local` para los demás, con la misma contraseña.
+Al arrancar aplica las migraciones y, en el entorno de desarrollo, carga datos de demostración: una cuenta por rol (`supervisor@gdt.local`, `clasificador@gdt.local`…) con la contraseña que se fije en *User Secrets* (`dotnet user-secrets set "Seed:ClaveDemo" "<una contraseña>"`) y un lote ya procesado hasta las hojas de ruta (se omite con `Seed:LoteDemo=false`). Cada repartidor tiene además una cuenta para la app móvil: `repartidor@gdt.local` (Carlos Mendoza) y `nombre.apellido@gdt.local` para los demás, con la misma contraseña.
 
 Abra `https://localhost:7019`. El estado del servicio está en `/health`.
 
