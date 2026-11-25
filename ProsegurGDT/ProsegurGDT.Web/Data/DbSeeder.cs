@@ -103,6 +103,9 @@ public static class DbSeeder
             }
         }
 
+        // Cada repartidor restante tiene su propia cuenta de la app móvil: nombre.apellido@gdt.local, misma clave demo
+        if (cargarDemo) await CrearCuentasRepartidoresAsync(sp, db, config["Seed:ClaveDemo"]);
+
         if (cargarDemo && !await db.InventarioBoveda.AnyAsync())
         {
             var tarjetasEnBoveda = await db.Tarjetas
@@ -151,6 +154,44 @@ public static class DbSeeder
     // Nombre legible del rol: «AuxiliarTelefonista» → «Auxiliar Telefonista», «EncargadoDeBoveda» → «Encargado de Bóveda»
     private static string Texto(this string rol) =>
         System.Text.RegularExpressions.Regex.Replace(rol, "(?<!^)([A-Z])", " $1").Replace(" De ", " de ").Replace("Boveda", "Bóveda");
+
+    // Cuentas móviles de los repartidores sin usuario (Carlos Mendoza usa repartidor@gdt.local).
+    // Ej.: «Luis Ramírez» → luis.ramirez@gdt.local. Solo con Seed:ClaveDemo; no toca cuentas existentes.
+    private static async Task CrearCuentasRepartidoresAsync(IServiceProvider sp, ApplicationDbContext db, string? claveDemo)
+    {
+        if (string.IsNullOrWhiteSpace(claveDemo)) return;
+        var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
+        var sinCuenta = await db.Repartidores.Where(r => r.UsuarioId == null && r.Activo).OrderBy(r => r.Id).ToListAsync();
+        foreach (var rep in sinCuenta)
+        {
+            var email = $"{CorreoDeNombre(rep.Nombre)}@gdt.local";
+            var u = await um.FindByEmailAsync(email);
+            if (u is null)
+            {
+                u = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true, NombreCompleto = rep.Nombre, Activo = true };
+                var r = await um.CreateAsync(u, claveDemo);
+                if (!r.Succeeded)
+                {
+                    log.LogWarning("No se pudo crear la cuenta del repartidor {Correo}: {Errores}", email, string.Join("; ", r.Errors.Select(e => e.Description)));
+                    continue;
+                }
+                await um.AddToRoleAsync(u, Roles.Repartidor);
+            }
+            if (await db.Repartidores.AnyAsync(x => x.UsuarioId == u.Id)) continue;
+            rep.UsuarioId = u.Id;
+            await db.SaveChangesAsync();
+        }
+    }
+
+    // «Luis Ramírez» → «luis.ramirez»: minúsculas, sin tildes, palabras unidas por punto
+    private static string CorreoDeNombre(string nombre)
+    {
+        var sinTildes = new string(nombre.Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray());
+        return string.Join('.', sinTildes.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
 
     // La contraseña de las cuentas demo viene de Seed:ClaveDemo (appsettings.Development.json o variable de entorno),
     // no del código. Sin ella no se crean cuentas demo nuevas; las que ya existen no se tocan.

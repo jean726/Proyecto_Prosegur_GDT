@@ -68,6 +68,25 @@ public class ArranqueTests(FabricaWeb fabrica)
         });
     }
 
+    [Theory]
+    [InlineData("luis.ramirez@gdt.local", "Luis Ramírez")]
+    [InlineData("jorge.salazar@gdt.local", "Jorge Salazar")]
+    [InlineData("ana.torres@gdt.local", "Ana Torres")]
+    [InlineData("miguel.castro@gdt.local", "Miguel Castro")]
+    [InlineData("rosa.quispe@gdt.local", "Rosa Quispe")]
+    public async Task Cada_repartidor_tiene_su_cuenta_movil(string correo, string nombre)
+    {
+        var (vinculado, esRepartidor) = await fabrica.ConBaseAsync(async (db, sp) =>
+        {
+            var um = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            var u = await um.FindByEmailAsync(correo);
+            Assert.NotNull(u);
+            return ((await db.Repartidores.SingleAsync(r => r.UsuarioId == u!.Id)).Nombre, await um.IsInRoleAsync(u!, Roles.Repartidor));
+        });
+        Assert.Equal(nombre, vinculado);
+        Assert.True(esRepartidor);
+    }
+
     [Fact]
     public async Task El_repartidor_demo_esta_vinculado_a_Carlos_Mendoza()
     {
